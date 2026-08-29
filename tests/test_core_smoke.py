@@ -1,5 +1,10 @@
 import math
 
+import pytest
+
+pytest.importorskip("torch", reason="legacy-ai extra is not part of the CPU API")
+pytest.importorskip("deap", reason="legacy-ai extra is not part of the CPU API")
+
 from fragrance_ai.ai.unified_ai_system import UnifiedAIConfig, UnifiedFragranceAI
 from fragrance_ai.domain.fragrance_chemistry import FragranceChemistry
 from fragrance_ai.tools.scientific_validator_tool import NotesComposition, validate_composition

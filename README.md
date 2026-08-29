@@ -71,7 +71,7 @@ $env:PYTHONUTF8='1'
 
 ## 검증 상태
 
-- GitHub 배포 스냅샷 추적 테스트: 137 passed / 1 PostgreSQL environment skip
+- 로컬 추적 테스트(legacy-ai extra 포함): 137 passed / 1 PostgreSQL environment skip
 - 전체 원본 workspace 회귀: 340 passed / 1 PostgreSQL environment skip
 - Modal-enabled 배포 테스트: 2/2
 - Modal 인증 계약 테스트: PASS
