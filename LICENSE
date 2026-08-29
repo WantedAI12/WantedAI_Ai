@@ -1,0 +1,71 @@
+Fragrance AI - Proprietary License
+
+Copyright (c) 2024 Fragrance AI Team. All rights reserved.
+
+TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+1. DEFINITIONS
+
+"License" shall mean the terms and conditions for use, reproduction, and distribution as defined by Sections 1 through 9 of this document.
+
+"Software" shall mean the Fragrance AI system, including but not limited to source code, documentation, data models, algorithms, and associated materials.
+
+"You" (or "Your") shall mean an individual or Legal Entity exercising permissions granted by this License.
+
+2. GRANT OF RIGHTS
+
+Subject to the terms and conditions of this License, the copyright holders hereby grant You a limited, non-exclusive, non-transferable, revocable license to:
+
+a) VIEW and READ the source code for personal learning purposes only
+b) EXECUTE the software for personal, non-commercial evaluation purposes only
+
+3. RESTRICTIONS
+
+You may NOT:
+
+a) Copy, modify, merge, publish, distribute, sublicense, or sell copies of the Software
+b) Use the Software for any commercial, research, or academic purposes
+c) Reverse engineer, decompile, or disassemble the Software
+d) Create derivative works based upon the Software
+e) Remove or alter any copyright notices, trademarks, or other proprietary notices
+f) Use the Software in any way that competes with the copyright holders' business
+g) Extract, copy, or use any algorithms, methodologies, or training data
+h) Use the Software for training other AI models or systems
+i) Redistribute or make available the Software through any means
+
+4. INTELLECTUAL PROPERTY
+
+All intellectual property rights in and to the Software, including but not limited to:
+- Source code and algorithms
+- AI models and training methodologies
+- Databases and datasets
+- User interfaces and designs
+- Documentation and technical specifications
+
+remain the exclusive property of the copyright holders.
+
+5. NO WARRANTIES
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+6. LIMITATION OF LIABILITY
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+7. TERMINATION
+
+This License is effective until terminated. Your rights under this License will terminate automatically without notice if You fail to comply with any term(s) of this License. Upon termination, You must cease all use of the Software and destroy all copies in Your possession.
+
+8. GOVERNING LAW
+
+This License shall be governed by and construed in accordance with the laws of the Republic of Korea, without regard to its conflict of law provisions.
+
+9. CONTACT INFORMATION
+
+For licensing inquiries or permissions beyond the scope of this license, please contact:
+- Email: legal@fragrance-ai.com
+- Repository: https://github.com/junseong2im/innovative_perfume_ai
+
+---
+
+NOTICE: This software contains proprietary and confidential information. Any unauthorized use, reproduction, or distribution is strictly prohibited and may result in severe civil and criminal penalties.

@@ -1,0 +1,2 @@
+ingredient_id,panelist_id,batch_id,dilution_percent,descriptor_json,source_ref,observed_on,perceived_intensity,replicate_id
+dihydromyrcenol,P-001,LOT-2026-01,10,"{""fresh"":0.9,""clean"":0.8,""citrus"":0.5}",LAB-REPORT-001,2026-07-11,72,primary

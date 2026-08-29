@@ -1,0 +1,384 @@
+{
+  "schema_version": "1.0",
+  "projection_version": "odor-descriptor-projection-1.1.0",
+  "reviewed_on": "2026-08-18",
+  "provenance": "Project-authored perfumery engineering projections from fine-grained odor words into the existing 19-dimensional formulation profile; no third-party rows are copied.",
+  "allowed_use": "Natural-language intent parsing, transparent coarse-profile projection, and fail-closed recognition of descriptors outside the current formulation contract.",
+  "claim_boundary": "These mappings are expert-curated semantic approximations, not measured sensory equivalence, receptor ground truth, or evidence of 90 percent human olfactory accuracy.",
+  "descriptors": [
+    {
+      "descriptor": "fatty",
+      "aliases": ["fatty", "지방감", "지방 냄새", "기름진 지방 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.70,
+      "profile": {"gourmand": 0.55, "musky": 0.30, "powdery": 0.15}
+    },
+    {
+      "descriptor": "waxy",
+      "aliases": ["waxy", "왁시", "왁스 향", "밀랍 같은"],
+      "formula_supported": true,
+      "projection_confidence": 0.72,
+      "profile": {"clean": 0.45, "powdery": 0.30, "musky": 0.15, "citrus": 0.10}
+    },
+    {
+      "descriptor": "sulfurous",
+      "aliases": ["sulfurous", "sulphurous", "sulfur", "eggy", "cabbage", "radish", "유황 냄새", "황화물 냄새", "양배추 냄새"],
+      "formula_supported": false,
+      "projection_confidence": 0.99,
+      "profile": {},
+      "unsupported_reason": "The current safe catalog has no validated sulfurous odor axis or material-level sulfur profile."
+    },
+    {
+      "descriptor": "tropical",
+      "aliases": ["tropical", "트로피컬", "열대 과일", "열대과일"],
+      "formula_supported": true,
+      "projection_confidence": 0.88,
+      "profile": {"fruity": 0.75, "fresh": 0.15, "gourmand": 0.10}
+    },
+    {
+      "descriptor": "oily",
+      "aliases": ["oily", "oil odor", "오일리", "기름 냄새", "기름진 냄새"],
+      "formula_supported": false,
+      "projection_confidence": 0.97,
+      "profile": {},
+      "unsupported_reason": "Oily can describe texture, oxidation, or odor and cannot be safely collapsed into the current scent axes."
+    },
+    {
+      "descriptor": "nutty",
+      "aliases": ["nutty", "nut-like", "nut notes", "walnut", "peanut", "너티", "견과류 향", "견과 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.82,
+      "profile": {"gourmand": 0.65, "woody": 0.20, "earthy": 0.15}
+    },
+    {
+      "descriptor": "balsamic",
+      "aliases": ["balsamic", "발사믹", "발삼 향", "발삼 수지"],
+      "formula_supported": true,
+      "projection_confidence": 0.86,
+      "profile": {"amber": 0.65, "woody": 0.25, "spicy": 0.10}
+    },
+    {
+      "descriptor": "vegetable",
+      "aliases": ["vegetable", "vegetal", "vegetative", "채소 향", "야채 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.78,
+      "profile": {"green": 0.70, "earthy": 0.20, "aromatic": 0.10}
+    },
+    {
+      "descriptor": "meaty",
+      "aliases": ["meaty", "고기 냄새", "육향", "육류 향"],
+      "formula_supported": false,
+      "projection_confidence": 0.99,
+      "profile": {},
+      "unsupported_reason": "A meaty target requires a dedicated sulfur, amine, and savory odor model that is not present."
+    },
+    {
+      "descriptor": "ethereal",
+      "aliases": ["ethereal", "에테리얼", "휘발성 느낌", "공기처럼 휘발하는"],
+      "formula_supported": true,
+      "projection_confidence": 0.75,
+      "profile": {"fresh": 0.55, "clean": 0.30, "aquatic": 0.15}
+    },
+    {
+      "descriptor": "roasted",
+      "aliases": ["roasted", "toasted", "로스티드", "볶은 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.84,
+      "profile": {"gourmand": 0.55, "smoky": 0.30, "woody": 0.15}
+    },
+    {
+      "descriptor": "caramellic",
+      "aliases": ["caramellic", "caramelic", "카라멜릭", "캐러멜릭"],
+      "formula_supported": true,
+      "projection_confidence": 0.91,
+      "profile": {"gourmand": 0.75, "amber": 0.15, "powdery": 0.10}
+    },
+    {
+      "descriptor": "winey",
+      "aliases": ["winey", "winy", "vinous", "wine", "cognac", "brandy", "rum", "와이니", "와인 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.75,
+      "profile": {"fruity": 0.55, "amber": 0.25, "gourmand": 0.20}
+    },
+    {
+      "descriptor": "pineapple",
+      "aliases": ["pineapple", "파인애플"],
+      "formula_supported": true,
+      "projection_confidence": 0.95,
+      "profile": {"fruity": 0.80, "fresh": 0.15, "gourmand": 0.05}
+    },
+    {
+      "descriptor": "musty",
+      "aliases": ["musty", "머스티", "곰팡내", "퀴퀴한"],
+      "formula_supported": true,
+      "projection_confidence": 0.75,
+      "profile": {"earthy": 0.60, "powdery": 0.20, "woody": 0.20}
+    },
+    {
+      "descriptor": "pungent",
+      "aliases": ["pungent", "펀전트", "톡 쏘는", "코를 찌르는"],
+      "formula_supported": true,
+      "projection_confidence": 0.72,
+      "profile": {"spicy": 0.65, "aromatic": 0.20, "green": 0.15}
+    },
+    {
+      "descriptor": "creamy",
+      "aliases": ["creamy", "크리미", "크림 같은", "부드러운 크림 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.78,
+      "profile": {"gourmand": 0.50, "musky": 0.25, "powdery": 0.15, "white_floral": 0.10}
+    },
+    {
+      "descriptor": "cheesy",
+      "aliases": ["cheesy", "cheese", "ripe cheese", "치즈 냄새", "치즈 향"],
+      "formula_supported": false,
+      "projection_confidence": 0.99,
+      "profile": {},
+      "unsupported_reason": "Cheesy odor needs a dedicated short-chain-acid and sulfur descriptor model."
+    },
+    {
+      "descriptor": "minty",
+      "aliases": ["minty", "mint", "민티", "민트 향", "박하 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.90,
+      "profile": {"fresh": 0.45, "aromatic": 0.35, "green": 0.20}
+    },
+    {
+      "descriptor": "phenolic",
+      "aliases": ["phenolic", "페놀릭", "페놀 향", "소독약 같은"],
+      "formula_supported": true,
+      "projection_confidence": 0.72,
+      "profile": {"smoky": 0.50, "leathery": 0.30, "woody": 0.20}
+    },
+    {
+      "descriptor": "onion",
+      "aliases": ["onion", "양파 냄새", "양파 향"],
+      "formula_supported": false,
+      "projection_confidence": 0.99,
+      "profile": {},
+      "unsupported_reason": "Onion odor is sulfur chemistry outside the current safe formulation profile."
+    },
+    {
+      "descriptor": "burnt",
+      "aliases": ["burnt", "burned", "탄 냄새", "타버린 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.88,
+      "profile": {"smoky": 0.70, "woody": 0.20, "gourmand": 0.10}
+    },
+    {
+      "descriptor": "aldehydic",
+      "aliases": ["aldehydic", "알데하이딕", "알데히딕", "알데하이드 느낌"],
+      "formula_supported": true,
+      "projection_confidence": 0.90,
+      "profile": {"clean": 0.45, "fresh": 0.30, "citrus": 0.15, "powdery": 0.10}
+    },
+    {
+      "descriptor": "camphoreous",
+      "aliases": ["camphoreous", "camphoraceous", "camphorous", "camphor", "캠퍼러스", "장뇌 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.88,
+      "profile": {"aromatic": 0.55, "fresh": 0.30, "green": 0.15}
+    },
+    {
+      "descriptor": "honey",
+      "aliases": ["honey", "허니", "꿀 향", "벌꿀 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.90,
+      "profile": {"gourmand": 0.50, "floral": 0.25, "amber": 0.25}
+    },
+    {
+      "descriptor": "melon",
+      "aliases": ["melon", "멜론", "참외 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.90,
+      "profile": {"fruity": 0.55, "aquatic": 0.25, "fresh": 0.20}
+    },
+    {
+      "descriptor": "fermented",
+      "aliases": ["fermented", "fermenty", "yeasty", "발효 냄새", "발효취"],
+      "formula_supported": false,
+      "projection_confidence": 0.97,
+      "profile": {},
+      "unsupported_reason": "Fermented odor spans acids, alcohols, sulfur compounds, and microbes and cannot use one safe coarse projection."
+    },
+    {
+      "descriptor": "buttery",
+      "aliases": ["buttery", "버터리", "버터 향", "버터 같은"],
+      "formula_supported": true,
+      "projection_confidence": 0.88,
+      "profile": {"gourmand": 0.65, "powdery": 0.20, "musky": 0.15}
+    },
+    {
+      "descriptor": "metallic",
+      "aliases": ["metallic", "메탈릭", "금속 냄새", "쇠 냄새"],
+      "formula_supported": true,
+      "projection_confidence": 0.68,
+      "profile": {"clean": 0.40, "aquatic": 0.35, "fresh": 0.25}
+    },
+    {
+      "descriptor": "leafy",
+      "aliases": ["leafy", "리피", "잎이 무성한", "잎사귀 같은"],
+      "formula_supported": true,
+      "projection_confidence": 0.93,
+      "profile": {"green": 0.75, "fresh": 0.15, "earthy": 0.10}
+    },
+    {
+      "descriptor": "savory",
+      "aliases": ["savory", "savoury", "brothy", "세이보리", "감칠맛 냄새"],
+      "formula_supported": false,
+      "projection_confidence": 0.97,
+      "profile": {},
+      "unsupported_reason": "Savory odor needs a dedicated food-aroma axis and cannot be represented by the current perfume profile."
+    },
+    {
+      "descriptor": "animal",
+      "aliases": ["animal", "animalic", "애니멀릭", "동물성 향", "동물적인 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.72,
+      "profile": {"musky": 0.55, "leathery": 0.30, "earthy": 0.15}
+    },
+    {
+      "descriptor": "alliaceous",
+      "aliases": ["alliaceous", "garlicky", "garlic", "알리아세우스", "마늘 냄새", "파 냄새"],
+      "formula_supported": false,
+      "projection_confidence": 0.99,
+      "profile": {},
+      "unsupported_reason": "Alliaceous odor is sulfur chemistry outside the current safe formulation profile."
+    },
+    {
+      "descriptor": "cocoa",
+      "aliases": ["cocoa", "cacao", "코코아", "카카오 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.90,
+      "profile": {"gourmand": 0.60, "woody": 0.25, "powdery": 0.15}
+    },
+    {
+      "descriptor": "dairy",
+      "aliases": ["dairy", "밀키", "우유 향", "유제품 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.78,
+      "profile": {"gourmand": 0.60, "musky": 0.25, "powdery": 0.15}
+    },
+    {
+      "descriptor": "caraway",
+      "aliases": ["caraway", "캐러웨이", "회향풀 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.82,
+      "profile": {"aromatic": 0.50, "spicy": 0.30, "green": 0.20}
+    },
+    {
+      "descriptor": "banana",
+      "aliases": ["banana", "banana-like", "바나나", "바나나 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.92,
+      "profile": {"fruity": 0.70, "gourmand": 0.20, "fresh": 0.10}
+    },
+    {
+      "descriptor": "coconut",
+      "aliases": ["coconut", "coconut-like", "코코넛", "코코넛 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.88,
+      "profile": {"gourmand": 0.45, "fruity": 0.30, "musky": 0.15, "woody": 0.10}
+    },
+    {
+      "descriptor": "rooty",
+      "aliases": ["rooty", "root-like", "뿌리 향", "뿌리 같은"],
+      "formula_supported": true,
+      "projection_confidence": 0.78,
+      "profile": {"earthy": 0.60, "green": 0.25, "woody": 0.15}
+    },
+    {
+      "descriptor": "green_fruity",
+      "aliases": ["green_fruity", "greenfruity", "green-fruity", "green fruity", "풋과일 향", "초록 과일 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.90,
+      "profile": {"fruity": 0.60, "green": 0.30, "fresh": 0.10}
+    },
+    {
+      "descriptor": "dusty",
+      "aliases": ["dusty", "dust-like", "먼지 냄새", "먼지 같은"],
+      "formula_supported": true,
+      "projection_confidence": 0.72,
+      "profile": {"powdery": 0.50, "earthy": 0.30, "woody": 0.20}
+    },
+    {
+      "descriptor": "malty",
+      "aliases": ["malty", "malt-like", "몰티", "맥아 향"],
+      "formula_supported": true,
+      "projection_confidence": 0.76,
+      "profile": {"gourmand": 0.55, "earthy": 0.20, "powdery": 0.15, "amber": 0.10}
+    },
+    {
+      "descriptor": "sweaty",
+      "aliases": ["sweaty", "sweat", "sweat-like", "땀 냄새", "땀내"],
+      "formula_supported": false,
+      "projection_confidence": 0.99,
+      "profile": {},
+      "unsupported_reason": "Sweaty odor needs dedicated short-chain-acid and animalic reference data that the current safe profile does not contain."
+    },
+    {
+      "descriptor": "ammoniacal",
+      "aliases": ["ammoniacal", "ammonia", "amine", "amine-like", "암모니아", "암모니아 냄새"],
+      "formula_supported": false,
+      "projection_confidence": 0.99,
+      "profile": {},
+      "unsupported_reason": "Ammoniacal and amine odors are not represented by a validated safe formulation axis."
+    },
+    {
+      "descriptor": "fishy",
+      "aliases": ["fishy", "fish odor", "shellfish", "비린내", "생선 냄새"],
+      "formula_supported": false,
+      "projection_confidence": 0.99,
+      "profile": {},
+      "unsupported_reason": "Fishy odor requires a dedicated amine and oxidation model outside the current perfume profile."
+    },
+    {
+      "descriptor": "rancid",
+      "aliases": ["rancid", "rancidity", "산패취", "산패 냄새"],
+      "formula_supported": false,
+      "projection_confidence": 0.99,
+      "profile": {},
+      "unsupported_reason": "Rancid odor is an oxidation and degradation target, not a validated safe perfume projection."
+    },
+    {
+      "descriptor": "sour_acrid",
+      "aliases": ["sour_acrid", "sour", "acrid", "acid-acrid", "acid odor", "시큼한", "신 냄새", "자극취"],
+      "formula_supported": false,
+      "projection_confidence": 0.97,
+      "profile": {},
+      "unsupported_reason": "Sour and acrid odors need acidity and trigeminal dimensions absent from the current formulation contract."
+    },
+    {
+      "descriptor": "hydrocarbon",
+      "aliases": ["hydrocarbon", "alkane", "gasoline", "petrol", "solvent odor", "탄화수소 냄새", "휘발유 냄새"],
+      "formula_supported": false,
+      "projection_confidence": 0.99,
+      "profile": {},
+      "unsupported_reason": "Hydrocarbon and solvent odors are not safe fragrance targets in the current material catalog."
+    },
+    {
+      "descriptor": "odorless",
+      "aliases": ["odorless", "odourless", "no odor", "tasteless", "무취", "냄새 없음"],
+      "formula_supported": false,
+      "projection_confidence": 0.99,
+      "profile": {},
+      "unsupported_reason": "An odorless target cannot be represented as a positive perfume profile and must not produce a scented formula."
+    },
+    {
+      "descriptor": "pyridinic",
+      "aliases": ["pyridinic", "pyridine", "피리딘", "피리딘 냄새"],
+      "formula_supported": false,
+      "projection_confidence": 0.99,
+      "profile": {},
+      "unsupported_reason": "Pyridinic odor is outside the current validated safe formulation axes."
+    },
+    {
+      "descriptor": "creosote",
+      "aliases": ["creosote", "creosote-like", "크레오소트", "크레오소트 냄새"],
+      "formula_supported": false,
+      "projection_confidence": 0.99,
+      "profile": {},
+      "unsupported_reason": "Creosote odor is a hazardous smoke and tar target outside the safe fragrance contract."
+    }
+  ]
+}

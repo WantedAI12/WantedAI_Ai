@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0",
+  "runtime": "numpy_only_r2_inference_v1",
+  "distribution_contract": {
+    "source_serialized_checkpoints_packaged": false,
+    "source_serialized_checkpoints_required_at_runtime": false,
+    "portable_weights_allow_pickle": false
+  },
+  "artifact_file": "physsim_r2_runtime_weights.npz",
+  "artifact_sha256": "8a12d563898692211a3af5a7e74634461fff54cfd3a176e1cd3a3910b76d87bd",
+  "ensemble_manifest_sha256": "af7585637974b110fb8489350fb46bf4589afad53c4bfabdc04f26df19ddfe82",
+  "descriptor_contract_sha256": "ee54fb207f0a131be6e53475fab11951152f46d52d779a8ca7c078adeb435f89",
+  "state_keys": [
+    "log_attraction",
+    "log_velocity_limit",
+    "log_mass_decay",
+    "log_charge_coupling",
+    "log_lj_well_depth",
+    "log_nonlinear_distance",
+    "log_spin_coupling",
+    "chemical_encoder.0.weight",
+    "chemical_encoder.0.bias",
+    "chemical_encoder.1.weight",
+    "chemical_encoder.1.bias",
+    "chemical_encoder.3.weight",
+    "chemical_encoder.3.bias",
+    "chemical_encoder.4.weight",
+    "chemical_encoder.4.bias",
+    "mass_mapper.weight",
+    "mass_mapper.bias",
+    "charge_mapper.weight",
+    "charge_mapper.bias",
+    "sigma_mapper.weight",
+    "sigma_mapper.bias",
+    "position_mapper.weight",
+    "position_mapper.bias",
+    "velocity_mapper.weight",
+    "velocity_mapper.bias",
+    "spin_mapper.weight",
+    "spin_mapper.bias",
+    "fingerprint_projection.0.weight",
+    "fingerprint_projection.0.bias",
+    "fingerprint_projection.1.weight",
+    "fingerprint_projection.1.bias",
+    "fingerprint_projection.4.weight",
+    "fingerprint_projection.4.bias",
+    "similarity_head.0.weight",
+    "similarity_head.0.bias",
+    "similarity_head.3.weight",
+    "similarity_head.3.bias"
+  ],
+  "members": [
+    {
+      "file": "physsim_r2_checkpoint.pt",
+      "sha256": "09c9045a8a2cf3a45b9572549dd22a4028621e9d38e2d95792840ccb705c12d8",
+      "model_seed": 20260715,
+      "weight": 0.3
+    },
+    {
+      "file": "physsim_r2_checkpoint_seed_20260713.pt",
+      "sha256": "564f17d164abc631aa1a8c6fdb25bc1ed1fc3970da322af6439c3d882ff674b5",
+      "model_seed": 20260713,
+      "weight": 0.7
+    }
+  ],
+  "numeric_contract": {
+    "dtype": "float32_weights_float64_dynamics",
+    "gelu": "exact_erf",
+    "layer_norm_epsilon": 1e-05,
+    "dropout": "disabled_inference",
+    "torch_reference_required_at_build_time_only": true
+  },
+  "numeric_equivalence": {
+    "passed": true,
+    "cases": 6,
+    "maximum_absolute_error": 1.4297324080758678e-06,
+    "tolerance": 1e-05,
+    "input_contract": "deterministic_standardized_descriptor_mixtures"
+  }
+}

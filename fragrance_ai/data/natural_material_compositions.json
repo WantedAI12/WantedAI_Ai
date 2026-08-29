@@ -1,0 +1,119 @@
+{
+  "schema_version": "1.0",
+  "claim_boundary": "Published reference composition, not a GC-MS measurement of the operator's supplied lot. Lot-specific GC-MS must replace these priors for manufacturing release.",
+  "materials": [
+    {
+      "ingredient_id": "sweet_orange_oil",
+      "material_cas": "8008-57-9",
+      "botanical_identity": "Citrus sinensis (L.) Osbeck",
+      "evidence_class": "published_single_sample_gc_ms_reference",
+      "measurement_basis": "relative GC-MS peak area percent",
+      "reported_identified_percent": 98.0,
+      "source": {
+        "title": "Chemical Composition and Assessment of the Anti-Inflammatory, Antioxidant, Cytotoxic and Skin Enzyme Inhibitory Activities of Citrus sinensis (L.) Osbeck Essential Oil and Its Major Compound Limonene",
+        "doi": "10.3390/ph17121652",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11728707/",
+        "table": "Table 1",
+        "license": "CC BY 4.0",
+        "accessed_on": "2026-07-14"
+      },
+      "components": [
+        {"name": "D-limonene", "cas_number": "5989-27-5", "percent": 70.15, "smiles": "CC1=CC[C@@H](CC1)C(=C)C"},
+        {"name": "alpha-thujene", "cas_number": "2867-05-2", "percent": 10.52, "smiles": "CC1=CCC2(C1C2)C(C)C"},
+        {"name": "myrcene", "cas_number": "123-35-3", "percent": 5.54, "smiles": "CC(=CCCC(=C)C=C)C"},
+        {"name": "gamma-terpinene", "cas_number": "99-85-4", "percent": 3.35, "smiles": "CC1=CCC(=CC1)C(C)C"},
+        {"name": "alpha-pinene", "cas_number": "80-56-8", "percent": 2.81, "smiles": "CC1=CCC2CC1C2(C)C"},
+        {"name": "linalool", "cas_number": "78-70-6", "percent": 2.07, "smiles": "CC(=CCCC(C)(C=C)O)C"},
+        {"name": "limonene oxide", "cas_number": "1195-92-2", "percent": 1.0, "smiles": "CC(=C)C1CCC2(C(C1)O2)C"},
+        {"name": "p-cymene", "cas_number": "99-87-6", "percent": 1.0, "smiles": "CC1=CC=C(C=C1)C(C)C"},
+        {"name": "D-carvone", "cas_number": "2244-16-8", "percent": 0.73, "smiles": "CC1=CC[C@@H](CC1=O)C(=C)C"},
+        {"name": "citronellal", "cas_number": "106-23-0", "percent": 0.57, "smiles": "CC(CCC=C(C)C)CC=O"},
+        {"name": "3-carene", "cas_number": "13466-78-9", "percent": 0.26, "smiles": "CC1=CCC2C(C1)C2(C)C"}
+      ]
+    },
+    {
+      "ingredient_id": "lavender_oil",
+      "material_cas": "8000-28-0",
+      "botanical_identity": "Lavandula angustifolia essential oil",
+      "evidence_class": "published_single_sample_gc_ms_reference",
+      "measurement_basis": "relative GC-MS peak area percent",
+      "reported_identified_percent": 99.7,
+      "source": {
+        "title": "Medicinal Anti-Inflammatory Patch Loaded with Lavender Essential Oil",
+        "doi": "10.3390/ijms25116171",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11173169/",
+        "table": "Table 1",
+        "license": "CC BY 4.0",
+        "accessed_on": "2026-07-14"
+      },
+      "components": [
+        {"name": "linalyl acetate", "cas_number": "115-95-7", "percent": 34.9, "standard_deviation": 0.36, "smiles": "CC(=CCCC(C)(C=C)OC(=O)C)C"},
+        {"name": "linalool", "cas_number": "78-70-6", "percent": 28.19, "standard_deviation": 0.09, "smiles": "CC(=CCCC(C)(C=C)O)C"},
+        {"name": "camphor", "cas_number": "76-22-2", "percent": 3.55, "standard_deviation": 0.04, "smiles": "CC1(C2CCC1(C(=O)C2)C)C"},
+        {"name": "beta-caryophyllene", "cas_number": "87-44-5", "percent": 2.87, "standard_deviation": 0.16, "smiles": "C/C/1=C\\CCC(=C)[C@H]2CC([C@@H]2CC1)(C)C"},
+        {"name": "D-limonene", "cas_number": "5989-27-5", "percent": 2.62, "standard_deviation": 0.03, "smiles": "CC1=CC[C@@H](CC1)C(=C)C"},
+        {"name": "borneol", "cas_number": "507-70-0", "percent": 2.44, "standard_deviation": 0.02, "smiles": "CC1(C2CCC1(C(C2)O)C)C"},
+        {"name": "eucalyptol", "cas_number": "470-82-6", "percent": 2.41, "standard_deviation": 0.04, "smiles": "CC1(C2CCC(O1)(CC2)C)C"},
+        {"name": "terpinen-4-ol", "cas_number": "562-74-3", "percent": 2.32, "standard_deviation": 0.01, "smiles": "CC1=CCC(CC1)(C(C)C)O"},
+        {"name": "lavandulyl acetate", "cas_number": "25905-14-0", "percent": 2.07, "standard_deviation": 0.04, "smiles": "CC(=CCC(COC(=O)C)C(=C)C)C"},
+        {"name": "alpha-terpineol", "cas_number": "98-55-5", "percent": 1.73, "standard_deviation": 0.04, "smiles": "CC1=CCC(CC1)(C)O"}
+      ]
+    },
+    {
+      "ingredient_id": "cedarwood_virginia",
+      "material_cas": "8000-27-9",
+      "botanical_identity": "Juniperus virginiana cedarwood oil",
+      "evidence_class": "iso_chromatographic_range_reference",
+      "measurement_basis": "midpoint of ISO minimum-maximum chromatographic profile range",
+      "reported_identified_percent": 79.25,
+      "source": {
+        "title": "NTP Technical Report on the Toxicity Studies of Cedarwood Oil (Virginia), Toxicity Report 86",
+        "url": "https://www.ncbi.nlm.nih.gov/books/NBK552536/",
+        "section": "Chemical and Physical Properties",
+        "license": "US Government public domain",
+        "accessed_on": "2026-07-14"
+      },
+      "components": [
+        {"name": "alpha-cedrene", "cas_number": "469-61-4", "minimum_percent": 20.0, "maximum_percent": 35.0, "percent": 27.5, "smiles": "C[C@@H]1CC[C@@H]2[C@]13CC=C([C@H](C3)C2(C)C)C"},
+        {"name": "cedrol", "cas_number": "77-53-2", "minimum_percent": 16.0, "maximum_percent": 25.0, "percent": 20.5, "smiles": "C[C@@H]1CC[C@@H]2[C@]13CC[C@@]([C@H](C3)C2(C)C)(C)O"},
+        {"name": "thujopsene", "cas_number": "470-40-6", "minimum_percent": 10.0, "maximum_percent": 25.0, "percent": 17.5, "smiles": "CC1=CC[C@@]2(CCCC([C@]23[C@H]1C3)(C)C)C"},
+        {"name": "beta-cedrene", "cas_number": "546-28-1", "minimum_percent": 4.0, "maximum_percent": 8.0, "percent": 6.0, "smiles": "C[C@@H]1CC[C@@H]2[C@]13CCC(=C)[C@H](C3)C2(C)C"},
+        {"name": "cuparene", "cas_number": "16982-00-6", "minimum_percent": 1.5, "maximum_percent": 7.0, "percent": 4.25, "smiles": "CC1=CC=C(C=C1)[C@@]2(CCCC2(C)C)C"},
+        {"name": "widdrol", "cas_number": "6892-80-4", "minimum_percent": 2.0, "maximum_percent": 5.0, "percent": 3.5, "smiles": "C[C@@]12CCCC(C1=CC[C@@](CC2)(C)O)(C)C"}
+      ]
+    },
+    {
+      "ingredient_id": "patchouli_oil",
+      "material_cas": "8014-09-3",
+      "botanical_identity": "Pogostemon cablin essential oil",
+      "evidence_class": "published_single_sample_gc_ms_reference",
+      "measurement_basis": "relative GC-MS peak area percent",
+      "reported_identified_percent": 99.04,
+      "source": {
+        "title": "Antibacterial, In Vitro Anti-Inflammatory and Anti-Acne Activities of Patchouli Essential Oil",
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC13306163/",
+        "table": "Table 1",
+        "accessed_on": "2026-07-14"
+      },
+      "components": [
+        {"name": "alpha-guaiene", "cas_number": "3691-12-1", "percent": 20.54, "smiles": "C[C@H]1CC[C@H](CC2=C1CC[C@@H]2C)C(=C)C"},
+        {"name": "patchouli alcohol", "cas_number": "5986-55-0", "percent": 18.94, "smiles": "C[C@H]1CC[C@@]2([C@@]3([C@H]1C[C@H](C2(C)C)CC3)C)O"},
+        {"name": "alpha-bulnesene", "cas_number": "3691-11-0", "percent": 16.29, "smiles": "C[C@H]1CCC2=C(CC[C@H](C[C@@H]12)C(=C)C)C"},
+        {"name": "seychellene", "cas_number": "20085-93-2", "percent": 10.41, "smiles": "C[C@H]1CC[C@]2(C(=C)[C@@H]3CC[C@]2([C@H]1C3)C)C"},
+        {"name": "beta-patchoulene", "cas_number": "514-51-2", "percent": 8.53, "smiles": "C[C@H]1CCC2=C1C[C@H]3CC[C@@]2(C3(C)C)C"},
+        {"name": "alpha-patchoulene", "cas_number": "560-32-7", "percent": 6.85, "smiles": "CC1CCC23C1CC(C2(C)C)CC=C3C"},
+        {"name": "bicyclo[5.2.0]nonane derivative", "cas_number": "242794-76-9", "percent": 4.65, "smiles": "CC1(CC2C1CCC(CC2=C)(C)C=C)C"},
+        {"name": "globulol", "cas_number": "489-41-8", "percent": 3.94, "smiles": "C[C@@H]1CC[C@@H]2[C@@H]1[C@H]3[C@H](C3(C)C)CC[C@@]2(C)O"},
+        {"name": "costol", "cas_number": "515-20-8", "percent": 3.11, "smiles": "C[C@]12CCCC(=C)[C@@H]1C[C@@H](CC2)C(=C)CO"},
+        {"name": "valerena-4,7(11)-diene", "cas_number": "351222-66-7", "percent": 1.87, "smiles": "C[C@@H]1CC[C@H](C2=C(CC[C@H]12)C)C=C(C)C"},
+        {"name": "gamma-patchoulene", "cas_number": "508-55-4", "percent": 1.09, "smiles": "CC1CCC23C1CC(C2(C)C)CCC3=C"},
+        {"name": "gamma-himachalene", "cas_number": "1000140-08-0", "percent": 0.89, "smiles": null},
+        {"name": "norpatchoulenol", "cas_number": "41429-52-1", "percent": 0.69, "smiles": "C[C@@]12CC[C@H]3C[C@@H]1C=CC[C@]2(C3(C)C)O"},
+        {"name": "gamma-gurjunene", "cas_number": "22567-17-5", "percent": 0.39, "smiles": "C[C@@H]1CC[C@H](C=C2[C@@H]1CC[C@H]2C)C(=C)C"},
+        {"name": "alpha-cyperone", "cas_number": "473-08-5", "percent": 0.31, "smiles": "CC1=C2C[C@@H](CC[C@]2(CCC1=O)C)C(=C)C"},
+        {"name": "nootkatene", "cas_number": "5090-61-9", "percent": 0.29, "smiles": "C[C@@H]1CC=CC2=CC[C@H](C[C@]12C)C(=C)C"},
+        {"name": "ceramides", "cas_number": "1000333-80-8", "percent": 0.25, "smiles": null}
+      ]
+    }
+  ]
+}

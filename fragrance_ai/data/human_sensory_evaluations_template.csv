@@ -1,0 +1,2 @@
+study_id,blind_code,panelist_id,expert,similarity,liking,dimension_json,defects_json,source,evidence_ref
+STUDY-REPLACE,S-CODE-REPLACE,P-001,false,94,82,"{}","[]",human,LAB-PANEL-REPORT-001

@@ -1,0 +1,22 @@
+{
+  "schema_version": "2.0",
+  "status": "completed_retrospective_protocol_aware",
+  "fit_partition": "predeclared_calibration_only",
+  "fit_stimuli": 52,
+  "cross_conformal_stimuli": 52,
+  "historical_final_stimuli": 208,
+  "selected_dilution_spread_coefficient": -0.6699999999999999,
+  "r2_spearman": 0.2916991002354614,
+  "component_overlap_spearman": 0.6266899385255676,
+  "protocol_aware_rank_spearman": 0.6460129905022272,
+  "protocol_minus_overlap_spearman": 0.01932305197665951,
+  "paired_stimulus_bootstrap_95_interval": [
+    0.000933320473949917,
+    0.038200677610824574
+  ],
+  "calibrated_probability_mae_percentage_points": 12.00044079851772,
+  "cross_conformal_absolute_error_q95_percentage_points": 29.487179487179482,
+  "human_ceiling_normalized_rank_correlation": 0.7551943738586886,
+  "prospective_external_validation": false,
+  "human_similarity_90_claim_authorized": false
+}

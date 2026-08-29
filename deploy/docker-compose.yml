@@ -1,0 +1,87 @@
+services:
+  postgres:
+    image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+    environment:
+      POSTGRES_DB: perfumery
+      POSTGRES_USER: perfumery
+      POSTGRES_PASSWORD: development-only-password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U perfumery -d perfumery"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - perfumery-postgres:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment: &platform-environment
+      PERFUMERY_AI_ENV: development
+      PERFUMERY_AI_DATABASE_URL: postgresql://perfumery:development-only-password@postgres:5432/perfumery
+      # Development-only 32-byte key encoded as URL-safe base64. Replace via a
+      # secret manager before any non-local deployment.
+      PERFUMERY_AI_AUDIT_HMAC_KEY: MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA
+      PERFUMERY_AI_AUTH_MODE: static
+      PERFUMERY_AI_API_TOKENS: '{"formulator-token":{"actor_id":"formulator-dev","role":"formulator","tenant_id":"demo"},"auditor-token":{"actor_id":"auditor-dev","role":"auditor","tenant_id":"demo"}}'
+      PERFUMERY_AI_RATE_LIMIT_REQUESTS: 300
+      PERFUMERY_AI_RATE_LIMIT_WINDOW: 60
+      PERFUMERY_AI_LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+    volumes:
+      - perfumery-continual:/var/lib/perfumery-ai/continuous:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  worker:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    command: ["perfumery-ai-worker", "--poll-seconds", "0.25"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment: *platform-environment
+    volumes:
+      - perfumery-continual:/var/lib/perfumery-ai/continuous:ro
+
+  continual:
+    profiles: ["continual"]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    command:
+      [
+        "perfumery-ai-continual",
+        "watch",
+        "--root",
+        "/var/lib/perfumery-ai/continuous",
+        "--interval-seconds",
+        "300",
+      ]
+    environment:
+      PERFUMERY_AI_CONTINUAL_TRUST_ROOT: ${PERFUMERY_AI_CONTINUAL_TRUST_ROOT:-}
+    volumes:
+      - perfumery-continual:/var/lib/perfumery-ai/continuous
+
+  prometheus:
+    image: prom/prometheus:v3.5.0@sha256:63805ebb8d2b3920190daf1cb14a60871b16fd38bed42b857a3182bc621f4996
+    depends_on:
+      api:
+        condition: service_healthy
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+volumes:
+  perfumery-postgres:
+  perfumery-continual:

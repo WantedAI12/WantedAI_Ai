@@ -1,0 +1,12 @@
+exclude fragrance_ai/data/reference_fragrances.db
+exclude fragrance_ai/data/human_sensory_evaluations_template.csv
+exclude fragrance_ai/data/odor_observations_template.csv
+exclude fragrance_ai/data/scientific_properties_template.csv
+exclude fragrance_ai/data/supplier_materials_template.csv
+exclude fragrance_ai/data/concentration_response_model.joblib
+exclude fragrance_ai/data/physsim_r2_checkpoint.pt
+exclude fragrance_ai/data/physsim_r2_checkpoint_seed_20260713.pt
+recursive-include fragrance_ai/ui *.html *.css *.js
+global-exclude __pycache__
+global-exclude *.py[cod]
+global-exclude *.joblib *.pickle *.pkl *.pt *.pth

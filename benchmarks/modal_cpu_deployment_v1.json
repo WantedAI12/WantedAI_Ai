@@ -1,0 +1,61 @@
+{
+  "schema": "perfumery-ai-modal-cpu-deployment/v1",
+  "generated_at": "2026-08-29T10:35:00Z",
+  "status": "deployed_proxy_authenticated_and_remote_smoke_passed",
+  "modal": {
+    "app": "perfumery-ai-core",
+    "web_url": "https://junseong2im--perfumery-ai-core-web.modal.run",
+    "dashboard": "https://modal.com/apps/junseong2im/main/deployed/perfumery-ai-core",
+    "cpu_cores": 1.0,
+    "memory_mib": 1024,
+    "gpu_required": false,
+    "min_containers": 0,
+    "max_containers": 1,
+    "scaledown_window_seconds": 300,
+    "max_concurrent_inputs_per_container": 1,
+    "formula_rate_limit_per_minute": 30
+    ,"proxy_auth_required": true
+  },
+  "artifacts": {
+    "wheel_sha256": "416a6eec32fb2c484aaf6bb2cc8a6a7cc6b661ccc18ff70674ad250a9ad8a120",
+    "registry_sha256": "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765",
+    "registry_bytes": 77615104
+  },
+  "remote_checks": {
+    "unauthenticated_http_status": 401,
+    "authenticated_health_http_status": 200,
+    "authenticated_health_cold_seconds": 7.85,
+    "root_http_status": 200,
+    "authenticated_catalog_http_status": 200,
+    "authenticated_catalog_warm_seconds": 0.719,
+    "reference_molecules": 29240,
+    "safety_screened": 29240,
+    "static_active_total": 34,
+    "authenticated_formula_http_status": 200,
+    "authenticated_formula_warm_seconds": 1.389,
+    "formula_status": "prototype_ready",
+    "formula_lines": 9,
+    "internal_safety_gate_passed": true,
+    "provider": "modal",
+    "gpu_required": false,
+    "proxy_token_authentication_passed": true
+  },
+  "huggingface_frontend": {
+    "repo_id": "PPWK/Perfumery_AI_Core",
+    "commit": "e128e8d41fba0a66673a29fbdcdccd2c869c89ad",
+    "sdk": "static",
+    "stage": "RUNNING",
+    "replicas_requested": 1,
+    "replicas_current": 1
+  },
+  "verification": {
+    "collected_tests": 341,
+    "passed_tests": 340,
+    "skipped_postgresql_environment": 1,
+    "failed_tests": 0,
+    "changed_file_ruff_passed": true,
+    "compileall_passed": true,
+    "ocr_final_critical_high_medium": "0/0/0"
+  },
+  "claim_boundary": "Remote deployment, proxy authentication and API correctness only. It does not establish human olfactory accuracy, supplier evidence, manufacturing readiness, or commercial authorization."
+}

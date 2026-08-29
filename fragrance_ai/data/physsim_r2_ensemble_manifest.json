@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.1",
+  "model_spec_version": "jcim-r2-physsim-core-1.0",
+  "descriptor_contract_sha256": "ee54fb207f0a131be6e53475fab11951152f46d52d779a8ca7c078adeb435f89",
+  "members": [
+    {
+      "model_seed": 20260715,
+      "file": "physsim_r2_checkpoint.pt",
+      "sha256": "09c9045a8a2cf3a45b9572549dd22a4028621e9d38e2d95792840ccb705c12d8",
+      "weight": 0.3
+    },
+    {
+      "model_seed": 20260713,
+      "file": "physsim_r2_checkpoint_seed_20260713.pt",
+      "sha256": "564f17d164abc631aa1a8c6fdb25bc1ed1fc3970da322af6439c3d882ff674b5",
+      "weight": 0.7
+    }
+  ],
+  "selection": {
+    "configuration": "all_low_lr",
+    "weights_selected_on": "development-only balanced mean of pooled and fold-mean Spearman across molecule/scaffold strict protocols",
+    "seed_20260715_weight_grid": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+    "selected_seed_20260715_weight": 0.3,
+    "final_labels_used_for_selection": false
+  },
+  "uncertainty": {
+    "absolute_error_q95": 0.39693854053781885,
+    "maximum_member_disagreement": 0.12270691990852356,
+    "calibration_phase": "development_only",
+    "ood_behavior": "learned_primary_score_weight_zero"
+  },
+  "calibration": {
+    "neutral_similarity_percent": 46.32433683395278,
+    "approved_primary_score_weight": 0.1
+  },
+  "evidence": {
+    "strong_baselines": {
+      "file": "physsim_r2_strong_baselines.json",
+      "sha256": "8d99e454eb3312970f5fdd10babf4d4d3f013b4fd8853c83d7cb72c28e619839"
+    },
+    "ensemble_validation": {
+      "file": "physsim_r2_ensemble_validation.json",
+      "sha256": "1f9222a540b0eb779476066ead833e7b636bf793b7c3482de44bc483e42719c8"
+    }
+  },
+  "release_gate": {
+    "passed": true,
+    "checks": {
+      "both_member_checkpoints_pass_individual_release_gates": true,
+      "descriptor_contracts_match": true,
+      "weights_selected_without_final_labels": true,
+      "ensemble_improves_strong_baseline_molecule_disjoint": true,
+      "ensemble_improves_strong_baseline_scaffold_disjoint": true,
+      "development_calibrated_uncertainty_is_present": true
+    }
+  },
+  "claim_boundary": "Historical mixture-pair similarity ensemble with development-calibrated uncertainty; not measured human text-to-formula olfactory equivalence."
+}

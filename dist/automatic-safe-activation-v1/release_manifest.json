@@ -1,0 +1,87 @@
+{
+  "schema": "perfumery-ai-automatic-safe-ingredient-activation-release/v1",
+  "package_version": "1.4.0",
+  "status": "signed_safety_pass_auto_activation_implemented",
+  "runtime": {
+    "gpu_required": false,
+    "cpu_only_default_path": true,
+    "static_active_safe": 29,
+    "static_active_conditional": 5,
+    "static_active_total": 34,
+    "externally_signed_promotions_present": 0,
+    "active_total_formula": "34 + verified signed promotion count",
+    "automatic_load_targets": [
+      "NaturalLanguagePerfumeryAI",
+      "perfumery-ai-api",
+      "perfumery-ai-worker"
+    ]
+  },
+  "artifacts": {
+    "wheel": {
+      "path": "perfumery_ai_core-1.4.0-py3-none-any.whl",
+      "bytes": 3272030,
+      "sha256": "416a6eec32fb2c484aaf6bb2cc8a6a7cc6b661ccc18ff70674ad250a9ad8a120"
+    },
+    "registry_database": {
+      "path": "../../benchmarks/industrial_ingredient_registry_v1.db",
+      "bytes": 77615104,
+      "sha256": "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765"
+    },
+    "registry_report": {
+      "path": "../../benchmarks/industrial_ingredient_registry_v1.json",
+      "bytes": 7176,
+      "sha256": "3a3eccc569cd8601d31b171f516458d5c57ade16c5043ddf4bd42da03c5c70f0"
+    },
+    "data_audit": {
+      "path": "../../benchmarks/data_audit_after_auto_promotion_v1.json",
+      "bytes": 5689,
+      "sha256": "39d8e916078796e20061f4672d59edb0e3a4e07fa9d78c8d2c0a9d7efe5ebcc3"
+    },
+    "activation_guide": {
+      "path": "../../SIGNED_INGREDIENT_PROMOTIONS.md",
+      "bytes": 4304,
+      "sha256": "bccaee79cd00106d2d9c4a1b6a6dd016ba6ba6183197680e76626a4ce2d11bd9"
+    },
+    "registry_guide": {
+      "path": "../../INDUSTRIAL_INGREDIENT_REGISTRY_V1.md",
+      "bytes": 4899,
+      "sha256": "263596583a88e6581ce9591927b0255359a042ec85c399f54f47d2e4c4c5b915"
+    }
+  },
+  "activation_contract": {
+    "reference_screening_alone_activates_formula_use": false,
+    "complete_signed_dossier_required": true,
+    "signed_formulation_spec_required": true,
+    "supplier_offer_is_merged_into_runtime_registry": true,
+    "market_product_category_scope_rechecked": true,
+    "signature_expiry_rechecked_per_recipe": true,
+    "safe_target_maps_to_risk_tier_1": true,
+    "conditional_target_maps_to_risk_tier_2": true,
+    "conditional_requires_explicit_risk_two": true,
+    "concentration_cap_rechecked": true,
+    "rare_out_of_stock_expensive_or_hard_to_source_rejected": true,
+    "alias_collision_and_path_escape_rejected": true,
+    "formula_lines_include_promotion_artifact_and_scope": true
+  },
+  "verification": {
+    "collected_tests": 339,
+    "passed_tests": 338,
+    "skipped_tests": 1,
+    "failed_tests": 0,
+    "postgresql_environment_skip": 1,
+    "signed_fixture_auto_active_total": 35,
+    "signed_fixture_selected_in_actual_recipe": true,
+    "signed_fixture_internal_safety_gate_passed": true,
+    "tamper_scope_expiry_risk_and_alias_negative_tests_passed": true,
+    "registry_rebuild_byte_deterministic": true,
+    "scoped_ruff_passed": true,
+    "compileall_passed": true,
+    "data_audit_passed": true,
+    "isolated_wheel_cpu_only_probe_passed": true,
+    "isolated_wheel_signed_activation_probe_passed": true,
+    "ocr_reviewable_files": 15,
+    "ocr_total_files": 17,
+    "ocr_final_critical_high_medium": "0/0/0"
+  },
+  "claim_boundary": "The CPU runtime now automatically adds independently signed safety-passed ingredients to the static 34-material formula pool and can select them in real recipe generation. The repository contains no external production promotion dossier, so the current non-test active count remains 34; unit and isolated-wheel fixtures demonstrate the mechanism without creating real supplier or regulatory evidence."
+}
