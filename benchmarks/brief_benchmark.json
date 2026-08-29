@@ -1,0 +1,19 @@
+{
+  "benchmark_version": "1.0.0",
+  "metric": "semantic_profile_match_not_human_panel_accuracy",
+  "as_of": "2026-07-11",
+  "cases": [
+    {"brief": "clean fresh citrus with soft woods, not sweet", "expect_recipe": true, "expected_dimensions": ["clean", "fresh", "citrus", "woody"]},
+    {"brief": "fresh green aquatic rain in a forest", "expect_recipe": true, "expected_dimensions": ["fresh", "green", "aquatic", "woody"]},
+    {"brief": "elegant rose and jasmine, affordable materials only", "expect_recipe": true, "expected_dimensions": ["floral", "rose", "white_floral"]},
+    {"brief": "warm sweet vanilla clean musk", "expect_recipe": true, "expected_dimensions": ["amber", "gourmand", "clean", "musky"]},
+    {"brief": "juicy fruity peach with a fresh light feeling", "expect_recipe": true, "expected_dimensions": ["fruity", "fresh"]},
+    {"brief": "clean aromatic herbal lavender style", "expect_recipe": true, "expected_dimensions": ["clean", "aromatic"]},
+    {"brief": "soft powdery floral cosmetic scent", "expect_recipe": true, "expected_dimensions": ["powdery", "floral"]},
+    {"brief": "spicy woody amber, warm but not sweet", "expect_recipe": true, "expected_dimensions": ["spicy", "woody", "amber"]},
+    {"brief": "clean musky skin scent, subtle and soft", "expect_recipe": true, "expected_dimensions": ["clean", "musky"]},
+    {"brief": "aquatic white floral clean fresh scent", "expect_recipe": true, "expected_dimensions": ["aquatic", "white_floral", "clean", "fresh"]},
+    {"brief": "fruity caramel gourmand dessert scent", "expect_recipe": true, "expected_dimensions": ["fruity", "gourmand"]},
+    {"brief": "dark smoky leather and birch tar", "expect_recipe": false, "expected_dimensions": ["smoky", "leathery"]}
+  ]
+}

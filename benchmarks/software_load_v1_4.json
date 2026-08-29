@@ -1,0 +1,89 @@
+{
+  "audit_chain": {
+    "control": {
+      "authenticated_chain": true,
+      "events": 600,
+      "failures": [],
+      "head_hash": "88362db953c81e0de856f32e3e84f99ddd50b34d7dc51c7641535cba7d1d1892",
+      "passed": true,
+      "retention_boundary": "Copy the head hash and database snapshot to an independently controlled immutable store; a local administrator can replace both."
+    },
+    "real": {
+      "authenticated_chain": true,
+      "events": 60,
+      "failures": [],
+      "head_hash": "9b7974670c2044f8ec345dbe92baa3c82363451fcc1d307452dae65013e3671c",
+      "passed": true,
+      "retention_boundary": "Copy the head hash and database snapshot to an independently controlled immutable store; a local administrator can replace both."
+    }
+  },
+  "claim_boundary": "Machine-specific in-process ASGI measurement. It excludes network, reverse proxy, external OIDC/JWKS, PostgreSQL, and multi-host effects; it is not a competitor comparison or production SLA.",
+  "configuration": {
+    "control_engine": "constant_time_deterministic_stub",
+    "engine_instances_preinitialized": {
+      "control": 24,
+      "real": 2
+    },
+    "real_engine_warmup_requests": 0,
+    "simulation_draws": 64,
+    "transport": "in_process_asgi"
+  },
+  "environment": {
+    "implementation": "CPython",
+    "logical_cpu_count": 12,
+    "operating_system": "Windows-11-10.0.22631-SP0",
+    "processor": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+    "python": "3.13.1"
+  },
+  "generated_at": "2026-08-18T18:47:02.903218+00:00",
+  "package": "perfumery-ai-core",
+  "package_loaded_from_wheel": false,
+  "package_root": "C:\\Users\\user\\Desktop\\Newera\\perfumery-ai-core",
+  "package_version": "1.4.0",
+  "passed": true,
+  "real_inference": {
+    "concurrency": 2,
+    "error_rate": 0.0,
+    "errors": 0,
+    "latency": {
+      "maximum_ms": 1521.317,
+      "mean_ms": 1196.097,
+      "minimum_ms": 709.039,
+      "p50_ms": 1198.369,
+      "p95_ms": 1511.612,
+      "p99_ms": 1519.463
+    },
+    "requests": 30,
+    "status_counts": {
+      "200": 30
+    },
+    "successes": 30,
+    "throughput_requests_per_second": 1.6674,
+    "wall_seconds": 17.992358
+  },
+  "schema_version": "1.0",
+  "service_control_plane": {
+    "concurrency": 24,
+    "error_rate": 0.0,
+    "errors": 0,
+    "latency": {
+      "maximum_ms": 121.483,
+      "mean_ms": 107.563,
+      "minimum_ms": 67.741,
+      "p50_ms": 108.742,
+      "p95_ms": 119.291,
+      "p99_ms": 120.044
+    },
+    "requests": 300,
+    "status_counts": {
+      "200": 300
+    },
+    "successes": 300,
+    "throughput_requests_per_second": 216.21,
+    "wall_seconds": 1.38754
+  },
+  "wheel": null,
+  "wheel_binding_passed": true,
+  "wheel_sha256": null,
+  "wheel_source_mismatches": []
+}

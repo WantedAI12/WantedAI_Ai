@@ -1,0 +1,168 @@
+{
+  "schema_version": "2.0",
+  "artifact_name": "bushdid_protocol_aware_human_calibration_v2",
+  "endpoint": "three_alternative_odd_one_out_correct_rate",
+  "source": {
+    "dataset": "Bushdid 2014 raw behavior",
+    "doi": "10.1126/science.1249168",
+    "blind_report_sha256": "4f0c94b6f7d5896793fba3a8e269f558380a90bb6dd98a5bd40afe641e7c2849",
+    "sealed_prediction_sha256": "9e254e9c00c5835f54d1167834445e8e19b9c2d82dfb1f1b7c132776fb254b69",
+    "stimulus_protocol_sha256": "6e375a0ef6190b31b44d930f23c70dc193cc61997f83bcac73817c92b405d8be",
+    "fit_partition": "predeclared_calibration_only",
+    "historical_final_labels_used_for_parameter_selection": false,
+    "development_timing": "post_unblinding_protocol_model"
+  },
+  "applicability_scope": {
+    "matrix_ids": [
+      "bushdid_2014_equal_presence_molecular_mixture"
+    ],
+    "product_concentration_percent_range": [
+      100.0,
+      100.0
+    ],
+    "components_per_mixture": [
+      10,
+      20,
+      30
+    ],
+    "maximum_within_mixture_weight_cv": 1e-09,
+    "required_formula_relationship": "same_size_equal_presence_component_sets",
+    "study_protocol_id": "bushdid_2014_supplemental_3afc_protocol",
+    "requires_registered_stimulus_table": true,
+    "requires_exact_vial_dilution_design": true,
+    "allowed_vial_dilutions": [
+      0.25,
+      0.5,
+      1.0
+    ],
+    "formula_projection_supported": false
+  },
+  "feature_contract": {
+    "component_overlap_dissimilarity_range": [
+      0.0,
+      1.0
+    ],
+    "dilution_feature": "population_stddev(log10(wrong_vial_dilutions))",
+    "score": "component_overlap_dissimilarity + alpha * dilution_feature",
+    "selected_alpha": -0.6699999999999999,
+    "alpha_grid": {
+      "minimum": -2.0,
+      "maximum": 0.0,
+      "step": 0.01,
+      "selection_metric": "calibration_partition_spearman",
+      "tie_break": "smallest_absolute_coefficient"
+    }
+  },
+  "calibration": {
+    "method": "protocol_score_monotonic_pava_plus_four_fold_cross_conformal",
+    "fit_stimuli": 52,
+    "crossfit_stimuli": 52,
+    "fold_count": 4,
+    "fold_salt_sha256": "d3fd73f4b47e49fae4dfb0743026efbddd065697309c0ce27508a01262556b7f",
+    "calibration_rank_spearman": 0.5572993215691817,
+    "x_protocol_score": [
+      -0.16835676376153405,
+      -0.15169009709486733,
+      -0.1016900970948674,
+      -0.06751171521410036,
+      -0.050845048547433644,
+      -0.0008450485474337105,
+      0.04830990290513262,
+      0.131643236238466,
+      0.1491549514525663,
+      0.19830990290513265,
+      0.23248828478589967,
+      0.2983099029051326,
+      0.2991549514525663,
+      0.3991549514525663,
+      0.46497656957179934,
+      0.49830990290513255,
+      0.5483099029051326,
+      0.565821618119233,
+      0.5991549514525663,
+      0.6491549514525663,
+      0.7983099029051326,
+      0.8991549514525663
+    ],
+    "predicted_correct_rate": [
+      0.23076923076923078,
+      0.37692307692307697,
+      0.37692307692307697,
+      0.37692307692307697,
+      0.4230769230769231,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.4444444444444444,
+      0.5865384615384616,
+      0.5865384615384616,
+      0.6249999999999999,
+      0.6249999999999999,
+      0.6249999999999999,
+      0.6249999999999999,
+      0.6249999999999999,
+      0.6468531468531468,
+      0.6468531468531468,
+      0.6468531468531468,
+      0.6468531468531468,
+      0.6468531468531468,
+      0.6468531468531468
+    ],
+    "cross_conformal_absolute_error_q95": 0.2948717948717948,
+    "folds": [
+      {
+        "fold": 0,
+        "train_stimuli": 39,
+        "held_out_stimuli": 13,
+        "selected_dilution_spread_coefficient": -1.56,
+        "train_rank_spearman": 0.5454049583885757,
+        "held_out_mae": 0.1242603550295858,
+        "held_out_ids_sha256": "b2e7e3332b5a6a0b7ba9f7f83c634b8a3951870e83b1e48156abebf18a352cb3"
+      },
+      {
+        "fold": 1,
+        "train_stimuli": 39,
+        "held_out_stimuli": 13,
+        "selected_dilution_spread_coefficient": 0.0,
+        "train_rank_spearman": 0.521475513387452,
+        "held_out_mae": 0.12465483234714005,
+        "held_out_ids_sha256": "e1f5050bb0104de6180e104364aa26ad36b55551cf15d5882527600487007d3f"
+      },
+      {
+        "fold": 2,
+        "train_stimuli": 39,
+        "held_out_stimuli": 13,
+        "selected_dilution_spread_coefficient": -0.6699999999999999,
+        "train_rank_spearman": 0.5485809121985763,
+        "held_out_mae": 0.09449845026768108,
+        "held_out_ids_sha256": "de5ea414c5689e33b293554929b469f7c2f3d3f1876499788bebc461ba88ead7"
+      },
+      {
+        "fold": 3,
+        "train_stimuli": 39,
+        "held_out_stimuli": 13,
+        "selected_dilution_spread_coefficient": -1.56,
+        "train_rank_spearman": 0.641213631387691,
+        "held_out_mae": 0.14670970055585436,
+        "held_out_ids_sha256": "ecd60592a5ce1f13526f6b2a2750457cff2d873d2ddc91c1616c2285b3fdd0aa"
+      }
+    ]
+  },
+  "historical_final_evaluation": {
+    "stimuli": 208,
+    "component_overlap_spearman": 0.6266899385255676,
+    "protocol_score_spearman": 0.6460129905022272,
+    "protocol_minus_overlap_spearman": 0.01932305197665951,
+    "paired_stimulus_bootstrap_95_interval": [
+      0.000933320473949917,
+      0.038200677610824574
+    ],
+    "bootstrap_draws": 20000,
+    "bootstrap_seed": 20260819,
+    "calibrated_probability_mae": 0.12000440798517721,
+    "human_ceiling_normalized_rank_correlation": 0.7551943738586886,
+    "human_similarity_90_claim_authorized": false,
+    "prospective_external_validation": false,
+    "claim_boundary": "Retrospective protocol-aware discrimination calibration for the registered equal-presence study; not perfume smell similarity."
+  }
+}

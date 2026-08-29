@@ -1,0 +1,2 @@
+ingredient_id,supplier,sku,cas_number,price_per_kg,currency,moq_kg,in_stock,lead_time_days,density_g_ml,active_strength_percent,carrier,regions,ifra_amendment,ifra_certificate_valid_until,sds_valid_until,coa_available,allergen_statement_valid_until,allergen_fractions,lot_number
+dihydromyrcenol,REPLACE_WITH_SUPPLIER,REPLACE_WITH_SKU,18479-58-8,0,USD,0,false,0,,100,,EU|KR,51,,,,false,,{},

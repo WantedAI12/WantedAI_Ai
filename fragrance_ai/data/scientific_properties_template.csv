@@ -1,0 +1,2 @@
+ingredient_id,cas_number,molecular_weight,xlogp,tpsa,hbond_donors,hbond_acceptors,rotatable_bonds,complexity,vapor_pressure_pa_25c,boiling_point_c,odor_threshold_ppm,source_ref,verified_on
+dihydromyrcenol,18479-58-8,REPLACE,,,,,,,,,,PUBCHEM_OR_SUPPLIER_SOURCE,2026-07-13

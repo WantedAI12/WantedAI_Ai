@@ -1,0 +1,8 @@
+{
+  "metadata": {
+    "schema_version": "1.0.0",
+    "registry_status": "no_operator_data",
+    "statement": "No supplier identity, quotation, inventory, SDS, IFRA certificate, COA, density, or allergen value is bundled or inferred. Import verified operator-owned records before qualified or commercial use."
+  },
+  "records": []
+}

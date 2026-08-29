@@ -1,0 +1,5 @@
+torch>=2.8,<3
+rdkit>=2025.3
+scipy>=1.14,<2
+scikit-learn==1.7.1
+pandas>=2.2,<3

@@ -1,0 +1,165 @@
+{
+  "passed": true,
+  "failures": [],
+  "verified": {
+    "reference_fragrances.db": {
+      "sha256": "90d2e43112182861f23a3f97b4a2719974a465e8cde1354a246c75fdbd82b5f1",
+      "bytes": 7360512
+    },
+    "moga_ingredients.db": {
+      "sha256": "645219198843bc926a1092238b2d1db971c41f07ceff03b230376dbe96cdb778",
+      "bytes": 12288
+    },
+    "safe_ingredient_catalog.json": {
+      "sha256": "6e06f139793a52ca8c93e873a9bce496fec8c87263cc17e9f9201e1be8568755",
+      "bytes": 23927
+    },
+    "supplier_registry.json": {
+      "sha256": "ae7adeec61636d985606579e76ddae106963d7bb3cb7c1a6e96af753786fd6a6",
+      "bytes": 332
+    },
+    "scientific_properties.db": {
+      "sha256": "d987498035f6006b4a4ae5e48759798d266329dcb87e4992dc1b91f65058f631",
+      "bytes": 32768
+    },
+    "nonhuman_data_hub.db": {
+      "sha256": "f38e640722037b7be7db2205ea4e6f829da1e439e6acd48378469f24f07d428c",
+      "bytes": 1662976
+    },
+    "epa_comptox_extract.db": {
+      "sha256": "5ae121964a538476e522522b15d492e66c103c2c6c5eef29dc9634cf1ae5a07d",
+      "bytes": 14524416
+    },
+    "natural_material_compositions.json": {
+      "sha256": "661a2a2d94c57b8ac20868c8fb0d876ab5a8161aa9ee9b039a5c017f13d8f745",
+      "bytes": 8986
+    },
+    "odor_descriptor_projections.json": {
+      "sha256": "27584c449af27645dbedb8f9240a9dc2ab76ff29ad2f0875d7c2978b42b4f89c",
+      "bytes": 15580
+    },
+    "odor_threshold_registry.json": {
+      "sha256": "d4d582eb33655c2d3fa88c8748f9e33b2970c1c45a54a290b22002c90e14bdc9",
+      "bytes": 6909
+    },
+    "r2_ingredient_components.npz": {
+      "sha256": "7ba532b0a7775cb0294872be22e280233442eaa60a2697c3fa596f010ac8e8a3",
+      "bytes": 23292
+    },
+    "r2_ingredient_components_manifest.json": {
+      "sha256": "932742c9d156d5e1bd3f3994e0c008f81f9023be2b326299c7f956aa3efc94a3",
+      "bytes": 2028
+    },
+    "physsim_r2_checkpoint.pt": {
+      "sha256": "09c9045a8a2cf3a45b9572549dd22a4028621e9d38e2d95792840ccb705c12d8",
+      "bytes": 669966
+    },
+    "physsim_r2_checkpoint_seed_20260713.pt": {
+      "sha256": "564f17d164abc631aa1a8c6fdb25bc1ed1fc3970da322af6439c3d882ff674b5",
+      "bytes": 669966
+    },
+    "physsim_r2_ensemble_manifest.json": {
+      "sha256": "af7585637974b110fb8489350fb46bf4589afad53c4bfabdc04f26df19ddfe82",
+      "bytes": 2258
+    },
+    "physsim_r2_runtime_weights.npz": {
+      "sha256": "8a12d563898692211a3af5a7e74634461fff54cfd3a176e1cd3a3910b76d87bd",
+      "bytes": 1215088
+    },
+    "physsim_r2_runtime_manifest.json": {
+      "sha256": "6090d74d0478c07b0d7254235bf48d2cefa0e44d6d194470e094520e75f2ab07",
+      "bytes": 2667
+    },
+    "human_mixture_calibration.json": {
+      "sha256": "c644c519f4e1276a0898fd38f6373f09e368518ee18ed6f5dc36066375876dc5",
+      "bytes": 5858
+    },
+    "concentration_response_model.joblib": {
+      "sha256": "3a218f1f66ca7ab325d710d5341e8317c8f2f1013ca2960b0405fb665335f27d",
+      "bytes": 860
+    },
+    "concentration_response_runtime.json": {
+      "sha256": "476f70832bf842c1c8c8a182ee7c321e8a191f642b412c3b7cd53acae2d0db3c",
+      "bytes": 708
+    },
+    "concentration_response_manifest.json": {
+      "sha256": "55af2ef9409bf4ccdccf76716452d8b4d48785200fb5522293303a55bad9046a",
+      "bytes": 2117
+    },
+    "continuous_improvement_policy.json": {
+      "sha256": "b96b744b4c02a54954dae18a64a6f9660663ac15228b7dbf10e05093891d6ae9",
+      "bytes": 2293
+    },
+    "physsim_r2_manifest.json": {
+      "sha256": "e0dfa74d43433ab937b242b4990cf6515184affff41df2eb6b18e8aa274badff",
+      "bytes": 27093
+    }
+  },
+  "counts": {
+    "reference": {
+      "perfumes": 10000,
+      "perfume_notes": 103419,
+      "ingredients": 242
+    },
+    "scientific": {
+      "rows": 33,
+      "threshold_rows": 5,
+      "composition_centroid_rows": 4
+    },
+    "nonhuman_hub": {
+      "sources": 75,
+      "observations": 7612,
+      "reference_formulas": 98,
+      "reference_notes": 605,
+      "threshold_observations": 0,
+      "composition_observations": 28
+    },
+    "epa": {
+      "source_files": 5,
+      "chemicals": 38
+    },
+    "headspace_sensory_hub": {
+      "molecule_source_links": 2449,
+      "molecules": 1642,
+      "molecules_with_physchem": 869,
+      "physchem_observations": 27283,
+      "sensory_observations": 109688,
+      "source_files": 29,
+      "stimuli": 2689,
+      "stimulus_components": 21708,
+      "stimulus_dilutions": 1473
+    },
+    "opera_vp_strict_scaffold_test_molecules": 93,
+    "natural_materials": 4,
+    "threshold_exact_structure_matches": 12,
+    "r2_component_rows": 72,
+    "r2_ensemble_members": 2,
+    "concentration_response_records": 271,
+    "continual_improvement_audit_events": 1,
+    "dream_mixture_training_pairs": 730,
+    "dream_mixture_test_pairs": 46,
+    "dream_mixture_validation_pairs": 50,
+    "dream_pair_ensemble_training_pairs": 730,
+    "dream_accuracy_v4_candidates": 4960,
+    "dream_set_encoder_v5_candidates": 4,
+    "prospective_formula_blind_study": {
+      "formulas": 24,
+      "pairs": 120,
+      "participants": 80,
+      "assignments": 2400
+    },
+    "bushdid_accuracy_v4_percent": 89.57880716951861,
+    "industrial_ingredient_registry": {
+      "reference_molecules": 29240,
+      "source_links": 36327,
+      "descriptor_assertions": 71458,
+      "prototype_safe_active": 29,
+      "prototype_conditional_active": 5,
+      "prototype_active_total": 34,
+      "safety_screened": 29240,
+      "promotion_candidates_total": 29212,
+      "promotion_evidence_pending": 20757,
+      "promotion_structural_review_required": 8455
+    }
+  }
+}

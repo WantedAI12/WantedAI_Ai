@@ -1,0 +1,110 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "perfumery-ai-core"
+version = "1.4.0"
+description = "Tenant-safe natural-language perfumery workbench, durable queue, and R&D core"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "LicenseRef-Proprietary"
+license-files = ["LICENSE", "LICENSE_POLICY.md"]
+dependencies = [
+    "numpy>=1.24,<3",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8,<9",
+    "cryptography>=43,<47",
+    "fastapi>=0.115,<1",
+    "httpx>=0.27,<1",
+    "PyJWT[crypto]>=2.10,<3",
+]
+legacy-ai = ["deap>=1.4,<2", "torch>=2.1"]
+data = ["xlrd>=2.0,<3"]
+physsim = []
+model-training = [
+    "numpy==2.2.6",
+    "torch==2.8.0",
+    "torch-geometric==2.7.0",
+    "ogb==1.3.6",
+    "rdkit==2025.9.4",
+    "descriptastorus @ git+https://github.com/bp-kelley/descriptastorus.git@9b133e2c91bb6a67df53db4cba992776db219ab7",
+    "scipy==1.15.2",
+    "scikit-learn==1.7.1",
+    "pandas==2.3.2",
+]
+commercial = [
+    "cryptography>=43,<47",
+    "fastapi>=0.115,<1",
+    "PyJWT[crypto]>=2.10,<3",
+    "uvicorn>=0.30,<1",
+    "psycopg[binary,pool]>=3.2,<4",
+]
+
+[project.scripts]
+perfumery-ai = "fragrance_ai.cli:main"
+perfumery-ai-api = "fragrance_ai.api_cli:main"
+perfumery-ai-worker = "fragrance_ai.platform.worker:main"
+perfumery-ai-continual = "fragrance_ai.continual_cli:main"
+perfumery-ai-prospective-study = "fragrance_ai.research.prospective_formula_study_cli:main"
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+include = ["fragrance_ai*"]
+
+[tool.setuptools.package-data]
+# Deliberately explicit: wildcard inclusion can redistribute data whose source
+# license has not been established. Add a new runtime asset only after its
+# provenance/claim-boundary entry has been reviewed in data_manifest.json.
+fragrance_ai = [
+    "data/continuous_improvement_policy.json",
+    "data/concentration_response_manifest.json",
+    "data/concentration_response_runtime.json",
+    "data/data_manifest.json",
+    "data/epa_comptox_extract.db",
+    "data/human_mixture_calibration.json",
+    "data/moga_ingredients.db",
+    "data/natural_material_compositions.json",
+    "data/nonhuman_data_hub.db",
+    "data/odor_descriptor_projections.json",
+    "data/odor_threshold_registry.json",
+    "data/physsim_r2_ensemble_manifest.json",
+    "data/physsim_r2_manifest.json",
+    "data/physsim_r2_runtime_manifest.json",
+    "data/physsim_r2_runtime_weights.npz",
+    "data/r2_ingredient_components.npz",
+    "data/r2_ingredient_components_manifest.json",
+    "data/safe_ingredient_catalog.json",
+    "data/scientific_properties.db",
+    "data/supplier_registry.json",
+    "ui/index.html",
+    "ui/app.css",
+    "ui/app.js",
+]
+
+[tool.setuptools.exclude-package-data]
+# Original source/license of this workspace-only compatibility database is not
+# established. Keep it available for local historical analysis, but never
+# redistribute it in a wheel. HistoricalReferenceCorpus is fallback-safe when
+# this file is absent from an installed package.
+fragrance_ai = [
+    "data/reference_fragrances.db",
+    "data/human_sensory_evaluations_template.csv",
+    "data/odor_observations_template.csv",
+    "data/scientific_properties_template.csv",
+    "data/supplier_materials_template.csv",
+    "data/*.joblib",
+    "data/*.pickle",
+    "data/*.pkl",
+    "data/*.pt",
+    "data/*.pth",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

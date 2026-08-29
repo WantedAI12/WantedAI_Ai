@@ -1,0 +1,10 @@
+# Exact commercial runtime inputs for the container image.
+# Compile with:
+#   python -m piptools compile --generate-hashes --resolver=backtracking \
+#     --output-file requirements-runtime.lock requirements-runtime.in
+cryptography==46.0.1
+fastapi==0.115.0
+numpy==2.2.6
+PyJWT[crypto]==2.10.1
+psycopg[binary,pool]==3.3.4
+uvicorn==0.30.6

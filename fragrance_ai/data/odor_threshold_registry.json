@@ -1,0 +1,189 @@
+{
+  "schema_version": "1.0",
+  "source": {
+    "title": "An Algorithm for 353 Odor Detection Thresholds in Humans",
+    "doi": "10.1093/chemse/bjr094",
+    "article_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3278675/",
+    "processed_archive": "Pyrfume Public Data Archive / abraham_2012",
+    "archive_license": "MIT",
+    "archive_license_url": "https://raw.githubusercontent.com/pyrfume/pyrfume-data/main/LICENSE",
+    "measurement": "historical human gas-phase odor detection threshold",
+    "unit": "ppmv",
+    "conversion": "ODT_ppmv = 10 ** (-Log10(1/ODT))",
+    "known_source_self_consistency": "approximately 0.66 log unit as reported by the article",
+    "retrieved_on": "2026-07-14",
+    "files": {
+      "behavior.csv": {
+        "url": "https://raw.githubusercontent.com/pyrfume/pyrfume-data/main/abraham_2012/behavior.csv",
+        "sha256": "d0d4f8682e0bbad9163f3d908bfd106f91930f8ea464c731413852f60d170e08",
+        "bytes": 28003
+      },
+      "molecules.csv": {
+        "url": "https://raw.githubusercontent.com/pyrfume/pyrfume-data/main/abraham_2012/molecules.csv",
+        "sha256": "75415d71c881f0fe450bab1a79c9f8ffef6f1194649bfb5646dcd478cbf08e6e",
+        "bytes": 15237
+      },
+      "manifest.toml": {
+        "url": "https://raw.githubusercontent.com/pyrfume/pyrfume-data/main/abraham_2012/manifest.toml",
+        "sha256": "56132aff4f05b67882418e7a29ee3e90608f09a3f975e108a6768c9b1808021d",
+        "bytes": 808
+      }
+    }
+  },
+  "claim_boundary": "Historical compound-level threshold prior only; excluded from generated-formula human validation and from any 90% olfactory-equivalence claim.",
+  "source_record_count": 266,
+  "matched_record_count": 12,
+  "catalog_match_count": 3,
+  "natural_component_match_count": 9,
+  "scientific_db_rows_updated": 3,
+  "dry_run": false,
+  "matches": [
+    {
+      "match_scope": "catalog_ingredient",
+      "ingredient_id": "aldehyde_c10",
+      "name": "decanal",
+      "pubchem_cid": 8175,
+      "smiles": "CCCCCCCCCC=O",
+      "log10_inverse_odt_ppmv": 3.39794,
+      "odor_detection_threshold_ppmv": 0.00040000000798724175,
+      "duplicates_averaged": 0
+    },
+    {
+      "match_scope": "catalog_ingredient",
+      "ingredient_id": "hexyl_acetate",
+      "name": "hexyl acetate",
+      "pubchem_cid": 8908,
+      "smiles": "CCCCCCOC(=O)C",
+      "log10_inverse_odt_ppmv": 1.8282433333333337,
+      "odor_detection_threshold_ppmv": 0.014851033121245793,
+      "duplicates_averaged": 2
+    },
+    {
+      "match_scope": "catalog_ingredient",
+      "ingredient_id": "phenethyl_alcohol",
+      "name": "2-phenylethanol",
+      "pubchem_cid": 6054,
+      "smiles": "C1=CC=C(C=C1)CCO",
+      "log10_inverse_odt_ppmv": 2.19,
+      "odor_detection_threshold_ppmv": 0.006456542290346556,
+      "duplicates_averaged": 0
+    },
+    {
+      "match_scope": "natural_material_component",
+      "ingredient_id": "lavender_oil",
+      "component_name": "D-limonene",
+      "cas_number": "5989-27-5",
+      "smiles": "CC1=CC[C@@H](CC1)C(=C)C",
+      "composition_percent": 2.62,
+      "pubchem_cid": 440917,
+      "name": "d-limonene",
+      "log10_inverse_odt_ppmv": -0.994,
+      "odor_detection_threshold_ppmv": 9.862794856312105,
+      "duplicates_averaged": 0
+    },
+    {
+      "match_scope": "natural_material_component",
+      "ingredient_id": "lavender_oil",
+      "component_name": "eucalyptol",
+      "cas_number": "470-82-6",
+      "smiles": "CC1(C2CCC(O1)(CC2)C)C",
+      "composition_percent": 2.41,
+      "pubchem_cid": 2758,
+      "name": "eucalyptol",
+      "log10_inverse_odt_ppmv": 0.495,
+      "odor_detection_threshold_ppmv": 0.3198895109691398,
+      "duplicates_averaged": 0
+    },
+    {
+      "match_scope": "natural_material_component",
+      "ingredient_id": "lavender_oil",
+      "component_name": "linalool",
+      "cas_number": "78-70-6",
+      "smiles": "CC(=CCCC(C)(C=C)O)C",
+      "composition_percent": 28.19,
+      "pubchem_cid": 6549,
+      "name": "linalool",
+      "log10_inverse_odt_ppmv": 0.022,
+      "odor_detection_threshold_ppmv": 0.9506047936562815,
+      "duplicates_averaged": 0
+    },
+    {
+      "match_scope": "natural_material_component",
+      "ingredient_id": "sweet_orange_oil",
+      "component_name": "3-carene",
+      "cas_number": "13466-78-9",
+      "smiles": "CC1=CCC2C(C1)C2(C)C",
+      "composition_percent": 0.26,
+      "pubchem_cid": 26049,
+      "name": "3-carene",
+      "log10_inverse_odt_ppmv": -0.22286,
+      "odor_detection_threshold_ppmv": 1.670552005161652,
+      "duplicates_averaged": 1
+    },
+    {
+      "match_scope": "natural_material_component",
+      "ingredient_id": "sweet_orange_oil",
+      "component_name": "D-limonene",
+      "cas_number": "5989-27-5",
+      "smiles": "CC1=CC[C@@H](CC1)C(=C)C",
+      "composition_percent": 70.15,
+      "pubchem_cid": 440917,
+      "name": "d-limonene",
+      "log10_inverse_odt_ppmv": -0.994,
+      "odor_detection_threshold_ppmv": 9.862794856312105,
+      "duplicates_averaged": 0
+    },
+    {
+      "match_scope": "natural_material_component",
+      "ingredient_id": "sweet_orange_oil",
+      "component_name": "alpha-pinene",
+      "cas_number": "80-56-8",
+      "smiles": "CC1=CCC2CC1C2(C)C",
+      "composition_percent": 2.81,
+      "pubchem_cid": 6654,
+      "name": "alpha-pinene",
+      "log10_inverse_odt_ppmv": 0.233865,
+      "odor_detection_threshold_ppmv": 0.5836264957849249,
+      "duplicates_averaged": 1
+    },
+    {
+      "match_scope": "natural_material_component",
+      "ingredient_id": "sweet_orange_oil",
+      "component_name": "gamma-terpinene",
+      "cas_number": "99-85-4",
+      "smiles": "CC1=CCC(=CC1)C(C)C",
+      "composition_percent": 3.35,
+      "pubchem_cid": 7461,
+      "name": "gamma-terpinene",
+      "log10_inverse_odt_ppmv": -0.992,
+      "odor_detection_threshold_ppmv": 9.817479430199844,
+      "duplicates_averaged": 0
+    },
+    {
+      "match_scope": "natural_material_component",
+      "ingredient_id": "sweet_orange_oil",
+      "component_name": "linalool",
+      "cas_number": "78-70-6",
+      "smiles": "CC(=CCCC(C)(C=C)O)C",
+      "composition_percent": 2.07,
+      "pubchem_cid": 6549,
+      "name": "linalool",
+      "log10_inverse_odt_ppmv": 0.022,
+      "odor_detection_threshold_ppmv": 0.9506047936562815,
+      "duplicates_averaged": 0
+    },
+    {
+      "match_scope": "natural_material_component",
+      "ingredient_id": "sweet_orange_oil",
+      "component_name": "p-cymene",
+      "cas_number": "99-87-6",
+      "smiles": "CC1=CC=C(C=C1)C(C)C",
+      "composition_percent": 1.0,
+      "pubchem_cid": 7463,
+      "name": "p-cymene",
+      "log10_inverse_odt_ppmv": -0.121,
+      "odor_detection_threshold_ppmv": 1.3212956341865751,
+      "duplicates_averaged": 0
+    }
+  ]
+}

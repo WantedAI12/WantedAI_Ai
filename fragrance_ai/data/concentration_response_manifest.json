@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.1",
+  "generated_at": "2026-07-15T07:50:23.359046+00:00",
+  "source_model_file": "concentration_response_model.joblib",
+  "source_model_sha256": "3a218f1f66ca7ab325d710d5341e8317c8f2f1013ca2960b0405fb665335f27d",
+  "runtime_file": "concentration_response_runtime.json",
+  "runtime_sha256": "476f70832bf842c1c8c8a182ee7c321e8a191f642b412c3b7cd53acae2d0db3c",
+  "algorithm": "concentration_only_ridge",
+  "development_selected_structure_candidate": "descriptor_concentration_random_forest",
+  "structure_specific_weight": 0.0,
+  "distribution_contract": {
+    "runtime_format": "json_numeric_arrays_only",
+    "source_model_packaged": false,
+    "source_model_required_at_runtime": false,
+    "pickle_deserialization_allowed": false
+  },
+  "model_seed": 781241,
+  "descriptor_count": 217,
+  "training_records": 271,
+  "training_molecules": 71,
+  "dilution_range_fraction": [
+    0.0001,
+    1.0
+  ],
+  "release_gate": {
+    "passed": true,
+    "checks": {
+      "molecule_disjoint_final_set": true,
+      "model_selected_on_development_only": true,
+      "deployed_concentration_curve_has_normalized_mae_at_most_20_percent": true,
+      "deployed_concentration_curve_has_final_spearman_at_least_0_50": true
+    },
+    "rejected_structure_candidate_checks": {
+      "structure_model_beats_concentration_only_final_mae": true,
+      "structure_model_not_worse_final_spearman": false
+    }
+  },
+  "source_files": {
+    "molecules.csv": {
+      "sha256": "ea03779465f0637d2993ba2c5224106e6575149499d11df92c61c800b09a6594",
+      "bytes": 25686
+    },
+    "stimuli.csv": {
+      "sha256": "49122b86eee2b48ad1fc9690c1dcbd418e2e0eb2175bbe0f8f735da513ea2cf7",
+      "bytes": 41983
+    },
+    "behavior_1.csv": {
+      "sha256": "644d69e3a5246738558255b54139d680b1f725525529f8cb19d59bd5b02a7e90",
+      "bytes": 8669
+    }
+  },
+  "claim_boundary": "Predicts a global Ravia mono-molecule perceived-intensity response to dilution. Molecule-specific concentration modulation has zero production weight; this is not mixture similarity or text-to-formula accuracy."
+}

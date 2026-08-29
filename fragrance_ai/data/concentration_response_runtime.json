@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "runtime": "numpy_concentration_response_v1",
+  "format": "standard_scaler_plus_ridge_coefficients_v1",
+  "feature_contract": [
+    "log10_dilution",
+    "log10_dilution_squared"
+  ],
+  "feature_mean": [
+    -2.121771217712177,
+    6.845018450184502
+  ],
+  "feature_scale": [
+    1.5307205329101348,
+    6.463491218110921
+  ],
+  "coefficients": [
+    6.978258938866059,
+    -0.4753820233813379
+  ],
+  "intercept": 43.00612849188192,
+  "dilution_range_fraction": [
+    0.0001,
+    1.0
+  ],
+  "source_training_artifact_sha256": "3a218f1f66ca7ab325d710d5341e8317c8f2f1013ca2960b0405fb665335f27d",
+  "source_training_artifact_required_at_runtime": false,
+  "allow_pickle": false
+}

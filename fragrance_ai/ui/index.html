@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Perfumery AI Workbench</title>
+  <link rel="stylesheet" href="/ui/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/ui/" aria-label="Perfumery AI 홈">
+      <span class="brand-mark" aria-hidden="true">PA</span>
+      <span><strong>Perfumery AI</strong><small>FORMULATION WORKBENCH · 1.2</small></span>
+    </a>
+    <div class="service-state" aria-live="polite">
+      <span id="serviceDot" class="state-dot"></span>
+      <span id="serviceText">서비스 확인 중</span>
+      <span id="backendBadge" class="badge">—</span>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar">
+      <section class="side-section auth-panel">
+        <div class="section-kicker">ACCESS</div>
+        <h2>워크스페이스 연결</h2>
+        <label>테넌트 ID<input id="tenantInput" autocomplete="organization" placeholder="tenant-a"></label>
+        <label>Bearer token<input id="tokenInput" type="password" autocomplete="off" placeholder="세션에만 보관"></label>
+        <div class="inline-actions">
+          <button id="connectButton" class="button primary" type="button">연결</button>
+          <button id="disconnectButton" class="button ghost" type="button">해제</button>
+        </div>
+        <p class="microcopy">토큰은 현재 탭의 sessionStorage에만 저장됩니다.</p>
+      </section>
+
+      <section class="side-section project-panel">
+        <div class="section-title-row">
+          <div><div class="section-kicker">PROJECTS</div><h2>프로젝트</h2></div>
+          <button id="refreshProjects" class="icon-button" type="button" aria-label="프로젝트 새로고침">↻</button>
+        </div>
+        <form id="projectForm" class="compact-form">
+          <input id="projectName" maxlength="160" placeholder="새 프로젝트 이름" required>
+          <button class="button secondary" type="submit">추가</button>
+        </form>
+        <nav id="projectList" class="project-list" aria-label="프로젝트 목록"></nav>
+      </section>
+
+      <section class="side-section formula-nav">
+        <div class="section-kicker">FORMULAS</div>
+        <div id="formulaList" class="formula-list"><p class="empty">프로젝트를 선택하세요.</p></div>
+      </section>
+    </aside>
+
+    <main class="workspace">
+      <section class="hero-grid">
+        <article class="panel brief-panel">
+          <div class="panel-heading">
+            <div><div class="section-kicker">CREATE</div><h1>자연어 조향 브리프</h1></div>
+            <span class="step-number">01</span>
+          </div>
+          <form id="recipeForm">
+            <label class="wide-label">원하는 향
+              <textarea id="briefInput" rows="4" maxlength="4000" placeholder="깨끗하고 시원한 시트러스 우디. 달지 않고 아침 공기처럼 투명하게." required></textarea>
+            </label>
+            <div class="field-grid four">
+              <label>처방 이름<input id="formulaName" value="New formula" maxlength="160"></label>
+              <label>최대 원가/kg<input id="maxCost" type="number" min="1" max="10000" value="180"></label>
+              <label>최대 원료 수<input id="maxIngredients" type="number" min="3" max="30" value="12"></label>
+              <label>시뮬레이션 draws<input id="simulationDraws" type="number" min="64" max="2000" value="200"></label>
+            </div>
+            <div class="inline-actions end">
+              <span id="activeProjectLabel" class="selection-label">프로젝트 미선택</span>
+              <button class="button primary large" type="submit">처방 생성</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="panel queue-panel">
+          <div class="panel-heading compact">
+            <div><div class="section-kicker">QUEUE</div><h2>분산 작업 상태</h2></div>
+            <span id="queueCount" class="metric-large">0</span>
+          </div>
+          <div id="jobList" class="job-list"><p class="empty">대기 중인 작업이 없습니다.</p></div>
+        </article>
+      </section>
+
+      <section id="formulaWorkspace" class="formula-workspace hidden">
+        <div class="workspace-title-row">
+          <div>
+            <div class="section-kicker">ACTIVE FORMULA</div>
+            <h2 id="activeFormulaName">처방</h2>
+            <p id="activeFormulaMeta" class="muted"></p>
+          </div>
+          <div class="status-cluster">
+            <span id="formulaStatus" class="status-pill">—</span>
+            <span id="versionBadge" class="badge accent">v—</span>
+          </div>
+        </div>
+
+        <div class="metric-strip">
+          <div><span>의미 일치</span><strong id="similarityMetric">—</strong></div>
+          <div><span>프록시 P05</span><strong id="proxyMetric">—</strong></div>
+          <div><span>현실성</span><strong id="realismMetric">—</strong></div>
+          <div><span>원가 / kg</span><strong id="costMetric">—</strong></div>
+          <div><span>원료 수</span><strong id="ingredientMetric">—</strong></div>
+        </div>
+
+        <div class="editor-grid">
+          <article class="panel formula-editor-panel">
+            <div class="panel-heading compact">
+              <div><div class="section-kicker">VISUAL EDITOR</div><h2>포뮬러 편집</h2></div>
+              <div class="inline-actions">
+                <button id="normalizeButton" class="button ghost" type="button">100% 정규화</button>
+                <button id="saveVersionButton" class="button secondary" type="button">새 버전 저장</button>
+              </div>
+            </div>
+            <div class="formula-total-row">
+              <span>Concentrate total</span>
+              <strong id="formulaTotal">0.000%</strong>
+              <div class="total-track"><span id="totalBar"></span></div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>원료</th><th>피라미드</th><th>배합비</th><th>조절</th><th></th></tr></thead>
+                <tbody id="formulaTable"></tbody>
+              </table>
+            </div>
+            <div class="editor-footer">
+              <select id="addIngredientSelect" aria-label="원료 추가"><option value="">원료 추가…</option></select>
+              <input id="editNote" maxlength="2000" placeholder="버전 변경 메모">
+            </div>
+          </article>
+
+          <div class="analysis-stack">
+            <article class="panel chart-panel">
+              <div class="panel-heading compact"><div><div class="section-kicker">PROFILE</div><h2>향 프로필</h2></div></div>
+              <div id="profileChart" class="profile-chart"></div>
+            </article>
+            <article class="panel pyramid-panel">
+              <div class="panel-heading compact"><div><div class="section-kicker">PYRAMID</div><h2>휘발 구조</h2></div></div>
+              <div id="pyramidChart" class="pyramid-chart"></div>
+            </article>
+          </div>
+        </div>
+
+        <div class="workflow-grid">
+          <article class="panel revision-panel">
+            <div class="panel-heading compact"><div><div class="section-kicker">CONVERSATIONAL REVISION</div><h2>자연어 수정</h2></div><span class="step-number">02</span></div>
+            <form id="revisionForm">
+              <textarea id="revisionInput" rows="3" maxlength="2000" placeholder="우디함은 조금 올리고, 단맛은 줄여줘." required></textarea>
+              <div class="inline-actions end"><button class="button primary" type="submit">새 버전 생성</button></div>
+            </form>
+          </article>
+
+          <article class="panel accord-panel">
+            <div class="panel-heading compact"><div><div class="section-kicker">ACCORD</div><h2>어코드 빌더</h2></div><span class="step-number">03</span></div>
+            <form id="accordForm">
+              <input id="accordName" maxlength="160" value="New accord" placeholder="어코드 이름">
+              <textarea id="accordBrief" rows="2" maxlength="2000" placeholder="투명한 앰버 우드 베이스" required></textarea>
+              <div class="inline-actions end"><button class="button secondary" type="submit">어코드 생성</button></div>
+            </form>
+          </article>
+        </div>
+
+        <article class="panel version-panel">
+          <div class="panel-heading compact">
+            <div><div class="section-kicker">VERSION CONTROL</div><h2>버전 이력·비교</h2></div>
+            <button id="refreshVersions" class="icon-button" type="button" aria-label="버전 새로고침">↻</button>
+          </div>
+          <div class="version-layout">
+            <div id="versionTimeline" class="version-timeline"></div>
+            <div class="compare-panel">
+              <div class="compare-selectors">
+                <select id="compareLeft" aria-label="이전 버전"></select><span>→</span><select id="compareRight" aria-label="다음 버전"></select>
+                <button id="compareButton" class="button ghost" type="button">비교</button>
+              </div>
+              <div id="compareResult" class="compare-result"><p class="empty">두 버전을 선택하면 원료·지표 차이를 표시합니다.</p></div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section id="welcomePanel" class="welcome-panel">
+        <span class="welcome-index">00</span>
+        <h2>프로젝트를 선택하고<br>첫 처방을 생성하세요.</h2>
+        <p>모든 수정은 새 버전으로 저장되며 테넌트 경계를 넘지 않습니다.</p>
+      </section>
+    </main>
+  </div>
+
+  <div id="toastRegion" class="toast-region" aria-live="polite"></div>
+  <script src="/ui/app.js" defer></script>
+</body>
+</html>

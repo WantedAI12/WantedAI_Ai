@@ -1,0 +1,167 @@
+{
+  "manifest_version": "1.0.0",
+  "reviewed_on": "2026-08-19",
+  "assets": {
+    "reference_fragrances.db": {
+      "sha256": "90d2e43112182861f23a3f97b4a2719974a465e8cde1354a246c75fdbd82b5f1",
+      "bytes": 7360512,
+      "provenance": "Copied from the workspace Newss project; original upstream source and license were not established.",
+      "allowed_use": "Unverified historical co-occurrence signal only",
+      "prohibited_claim": "Market coverage, sensory truth, or regulatory authority"
+    },
+    "moga_ingredients.db": {
+      "sha256": "645219198843bc926a1092238b2d1db971c41f07ceff03b230376dbe96cdb778",
+      "bytes": 12288,
+      "provenance": "Extracted workspace optimization seed database",
+      "allowed_use": "Legacy algorithm smoke tests",
+      "prohibited_claim": "Current price, inventory, safety, or supplier evidence"
+    },
+    "safe_ingredient_catalog.json": {
+      "sha256": "6e06f139793a52ca8c93e873a9bce496fec8c87263cc17e9f9201e1be8568755",
+      "provenance": "Project-curated engineering catalog",
+      "allowed_use": "Prototype candidate screening and semantic-profile optimization",
+      "prohibited_claim": "Supplier quotation, complete IFRA compliance, or human sensory accuracy",
+      "bytes": 23927
+    },
+    "supplier_registry.json": {
+      "sha256": "ae7adeec61636d985606579e76ddae106963d7bb3cb7c1a6e96af753786fd6a6",
+      "provenance": "Bundled empty registry",
+      "allowed_use": "Fail-closed proof that no supplier evidence is bundled",
+      "prohibited_claim": "Any supplier qualification",
+      "bytes": 332
+    },
+    "scientific_properties.db": {
+      "sha256": "d987498035f6006b4a4ae5e48759798d266329dcb87e4992dc1b91f65058f631",
+      "bytes": 32768,
+      "provenance": "29 CAS-linked single-material PubChem records plus four published-composition-derived natural-material descriptor centroids; five directly sourced compound odor thresholds are retained with row-level URLs",
+      "allowed_use": "Physics-informed headspace, odor-activity, temporal-mixture simulation and explicit uncertainty priors",
+      "prohibited_claim": "Complete physicochemical coverage, receptor prediction, supplier identity, or human olfactory accuracy"
+    },
+    "nonhuman_data_hub.db": {
+      "sha256": "f38e640722037b7be7db2205ea4e6f829da1e439e6acd48378469f24f07d428c",
+      "bytes": 1662976,
+      "provenance": "Built from 75 non-human local, schema and public-reference sources, including five fingerprinted EPA CompTox bulk sources; human validation assets and odor-threshold observations are excluded from this hub",
+      "allowed_use": "Non-human lineage search, molecular descriptor and EPA identifier/product-use/toxicology reference lookup, weak historical co-occurrence priors and offline synthetic training inventory",
+      "prohibited_claim": "Human sensory evidence, complete global coverage, supplier qualification, legal compliance or measured-property authority for unverified rows"
+    },
+    "epa_comptox_extract.db": {
+      "sha256": "5ae121964a538476e522522b15d492e66c103c2c6c5eef29dc9634cf1ae5a07d",
+      "bytes": 14524416,
+      "provenance": "Catalog-filtered extract of official EPA DSSTox December 2025, CPDat v4.0, ToxRefDB v3.0 and ToxValDB v9.7.0 bulk downloads; all five source URLs, versions, byte sizes and SHA-256 fingerprints retained in source_files",
+      "allowed_use": "CAS/DTXSID and structure linkage, product-use evidence, non-human toxicology screening and model-feature research",
+      "prohibited_claim": "Human olfactory accuracy, automatic safety approval, IFRA or legal compliance, supplier qualification or commercial release"
+    },
+    "natural_material_compositions.json": {
+      "sha256": "661a2a2d94c57b8ac20868c8fb0d876ab5a8161aa9ee9b039a5c017f13d8f745",
+      "bytes": 8986,
+      "provenance": "Published GC-MS single-sample compositions for sweet orange, lavender and patchouli, plus NTP-reported ISO chromatographic ranges for Virginia cedarwood; source table, URL, license and access date retained",
+      "allowed_use": "Reference molecular-component expansion and UVCB descriptor priors",
+      "prohibited_claim": "Lot-specific GC-MS, whole-material vapor pressure or odor threshold, supplier identity or release specification"
+    },
+    "odor_descriptor_projections.json": {
+      "sha256": "27584c449af27645dbedb8f9240a9dc2ab76ff29ad2f0875d7c2978b42b4f89c",
+      "bytes": 15580,
+      "provenance": "Project-authored perfumery engineering projections; no third-party rows are copied",
+      "allowed_use": "Natural-language intent parsing, transparent coarse-profile projection and fail-closed descriptor recognition",
+      "prohibited_claim": "Measured sensory equivalence, receptor ground truth or 90 percent human olfactory accuracy"
+    },
+    "odor_threshold_registry.json": {
+      "sha256": "d4d582eb33655c2d3fa88c8748f9e33b2970c1c45a54a290b22002c90e14bdc9",
+      "bytes": 6909,
+      "provenance": "Abraham 2012 gas-phase human ODT records from the MIT-licensed Pyrfume processed archive; only exact RDKit structure matches retained",
+      "allowed_use": "Compound-level historical odor-activity prior with explicit ppmv units",
+      "prohibited_claim": "Generated-formula human validation, text-to-odor accuracy or 90% olfactory equivalence"
+    },
+    "r2_ingredient_components.npz": {
+      "sha256": "7ba532b0a7775cb0294872be22e280233442eaa60a2697c3fa596f010ac8e8a3",
+      "bytes": 23292,
+      "provenance": "RDKit 217-descriptor registry for 34 formulation-ready materials expanded to 72 exact synthetic or published-reference natural components",
+      "allowed_use": "Frozen R2 mixture-similarity inference inside the descriptor and applicability contract",
+      "prohibited_claim": "Unknown-lot natural composition, receptor response, direct sensory truth or global ingredient coverage"
+    },
+    "r2_ingredient_components_manifest.json": {
+      "sha256": "932742c9d156d5e1bd3f3994e0c008f81f9023be2b326299c7f956aa3efc94a3",
+      "bytes": 2028,
+      "provenance": "Build manifest for the R2 component registry, including source hashes, descriptor contract and composition coverage",
+      "allowed_use": "Artifact integrity and lineage verification",
+      "prohibited_claim": "Independent sensory evidence"
+    },
+    "physsim_r2_checkpoint.pt": {
+      "sha256": "09c9045a8a2cf3a45b9572549dd22a4028621e9d38e2d95792840ccb705c12d8",
+      "bytes": 669966,
+      "provenance": "162,059-parameter JCIM R2 PhysSim-Core checkpoint trained on Snitz 2013 under the recorded protocol",
+      "allowed_use": "Diagnostic historical mixture-similarity output only; final formulation score weight remains zero until a ratio/concentration/time/headspace capability contract and independent artifact trust are both satisfied",
+      "prohibited_claim": "Literal learned physical observables, text-to-odor ground truth or 90% human olfactory equivalence"
+    },
+    "physsim_r2_checkpoint_seed_20260713.pt": {
+      "sha256": "564f17d164abc631aa1a8c6fdb25bc1ed1fc3970da322af6439c3d882ff674b5",
+      "bytes": 669966,
+      "provenance": "Second 162,059-parameter JCIM R2 member trained with fixed seed 20260713 under the same descriptor and transfer contract",
+      "allowed_use": "Diagnostic ensemble member and historical-label epistemic disagreement estimate; not authorized to alter a formulation score",
+      "prohibited_claim": "Independent human validation, literal physical observables or unbounded extrapolation"
+    },
+    "physsim_r2_ensemble_manifest.json": {
+      "sha256": "af7585637974b110fb8489350fb46bf4589afad53c4bfabdc04f26df19ddfe82",
+      "bytes": 2258,
+      "provenance": "Two-seed weights selected by a coarse development-only balanced molecule/scaffold objective, strong-baseline final validation and split-conformal uncertainty contract",
+      "allowed_use": "Fail-closed diagnostic loading, OOD disagreement and historical-mixture prediction interval; not a formulation-score authorization",
+      "prohibited_claim": "Text-to-formula or human olfactory uncertainty calibration"
+    },
+    "physsim_r2_runtime_weights.npz": {
+      "sha256": "8a12d563898692211a3af5a7e74634461fff54cfd3a176e1cd3a3910b76d87bd",
+      "bytes": 1215088,
+      "provenance": "Portable NumPy export of the two hash-bound frozen R2 checkpoint state dictionaries; serialized source checkpoints remain in the research tree but are excluded from runtime distributions",
+      "allowed_use": "Pickle-free and torch-free reproduction of the diagnostic frozen R2 forward pass",
+      "prohibited_claim": "New training evidence, concentration-aware formulation capability or human olfactory accuracy"
+    },
+    "physsim_r2_runtime_manifest.json": {
+      "sha256": "6090d74d0478c07b0d7254235bf48d2cefa0e44d6d194470e094520e75f2ab07",
+      "bytes": 2667,
+      "provenance": "Build-time binding of portable NumPy tensors to the exact ensemble manifest, member checkpoint hashes and descriptor contract, with six deterministic Torch-to-NumPy equivalence cases",
+      "allowed_use": "Runtime artifact integrity, shape contract and dependency-light numeric inference verification",
+      "prohibited_claim": "Independent scientific validation"
+    },
+    "human_mixture_calibration.json": {
+      "sha256": "c644c519f4e1276a0898fd38f6373f09e368518ee18ed6f5dc36066375876dc5",
+      "bytes": 5858,
+      "provenance": "Protocol-aware overlap calibration fitted only on the predeclared Bushdid calibration partition, with four-fold cross-conformal residuals; historical final labels are evaluation-only and the model was developed after unblinding",
+      "allowed_use": "Retrospective odd-one-out discrimination audit for the exact hash-bound Bushdid stimulus and vial-dilution protocol; ordinary RecipeLine formulas must abstain",
+      "prohibited_claim": "Perfume formula smell similarity, unequal-ratio extrapolation or 90 percent human olfactory equivalence"
+    },
+    "concentration_response_model.joblib": {
+      "sha256": "3a218f1f66ca7ab325d710d5341e8317c8f2f1013ca2960b0405fb665335f27d",
+      "bytes": 860,
+      "provenance": "Ravia behavior_1 global dilution-to-perceived-intensity ridge response fitted after molecule-disjoint evaluation",
+      "allowed_use": "Training provenance and offline equivalence audit only; this serialized source artifact is excluded from runtime wheels",
+      "prohibited_claim": "Molecule-specific concentration response, mixture similarity or human formula validation"
+    },
+    "concentration_response_runtime.json": {
+      "sha256": "476f70832bf842c1c8c8a182ee7c321e8a191f642b412c3b7cd53acae2d0db3c",
+      "bytes": 708,
+      "provenance": "JSON numeric export of the validated Ravia concentration-only scaler and ridge coefficients, cryptographically bound to the retained source training artifact",
+      "allowed_use": "Pickle-free NumPy diagnostic dilution-response inference and independently signed deployment authorization",
+      "prohibited_claim": "Molecule-specific concentration response, mixture similarity or human formula validation"
+    },
+    "concentration_response_manifest.json": {
+      "sha256": "55af2ef9409bf4ccdccf76716452d8b4d48785200fb5522293303a55bad9046a",
+      "bytes": 2117,
+      "provenance": "Molecule-disjoint validation, unit contract, source hashes, rejected structure-specific candidate record and a hash-bound JSON numeric runtime exported from the retained source model",
+      "allowed_use": "Fail-closed diagnostic loading and independent-signature authorization contract",
+      "prohibited_claim": "Accuracy outside the named Ravia intensity experiment"
+    },
+    "continuous_improvement_policy.json": {
+      "sha256": "b96b744b4c02a54954dae18a64a6f9660663ac15228b7dbf10e05093891d6ae9",
+      "bytes": 2293,
+      "provenance": "Project-curated fail-closed champion/challenger policy with prospective external, source/molecule/scaffold-cold, bootstrap, portable-runtime and detached-signature gates",
+      "allowed_use": "Autonomous research challenger evaluation, shadow promotion and independently authorized production selection",
+      "prohibited_claim": "Self-generated sensory truth, unsupervised production promotion, or 90 percent human olfactory accuracy"
+    },
+    "physsim_r2_manifest.json": {
+      "sha256": "e0dfa74d43433ab937b242b4990cf6515184affff41df2eb6b18e8aa274badff",
+      "bytes": 27093,
+      "provenance": "Checkpoint source hashes, runtime, component-cold, strict disjoint, external transfer and ensemble calibration release contract",
+      "allowed_use": "Fail-closed checkpoint loading and approved-weight selection",
+      "prohibited_claim": "Performance beyond the named datasets and split protocols"
+    }
+  }
+}

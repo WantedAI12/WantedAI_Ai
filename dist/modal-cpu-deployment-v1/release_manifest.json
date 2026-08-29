@@ -1,0 +1,90 @@
+{
+  "schema": "perfumery-ai-modal-cpu-release/v1",
+  "package_version": "1.4.0",
+  "status": "modal_cpu_backend_proxy_authenticated",
+  "endpoints": {
+    "modal_web": "https://junseong2im--perfumery-ai-core-web.modal.run",
+    "modal_health": "https://junseong2im--perfumery-ai-core-web.modal.run/health",
+    "modal_catalog": "https://junseong2im--perfumery-ai-core-web.modal.run/v1/catalog",
+    "modal_openapi": "https://junseong2im--perfumery-ai-core-web.modal.run/docs",
+    "huggingface_space": "https://huggingface.co/spaces/PPWK/Perfumery_AI_Core"
+  },
+  "runtime": {
+    "provider": "modal",
+    "cpu_cores": 1.0,
+    "memory_mib": 1024,
+    "gpu_required": false,
+    "min_containers": 0,
+    "max_containers": 1,
+    "scaledown_window_seconds": 300,
+    "max_concurrent_inputs": 1,
+    "formula_rate_limit_per_minute": 30
+    ,"proxy_auth_required": true
+  },
+  "artifacts": {
+    "deployment_source": {
+      "path": "../../deploy/modal_app.py",
+      "bytes": 10417,
+      "sha256": "b834b74294aefff446bda0147ab811a90c0619e909e93ad47eef3973d58b3b6e"
+    },
+    "deployment_test": {
+      "path": "../../tests/test_modal_deployment.py",
+      "bytes": 1972,
+      "sha256": "c9d9ecd4587b7f0f89dd8afaecf6390a2dab2df6fd5065c03a53382aaa01624f"
+    },
+    "authentication_test": {
+      "path": "../../tests/test_modal_auth_contract.py",
+      "bytes": 498,
+      "sha256": "3f4706d8d028134a3cbd4bbf6306df22eea7c26eed6672cada0d33c2c95e0a98"
+    },
+    "deployment_guide": {
+      "path": "../../MODAL_DEPLOYMENT.md",
+      "bytes": 2674,
+      "sha256": "bad93e6fe4b5e4857eccc3970ef44fc8bbca8cf5a062940b15620185a619055f"
+    },
+    "remote_evidence": {
+      "path": "../../benchmarks/modal_cpu_deployment_v1.json",
+      "bytes": 2259,
+      "sha256": "70e44805b6b8de05aa7e26ae831eaa8e80c27ae65377e337502ca291b1a4a726"
+    },
+    "wheel": {
+      "path": "../automatic-safe-activation-v1/perfumery_ai_core-1.4.0-py3-none-any.whl",
+      "bytes": 3272030,
+      "sha256": "416a6eec32fb2c484aaf6bb2cc8a6a7cc6b661ccc18ff70674ad250a9ad8a120"
+    },
+    "registry": {
+      "path": "../../benchmarks/industrial_ingredient_registry_v1.db",
+      "bytes": 77615104,
+      "sha256": "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765"
+    }
+  },
+  "remote_verification": {
+    "unauthenticated_http_401": true,
+    "proxy_authenticated_health_http_200": true,
+    "proxy_authenticated_catalog_http_200": true,
+    "proxy_authenticated_formula_http_200": true,
+    "health_http_200": true,
+    "catalog_http_200_and_29240": true,
+    "formula_http_200": true,
+    "formula_status": "prototype_ready",
+    "formula_lines": 9,
+    "formula_internal_safety_gate_passed": true,
+    "formula_warm_seconds": 1.69,
+    "root_ui_http_200": true,
+    "huggingface_cors_preflight_passed": true,
+    "huggingface_commit": "e128e8d41fba0a66673a29fbdcdccd2c869c89ad",
+    "huggingface_stage": "RUNNING",
+    "huggingface_current_replicas": 1
+  },
+  "verification": {
+    "collected_tests": 341,
+    "passed_tests": 340,
+    "skipped_postgresql_environment": 1,
+    "failed_tests": 0,
+    "scoped_ruff_passed": true,
+    "compileall_passed": true,
+    "ocr_reviewable_files": 3,
+    "ocr_final_critical_high_medium": "0/0/0"
+  },
+  "claim_boundary": "This release proves the current Modal CPU deployment, Hugging Face static frontend, and bounded API path. It does not create human olfactory, supplier, manufacturing, regulatory, or commercial approval evidence."
+}

@@ -1,0 +1,62 @@
+{
+  "schema_version": "1.0",
+  "policy_id": "perfumery-ai-continuous-improvement-v1",
+  "reviewed_on": "2026-08-27",
+  "claim_boundary": "Autonomous challenger training and promotion governance. A passing gate is evidence of bounded benchmark improvement, never proof of 90 percent human olfactory similarity.",
+  "blocked_label_origins": [
+    "model_generated",
+    "simulation_proxy",
+    "synthetic",
+    "self_training",
+    "weak_label"
+  ],
+  "allowed_evidence_class": "prospective_external_human",
+  "required_runtime_format": "standard_scaler_plus_ridge_coefficients_v1",
+  "required_runtime_engine": "numpy_concentration_response_v1",
+  "minimum_external_sources": 2,
+  "minimum_evaluation_targets": 30,
+  "minimum_evaluation_rows": 100,
+  "maximum_evaluation_rows": 10000,
+  "maximum_training_rows": 100000,
+  "minimum_bootstrap_draws": 2000,
+  "maximum_bootstrap_draws": 20000,
+  "minimum_baseline_minus_candidate_mae_bootstrap_lower": 0.0,
+  "minimum_candidate_minus_baseline_spearman_bootstrap_lower": -0.02,
+  "maximum_portable_parity_absolute_error": 1e-10,
+  "maximum_primary_score_weight": 0.05,
+  "maximum_runtime_bytes": 5242880,
+  "maximum_evidence_artifact_bytes": 67108864,
+  "maximum_candidate_bundle_bytes": 268435456,
+  "lock_stale_after_seconds": 21600,
+  "required_scientific_gates": [
+    "prediction_sealed_before_outcome",
+    "prospective_external",
+    "molecule_cold",
+    "scaffold_cold",
+    "source_cold",
+    "challenge_in_runtime_domain",
+    "baseline_runtime_parity",
+    "monotone_concentration_response",
+    "bootstrap_mae_gain",
+    "rank_noninferiority",
+    "portable_runtime_parity"
+  ],
+  "external_evidence_contract": {
+    "signed_acquisition_required": true,
+    "authorization_artifact_type": "prospective_dataset_acquisition",
+    "allowed_signer_roles": [
+      "external_evidence_acquirer"
+    ],
+    "production_signer_must_differ_from_acquisition_signer": true
+  },
+  "production_contract": {
+    "automatic_shadow_promotion": true,
+    "signed_production_authorization_required": true,
+    "allowed_signer_roles": [
+      "model_release_approver"
+    ],
+    "authorization_artifact_type": "concentration_response_model_authorization",
+    "unsafe_serialization_allowed": false,
+    "human_olfactory_90_percent_certified": false
+  }
+}
