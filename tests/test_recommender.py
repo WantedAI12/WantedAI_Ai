@@ -7,7 +7,7 @@ from fragrance_ai.recommender.brief_parser import (
     NaturalLanguageBriefParser,
     apply_relative_revision_profile,
 )
-from fragrance_ai.recommender.catalog import IngredientCatalog
+from fragrance_ai.recommender.catalog import HistoricalReferenceCorpus, IngredientCatalog
 from fragrance_ai.recommender.evaluation import evaluate_benchmark
 
 
@@ -161,13 +161,14 @@ def test_stale_regulatory_policy_blocks_recipe():
     assert any("검토 기한" in item for item in result.safety.violations)
 
 
-def test_catalog_and_reference_corpus_are_reported():
-    ai = NaturalLanguagePerfumeryAI()
-    stats = {**ai.catalog.stats(), **ai.corpus.stats()}
+def test_catalog_and_reference_corpus_are_reported(tmp_path):
+    corpus = HistoricalReferenceCorpus(tmp_path / "excluded-reference-corpus.db")
+    with NaturalLanguagePerfumeryAI(corpus=corpus) as ai:
+        stats = {**ai.catalog.stats(), **ai.corpus.stats()}
     assert stats["ifra_transparency_2025_reference_count"] == 3691
     assert stats["formulation_ready"] >= 25
-    assert stats["reference_perfumes"] == 10000
-    assert stats["reference_note_rows"] == 103419
+    assert stats["reference_perfumes"] == 0
+    assert stats["reference_note_rows"] == 0
 
 
 def test_bundled_semantic_gate_benchmark():
