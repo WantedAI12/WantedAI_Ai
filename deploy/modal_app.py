@@ -15,13 +15,13 @@ ROOT = Path(__file__).resolve().parents[1]
 WHEEL = (
     ROOT
     / "dist"
-    / "automatic-safe-activation-v1"
+    / "full-registry-activation-v1"
     / "perfumery_ai_core-1.4.0-py3-none-any.whl"
 )
 REGISTRY = ROOT / "benchmarks" / "industrial_ingredient_registry_v1.db"
 REMOTE_WHEEL = "/opt/perfumery/perfumery_ai_core-1.4.0-py3-none-any.whl"
 REMOTE_REGISTRY = "/opt/perfumery/industrial_ingredient_registry_v1.db"
-WHEEL_SHA256 = "416a6eec32fb2c484aaf6bb2cc8a6a7cc6b661ccc18ff70674ad250a9ad8a120"
+WHEEL_SHA256 = "f7b79713d4930baee87abdabef1e3a10522e9d1b5c14997068e5f95b65af51d0"
 REGISTRY_SHA256 = "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765"
 
 
@@ -76,7 +76,7 @@ table{width:100%;border-collapse:collapse;background:white}th,td{padding:9px;bor
 <section class="hero"><h1>Perfumery AI Core</h1><p>CPU 자연어 조향 · 안전/가격/가용성 제약 · 29,240개 산업 레지스트리</p></section>
 <p class="note">원하는 향을 입력하면 안전 후보 pool에서 정량 조향식을 생성합니다. 계산 점수는 사람 후각 정확도나 제조 승인이 아닙니다.</p>
 <textarea id="brief" rows="4">깨끗하고 시원한 시트러스 우디 향, 은은한 머스크와 드라이한 잔향</textarea>
-<div class="grid"><label>위험등급<select id="risk"><option value="1">1 · 기본 안전</option><option value="2">2 · 조건부 허용</option></select></label>
+<div class="grid"><label>위험등급<select id="risk"><option value="1">1 · 기본 안전</option><option value="2">2 · 조건부 전체 레지스트리</option></select></label>
 <label>시장<select id="region"><option>EU</option><option>KR</option><option>US</option></select></label>
 <label>제품군<select id="category"><option>eau_de_parfum</option><option>eau_de_toilette</option><option>shampoo</option><option>candle</option><option>room_spray</option></select></label>
 <label>원료 최대 $/kg<input id="price" type="number" value="180" min="10" max="300"></label>
@@ -85,7 +85,7 @@ table{width:100%;border-collapse:collapse;background:white}th,td{padding:9px;bor
 <table><thead><tr><th>원료</th><th>노트</th><th>농축액 %</th><th>위험</th><th>$/kg</th></tr></thead><tbody id="formula"></tbody></table>
 <details><summary>전체 계산 결과</summary><pre id="raw"></pre></details></main><script>
 const q=id=>document.getElementById(id);q('run').onclick=async()=>{q('status').textContent='계산 중...';q('formula').replaceChildren();
-try{const response=await fetch('/v1/formulas',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({brief:q('brief').value,max_risk_tier:Number(q('risk').value),target_region:q('region').value,product_category:q('category').value,max_ingredient_price_per_kg:Number(q('price').value),max_ingredients:Number(q('count').value)})});
+try{const risk=Number(q('risk').value);const response=await fetch('/v1/formulas',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({brief:q('brief').value,max_risk_tier:risk,enable_registry_trace_candidates:risk===2,target_region:q('region').value,product_category:q('category').value,max_ingredient_price_per_kg:Number(q('price').value),max_ingredients:Number(q('count').value)})});
 const data=await response.json();if(!response.ok)throw new Error(data.detail||'요청 실패');q('status').textContent=`${data.status} · 안전 게이트 ${data.safety.internal_gate_passed?'PASS':'BLOCK'} · 원료 ${data.recipe.length}개`;
 for(const line of data.recipe){const tr=document.createElement('tr');for(const value of [line.name,line.pyramid,line.concentrate_percent,line.risk_tier,line.price_per_kg]){const td=document.createElement('td');td.textContent=String(value);tr.appendChild(td)}q('formula').appendChild(tr)}q('raw').textContent=JSON.stringify(data,null,2)}catch(error){q('status').textContent=error.message}};
 </script></body></html>"""
@@ -104,7 +104,11 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY):
     from pydantic import BaseModel, ConfigDict, Field
 
     from fragrance_ai import NaturalLanguagePerfumeryAI, RecipeConstraints
+    from fragrance_ai.recommender.catalog import IngredientCatalog
     from fragrance_ai.recommender.industrial_catalog import IndustrialIngredientRegistry
+    from fragrance_ai.recommender.registry_activation import (
+        activate_registry_conditionals,
+    )
 
     class FormulaRequest(BaseModel):
         model_config = ConfigDict(extra="forbid")
@@ -117,6 +121,7 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY):
         target_similarity: float = Field(default=90.0, ge=50, le=95)
         product_concentration_percent: float = Field(default=15.0, gt=0, le=30)
         max_ingredients: int = Field(default=12, ge=6, le=20)
+        enable_registry_trace_candidates: bool = False
         target_region: str = Field(default="EU", pattern=r"^(EU|KR|US)$")
         product_category: str = Field(
             default="eau_de_parfum",
@@ -142,7 +147,18 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY):
         allow_headers=["content-type"],
     )
     with IndustrialIngredientRegistry(registry_path) as registry:
-        catalog_snapshot = {**registry.stats(), "registry_sha256": registry.sha256}
+        registry_stats = registry.stats()
+    runtime_catalog, activation_report = activate_registry_conditionals(
+        IngredientCatalog.load_builtin(),
+        registry_path,
+        expected_sha256=REGISTRY_SHA256,
+    )
+    catalog_snapshot = {
+        **registry_stats,
+        **runtime_catalog.stats(),
+        **activation_report.to_dict(),
+        "registry_sha256": activation_report.registry_sha256,
+    }
     request_times: deque[float] = deque()
     rate_lock = threading.Lock()
 
@@ -189,6 +205,9 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY):
             product_concentration_percent=request.product_concentration_percent,
             max_ingredients=request.max_ingredients,
             allow_rare=False,
+            enable_registry_trace_candidates=(
+                request.enable_registry_trace_candidates
+            ),
             target_region=request.target_region,
             product_category=request.product_category,
             simulation_draws=64,
@@ -196,7 +215,7 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY):
             minimum_realism_score=50.0,
         )
         try:
-            with NaturalLanguagePerfumeryAI() as ai:
+            with NaturalLanguagePerfumeryAI(catalog=runtime_catalog) as ai:
                 result = ai.create_recipe(request.brief.strip(), constraints)
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
@@ -207,6 +226,13 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY):
             "gpu_required": False,
             "wheel_sha256": WHEEL_SHA256,
             "registry_sha256": REGISTRY_SHA256,
+            "registry_connected_total": (
+                activation_report.reference_molecules_connected
+            ),
+            "registry_conditional_trace_active": (
+                activation_report.conditional_trace_candidates_active
+            ),
+            "registry_activation_mode": activation_report.activation_mode,
         }
         return payload
 

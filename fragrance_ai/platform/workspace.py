@@ -33,6 +33,7 @@ _BOOLEAN_CONSTRAINTS = (
     "enable_semantic_ontology",
     "enable_concentration_response",
     "enable_learned_r2",
+    "enable_registry_trace_candidates",
     "require_evidenced_olfactory_target",
     "require_catalog_dimension_support",
 )

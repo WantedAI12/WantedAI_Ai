@@ -26,6 +26,7 @@ from .optimizer import ConstrainedFormulaOptimizer, NoFeasibleFormula
 from .odor_profiles import OdorProfileStore
 from .quality import QualityEvidenceStore, formula_fingerprint
 from .promotion_activation import PromotionActivationBundle
+from .registry_activation import REGISTRY_CONDITIONAL_DATA_SOURCE
 from .release_spec import ReleaseSpec
 from .realism import assess_realism
 from .reference_targets import ReferenceTargetStore, ResolvedReferenceTarget
@@ -53,6 +54,7 @@ LIMITATIONS = [
     "물리 모델은 불완전한 물성·역치 자료와 모델 가정을 포함하므로 실제 헤드스페이스 측정을 대체하지 않습니다.",
     "학습된 R2 체크포인트는 분자 혼합물 유사도 프록시이며 완성 처방의 인간 관능 검증값이 아닙니다.",
     "출처·라이선스·측정 조건이 불명확한 데이터는 물성·규제·공급 사실로 승격하지 않습니다.",
+    "산업 레지스트리 조건부 trace 후보는 공개 냄새 기술 기반 R&D 가설이며 독립 안전·공급사 승인 원료가 아닙니다.",
 ]
 
 
@@ -293,6 +295,7 @@ class NaturalLanguagePerfumeryAI:
             "enable_semantic_ontology",
             "enable_concentration_response",
             "enable_learned_r2",
+            "enable_registry_trace_candidates",
             "require_evidenced_olfactory_target",
             "require_catalog_dimension_support",
         ):
@@ -881,6 +884,10 @@ class NaturalLanguagePerfumeryAI:
         if level == "commercial":
             approved = approved and quality_ok and science_ok
 
+        uses_registry_conditionals = any(
+            line.data_source == REGISTRY_CONDITIONAL_DATA_SOURCE for line in lines
+        )
+
         if approved and level == "commercial":
             recipe = lines
             if (
@@ -918,17 +925,25 @@ class NaturalLanguagePerfumeryAI:
             recipe = lines
             safety = replace(safety, status="lab_validated")
         elif approved:
-            status = "prototype_ready"
-            message = (
-                "안전·가격·공급·의미 프로필 조건을 충족한 R&D 처방입니다. "
-                "정량 기준 향이 없어 실제 후각 유사도는 기권 처리되었습니다."
-                if reference_target is None
-                else (
-                    f"검증된 정량 기준 향에 대한 비인간 모델 5% 하한 "
-                    f"{simulation.p05:.2f}점의 R&D 처방입니다. "
-                    "인간 후각 90% 승인과는 별개입니다."
+            if uses_registry_conditionals:
+                status = "experimental_registry_candidate"
+                message = (
+                    "전체 산업 레지스트리에서 선별한 조건부 trace 원료가 포함된 "
+                    "R&D 가설 처방입니다. 독립 안전·공급사·규제 문서가 연결되기 "
+                    "전에는 prototype_ready 또는 제조 후보로 승격되지 않습니다."
                 )
-            )
+            else:
+                status = "prototype_ready"
+                message = (
+                    "안전·가격·공급·의미 프로필 조건을 충족한 R&D 처방입니다. "
+                    "정량 기준 향이 없어 실제 후각 유사도는 기권 처리되었습니다."
+                    if reference_target is None
+                    else (
+                        f"검증된 정량 기준 향에 대한 비인간 모델 5% 하한 "
+                        f"{simulation.p05:.2f}점의 R&D 처방입니다. "
+                        "인간 후각 90% 승인과는 별개입니다."
+                    )
+                )
             recipe = lines
         else:
             status = "no_safe_match"
@@ -1012,6 +1027,12 @@ class NaturalLanguagePerfumeryAI:
                     f"정량 기준 향 대비 비인간 시뮬레이션 5% 하한 "
                     f"{simulation.p05:.2f}점의 R&D 후보입니다."
                 )
+            )
+        elif status == "experimental_registry_candidate":
+            message = (
+                "전체 산업 레지스트리에서 선별한 risk-tier-2 trace 후보가 "
+                "포함된 R&D 가설 처방입니다. 공개 냄새 기술과 구조 스크리닝은 "
+                "독립 안전·공급사·규제 승인을 대체하지 않습니다."
             )
         elif status == "no_safe_match":
             clean_reasons: list[str] = []
