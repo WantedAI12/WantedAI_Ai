@@ -25,15 +25,15 @@
   },
   "supply_chain": {
     "sbom_path": "sbom.cdx.json",
-    "sbom_bytes": 185147,
-    "sbom_sha256": "0858bd66ae08f889f60c678cb312d8b8178f2f080ab28bd6314e90a06c185703",
+    "sbom_bytes": 182006,
+    "sbom_sha256": "6f0c5679b9b5e576792eea49e8a7d80be9aa520159527911051807709b2142d7",
     "release_policy_path": "release_policy_report.json",
-    "release_policy_bytes": 5740,
-    "release_policy_sha256": "0f8dcec1e1f031a147ece5491993304d142746796c3f2138d3f6f818dae4d34b",
+    "release_policy_bytes": 5607,
+    "release_policy_sha256": "da1e415906cc487135918f4172b4a495c4a4a796d40368ccb0dac4026f66d8c9",
     "release_policy_passed": true,
     "wheel_install_verify_path": "wheel_install_verify.json",
-    "wheel_install_verify_bytes": 2166,
-    "wheel_install_verify_sha256": "16a9844ace29d90a452b2b3621c8fc2cca9589c042388b945699146c257a29d8",
+    "wheel_install_verify_bytes": 2109,
+    "wheel_install_verify_sha256": "07d609ddb063a748cb0d643072835548a2256e4d3c5892013cb327d997976efa",
     "wheel_install_verify_passed": true
   },
   "claim_boundary": "Registry trace candidates are opt-in prototype hypotheses, not supplier-qualified, independently safety-approved, manufacturing-ready, or commercial materials."
