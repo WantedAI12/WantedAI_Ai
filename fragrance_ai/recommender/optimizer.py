@@ -15,7 +15,6 @@ from .models import (
     SCENT_DIMENSIONS,
     profile_vector,
 )
-from .registry_activation import REGISTRY_CONDITIONAL_DATA_SOURCE
 
 
 class NoFeasibleFormula(RuntimeError):
@@ -148,19 +147,12 @@ class ConstrainedFormulaOptimizer:
         scent_match = cosine_similarity_percent(ingredient.vector(), target) / 100.0
         prevalence = min(1.0, self.corpus.frequency(ingredient.name) * 20.0)
         affordability = 1.0 - min(1.0, ingredient.price_per_kg / max(1.0, max_price))
-        score = (
+        return (
             scent_match * 0.78
             + ingredient.availability * 0.12
             + affordability * 0.07
             + prevalence * 0.03
         )
-        # Public-registry conditionals are trace accents with a 0.05% cap.
-        # They must not outrank high-capacity curated materials while building
-        # the top/heart/base backbone, but can still be added below as the only
-        # strong representative of a requested facet.
-        if ingredient.data_source == REGISTRY_CONDITIONAL_DATA_SOURCE:
-            score -= 0.35
-        return score
 
     def _select_candidates(
         self, candidates: list[Ingredient], brief: ScentBrief

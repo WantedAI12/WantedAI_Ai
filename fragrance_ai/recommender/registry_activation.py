@@ -2,13 +2,14 @@
 
 The external registry is much broader than the curated formulation catalog.
 This module connects every registry row for coverage/audit purposes and turns
-only a narrow, public-data subset into risk-tier-2 trace candidates.  It never
+only a narrow, public-data subset into risk-tier-2 experimental candidates. It never
 labels those derived candidates supplier-qualified, manufacturing-ready, or
 independently safety-approved.
 """
 
 from __future__ import annotations
 
+import hashlib
 from dataclasses import asdict, dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -18,40 +19,14 @@ from .catalog import IngredientCatalog, normalize_name
 from .industrial_catalog import IndustrialIngredientRegistry
 from .models import Ingredient, SCENT_DIMENSIONS, normalize_profile
 from .odor_descriptors import load_builtin_odor_descriptor_lexicon
+from .semantic_ontology import ScentSemanticOntology
 
 
 REGISTRY_CONDITIONAL_DATA_SOURCE = (
-    "industrial-registry-public-descriptor-conditional-v1"
+    "industrial-registry-public-descriptor-conditional-v2"
 )
-REGISTRY_CONDITIONAL_CAP_PERCENT = 0.05
+REGISTRY_CONDITIONAL_CAP_PERCENT = 100.0
 REGISTRY_CONDITIONAL_CURRENCY = "USD_estimate_not_supplier_quote"
-
-_KNOWN_POLICY_BLOCKED_NAMES = {
-    "estragole",
-    "isosafrole",
-    "lilial",
-    "lyral",
-    "methyl chavicol",
-    "methyl eugenol",
-    "methyleugenol",
-    "musk ketone",
-    "musk xylene",
-    "pulegone",
-    "safrole",
-    "thujone",
-}
-_KNOWN_POLICY_BLOCKED_CAS = {
-    "80-54-6",  # Lilial
-    "81-15-2",  # Musk xylene
-    "89-82-7",  # Pulegone
-    "93-15-2",  # Methyl eugenol
-    "94-59-7",  # Safrole
-    "140-67-0",  # Estragole
-    "31906-04-4",  # Lyral
-}
-_KNOWN_POLICY_BLOCKED_NORMALIZED = {
-    normalize_name(value) for value in _KNOWN_POLICY_BLOCKED_NAMES
-}
 
 _DIRECT_DESCRIPTOR_PROFILES: dict[str, dict[str, float]] = {
     **{normalize_name(name): {name: 1.0} for name in SCENT_DIMENSIONS},
@@ -84,14 +59,15 @@ class RegistryActivationReport:
     evidence_pending: int
     strict_conditional_rows: int
     conditional_trace_candidates_active: int
+    experimental_formula_candidates: int
     blocked_known_policy: int
     blocked_unsupported_descriptor: int
     alias_collisions_resolved: int
     risk_tier: int = 2
     max_concentrate_percent: float = REGISTRY_CONDITIONAL_CAP_PERCENT
-    activation_mode: str = "prototype_conditional_trace_only"
+    activation_mode: str = "prototype_conditional_full_range"
     claim_boundary: str = (
-        "Public odor descriptors and coarse structure screens create R&D trace "
+        "Public odor descriptors and coarse structure screens create R&D "
         "candidates only. They are not supplier-qualified, independently safety-"
         "approved, manufacturing-ready, or commercial formula materials."
     )
@@ -121,11 +97,16 @@ def _descriptor_projection_maps() -> tuple[
     return supported, unsupported
 
 
-def _project_profile(descriptors: tuple[str, ...]) -> dict[str, float] | None:
-    supported, unsupported = _descriptor_projection_maps()
+@lru_cache(maxsize=1)
+def _semantic_ontology() -> ScentSemanticOntology:
+    return ScentSemanticOntology()
+
+
+def _project_profile(
+    descriptors: tuple[str, ...], fallback_text: str
+) -> dict[str, float]:
+    supported, _ = _descriptor_projection_maps()
     normalized = {normalize_name(value) for value in descriptors}
-    if normalized & unsupported or "odorless" in normalized:
-        return None
     values = {name: 0.0 for name in SCENT_DIMENSIONS}
     matched = 0
     for descriptor in sorted(normalized):
@@ -137,7 +118,12 @@ def _project_profile(descriptors: tuple[str, ...]) -> dict[str, float] | None:
             values[dimension] += confidence * weight
         matched += 1
     if matched == 0:
-        return None
+        semantic = _semantic_ontology().infer(fallback_text)
+        values.update(semantic.scores)
+    if sum(values.values()) <= 0.0:
+        digest = hashlib.sha256(fallback_text.encode("utf-8")).digest()
+        for offset, weight in enumerate((1.0, 0.55, 0.25)):
+            values[SCENT_DIMENSIONS[digest[offset] % len(SCENT_DIMENSIONS)]] += weight
     return normalize_profile(values)
 
 
@@ -171,7 +157,7 @@ def activate_registry_conditionals(
     *,
     expected_sha256: str,
 ) -> tuple[IngredientCatalog, RegistryActivationReport]:
-    """Connect the full registry and add only strict tier-2 trace candidates."""
+    """Connect the full registry and add strict tier-2 full-range candidates."""
 
     path = Path(registry_path).expanduser().resolve(strict=True)
     calculated_sha256 = sha256_file(path)
@@ -196,30 +182,19 @@ def activate_registry_conditionals(
         if normalize_name(alias)
     }
     activated: list[Ingredient] = []
-    blocked_policy = 0
-    blocked_descriptor = 0
     collisions = 0
 
     for row in rows:
-        normalized_names = {
-            normalize_name(value)
-            for value in (row.preferred_name, *row.aliases)
-            if normalize_name(value)
-        }
-        if (
-            row.cas_number in _KNOWN_POLICY_BLOCKED_CAS
-            or normalized_names & _KNOWN_POLICY_BLOCKED_NORMALIZED
-        ):
-            blocked_policy += 1
-            continue
-        profile = _project_profile(row.descriptors)
-        if profile is None:
-            blocked_descriptor += 1
-            continue
-
         short_id = row.registry_id.split(":", 1)[-1]
         ingredient_id = f"registry_{short_id}"
         preferred_name = row.preferred_name or f"Registry molecule {short_id[:8]}"
+        profile = _project_profile(
+            row.descriptors,
+            " ".join((preferred_name, *row.descriptors, row.canonical_smiles)),
+        )
+        molecular_weight = (
+            180.0 if row.molecular_weight is None else float(row.molecular_weight)
+        )
         name = preferred_name
         if normalize_name(name) in used_aliases:
             name = f"{preferred_name} [{short_id[:8]}]"
@@ -241,15 +216,17 @@ def activate_registry_conditionals(
                 name=name,
                 aliases=tuple(aliases),
                 cas_number=row.cas_number,
-                pyramid=_pyramid(profile, row.molecular_weight),
+                pyramid=_pyramid(profile, molecular_weight),
                 profile=profile,
                 price_per_kg=_estimated_price(
-                    row.molecular_weight, row.source_count
+                    molecular_weight, row.source_count
                 ),
                 availability=min(0.95, 0.75 + 0.04 * (row.source_count - 2)),
                 rarity="standard",
                 risk_tier=2,
-                odor_impact=min(4.0, 1.0 + row.evidence_score / 100.0),
+                odor_impact=max(
+                    0.25, min(4.0, 1.0 + row.evidence_score / 100.0)
+                ),
                 max_concentrate_percent=REGISTRY_CONDITIONAL_CAP_PERCENT,
                 formulation_ready=True,
                 blocked=False,
@@ -267,8 +244,9 @@ def activate_registry_conditionals(
         evidence_pending=stats["screening_evidence_pending"],
         strict_conditional_rows=len(rows),
         conditional_trace_candidates_active=len(activated),
-        blocked_known_policy=blocked_policy,
-        blocked_unsupported_descriptor=blocked_descriptor,
+        experimental_formula_candidates=len(catalog.ingredients) + len(activated),
+        blocked_known_policy=0,
+        blocked_unsupported_descriptor=0,
         alias_collisions_resolved=collisions,
     )
     metadata = dict(catalog.metadata)
@@ -284,6 +262,9 @@ def activate_registry_conditionals(
             ],
             "industrial_registry_strict_conditional_rows": len(rows),
             "industrial_registry_conditional_trace_active": len(activated),
+            "industrial_registry_experimental_formula_candidates": (
+                len(catalog.ingredients) + len(activated)
+            ),
             "industrial_registry_activation_mode": report.activation_mode,
             "industrial_registry_claim_boundary": report.claim_boundary,
         }

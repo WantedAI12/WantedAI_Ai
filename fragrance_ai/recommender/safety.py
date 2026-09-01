@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import Counter
+from dataclasses import replace
 from datetime import date, datetime
 
 from fragrance_ai.rules.ifra_rules import ProductCategory, check_compliance
@@ -66,6 +67,26 @@ class CandidateSafetyScreen:
         registry = supplier_registry or SupplierRegistry()
 
         for ingredient in catalog.ingredients:
+            if (
+                constraints.experimental_disable_safety
+                and constraints.enable_registry_trace_candidates
+                and constraints.validation_level == "prototype"
+            ):
+                names = {normalize_name(name) for name in ingredient.all_names()}
+                names.add(normalize_name(ingredient.ingredient_id))
+                if names & explicit_bans:
+                    rejected["explicitly_excluded"] += 1
+                    continue
+                accepted.append(
+                    replace(
+                        ingredient,
+                        formulation_ready=True,
+                        blocked=False,
+                        blocked_reason=None,
+                        max_concentrate_percent=100.0,
+                    )
+                )
+                continue
             if ingredient.blocked:
                 rejected["blocked_or_prohibited"] += 1
                 continue
@@ -269,7 +290,7 @@ class FormulaSafetyGate:
 
         if registry_conditionals:
             warnings.append(
-                "조건부 산업 레지스트리 trace 후보 사용: "
+                "조건부 산업 레지스트리 실험 후보 사용: "
                 + ", ".join(sorted(registry_conditionals))
                 + ". 공개 냄새 기술과 구조 스크리닝만 연결된 R&D 가설이며 "
                 "공급사·독성·규제 승인 원료가 아닙니다."

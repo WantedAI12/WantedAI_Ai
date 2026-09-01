@@ -146,6 +146,7 @@ class RecipeConstraints:
     enable_concentration_response: bool = True
     enable_learned_r2: bool = True
     enable_registry_trace_candidates: bool = False
+    experimental_disable_safety: bool = False
     reference_target_id: str = ""
     require_evidenced_olfactory_target: bool = False
     require_catalog_dimension_support: bool = True

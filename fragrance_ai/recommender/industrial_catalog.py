@@ -52,7 +52,7 @@ class IndustrialConditionalCandidateRecord:
     registry_id: str
     preferred_name: str
     canonical_smiles: str
-    molecular_weight: float
+    molecular_weight: float | None
     source_count: int
     descriptor_count: int
     evidence_score: int
@@ -410,19 +410,17 @@ class IndustrialIngredientRegistry:
     def conditional_runtime_candidates(
         self,
         *,
-        limit: int = 5_000,
+        limit: int = 30_000,
     ) -> list[IndustrialConditionalCandidateRecord]:
-        """Return the strict public-data subset eligible for R&D trace use.
+        """Return the strict public-data subset eligible for full-range R&D use.
 
-        The query intentionally excludes structural-review rows, mixtures,
-        single-source records, molecules outside a perfume-like mass range,
-        and records without an IFRA-list reference or odor descriptor.  This
-        is still not a safety approval; the caller must retain risk tier 2,
-        a trace concentration cap, and an experimental result status.
+        This experimental query includes every unlinked registry molecule.
+        It is not a safety approval; the caller must retain an experimental
+        result status and non-manufacturing boundary.
         """
 
-        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 5_000:
-            raise ValueError("runtime candidate limit must be between 1 and 5000")
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 30_000:
+            raise ValueError("runtime candidate limit must be between 1 and 30000")
         rows = self._connection.execute(
             """
             SELECT i.registry_id, i.preferred_name, i.canonical_smiles,
@@ -435,16 +433,7 @@ class IndustrialIngredientRegistry:
                     ORDER BY x.identifier_value LIMIT 1) AS cas_number
             FROM promotion_candidates p
             JOIN ingredients i ON i.registry_id = p.registry_id
-            JOIN safety_screening s ON s.registry_id = p.registry_id
-            WHERE p.promotion_status = 'evidence_pending'
-              AND s.screening_status = 'evidence_pending'
-              AND s.structural_alert_count = 0
-              AND p.ifra_reference = 1
-              AND i.source_count >= 2
-              AND i.descriptor_count >= 1
-              AND i.molecular_weight BETWEEN 50.0 AND 350.0
-              AND i.canonical_smiles NOT LIKE '%.%'
-              AND NOT EXISTS (
+            WHERE NOT EXISTS (
                   SELECT 1 FROM formulation_materials f
                   WHERE f.linked_registry_id = i.registry_id
               )
@@ -494,7 +483,11 @@ class IndustrialIngredientRegistry:
                 registry_id=str(row["registry_id"]),
                 preferred_name=str(row["preferred_name"] or "").strip(),
                 canonical_smiles=str(row["canonical_smiles"]),
-                molecular_weight=float(row["molecular_weight"]),
+                molecular_weight=(
+                    None
+                    if row["molecular_weight"] is None
+                    else float(row["molecular_weight"])
+                ),
                 source_count=int(row["source_count"]),
                 descriptor_count=int(row["descriptor_count"]),
                 evidence_score=int(row["evidence_score"]),

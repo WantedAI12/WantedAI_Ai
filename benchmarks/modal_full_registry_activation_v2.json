@@ -1,0 +1,73 @@
+{
+  "schema": "perfumery-ai-modal-full-registry-activation/v2",
+  "generated_at": "2026-09-01T21:30:00Z",
+  "status": "deployed_full_registry_candidate_space_remote_smoke_passed",
+  "artifacts": {
+    "wheel_path": "dist/full-registry-activation-v2/perfumery_ai_core-1.4.0-py3-none-any.whl",
+    "wheel_bytes": 3278081,
+    "wheel_sha256": "aa24cc7e12d1cddb3d5cb37118b8079cc428b13b481f0aea24c1ae66ae6668a1",
+    "registry_path": "benchmarks/industrial_ingredient_registry_v1.db",
+    "registry_bytes": 77615104,
+    "registry_sha256": "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765"
+  },
+  "coverage": {
+    "reference_molecules_connected": 29240,
+    "unlinked_registry_candidates_active": 29212,
+    "curated_formulation_materials": 47,
+    "runtime_formula_candidates": 29259,
+    "registry_candidate_cap_percent": 100.0,
+    "maximum_recipe_lines": 20,
+    "default_recipe_lines": 12,
+    "all_registry_candidates_scored": true,
+    "single_best_formula_returned": true
+  },
+  "experimental_mode": {
+    "enable_registry_trace_candidates": true,
+    "experimental_disable_safety": true,
+    "safety_status": "experimental_safety_disabled",
+    "manufacturing_ready": false,
+    "qualified_or_commercial_allowed": false
+  },
+  "remote_checks": {
+    "url": "https://junseong2im--perfumery-ai-core-web.modal.run",
+    "unauthenticated_status": 401,
+    "authenticated_health_status": 200,
+    "authenticated_health_cold_seconds": 24.608,
+    "authenticated_catalog_status": 200,
+    "authenticated_catalog_warm_seconds": 0.818,
+    "tier_1_formula_status": "prototype_ready",
+    "tier_1_formula_lines": 12,
+    "tier_1_registry_lines": 0,
+    "tier_1_formula_seconds": 2.703,
+    "expanded_formula_status": "experimental_registry_candidate",
+    "expanded_formula_lines": 12,
+    "expanded_registry_lines": 10,
+    "expanded_max_registry_percent": 22.6559,
+    "expanded_semantic_similarity_score": 99.9954,
+    "expanded_internal_variants_evaluated": 8,
+    "expanded_perceptual_status": "abstained_no_evidenced_target",
+    "expanded_human_similarity_90_claim_authorized": false,
+    "expanded_manufacturing_ready": false,
+    "expanded_formula_seconds": 16.967,
+    "temporary_smoke_proxy_token_deleted": true
+  },
+  "human_behavior_boundary": {
+    "bushdid_retrospective_absolute_accuracy_percent": 89.57880716951861,
+    "bushdid_runtime_primary_score_weight": 0.0,
+    "applied_to_text_only_generated_formula": false,
+    "reason": "The Bushdid model requires paired quantitative mixtures and protocol features; a natural-language brief has no evidenced target composition."
+  },
+  "verification": {
+    "collected_tests": 346,
+    "passed_tests": 345,
+    "skipped_postgresql_environment": 1,
+    "failed_tests": 0,
+    "changed_scope_ruff_passed": true,
+    "compileall_passed": true,
+    "data_audit_passed": true,
+    "sbom_generated": true,
+    "release_policy_passed": true,
+    "isolated_wheel_inference_passed": true
+  },
+  "claim_boundary": "Every registry molecule is represented in the candidate space, but missing odor profiles are deterministic semantic fallbacks. The 99.9954 score is a text/profile proxy, not human olfactory accuracy. Safety was explicitly disabled for this non-industrial experiment; no manufacturing, regulatory, or human-89-percent claim is authorized."
+}

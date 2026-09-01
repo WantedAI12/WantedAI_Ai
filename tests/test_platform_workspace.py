@@ -472,6 +472,7 @@ def test_worker_owns_one_engine_for_its_process_lifetime(tmp_path):
         ({"target_similarity": float("nan")}, "finite"),
         ({"allow_rare": 1}, "boolean"),
         ({"enable_registry_trace_candidates": 1}, "boolean"),
+        ({"experimental_disable_safety": 1}, "boolean"),
         ({"require_evidenced_olfactory_target": 1}, "boolean"),
         ({"minimum_dimension_material_strength": 0}, "minimum_dimension"),
         ({"surrogate_objective_weight": 0.51}, "surrogate_objective_weight"),

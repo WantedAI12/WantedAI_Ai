@@ -12,8 +12,8 @@ from deploy.modal_app import REGISTRY_SHA256, WHEEL_SHA256, create_web_app
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "benchmarks" / "industrial_ingredient_registry_v1.db"
-REMOTE_EVIDENCE = ROOT / "benchmarks" / "modal_full_registry_activation_v1.json"
-RELEASE_MANIFEST = ROOT / "dist" / "full-registry-activation-v1" / "release_manifest.json"
+REMOTE_EVIDENCE = ROOT / "benchmarks" / "modal_full_registry_activation_v2.json"
+RELEASE_MANIFEST = ROOT / "dist" / "full-registry-activation-v2" / "release_manifest.json"
 
 
 def test_modal_cpu_app_health_catalog_and_formula():
@@ -33,8 +33,9 @@ def test_modal_cpu_app_health_catalog_and_formula():
         assert catalog.json()["reference_molecules"] == 29_240
         assert catalog.json()["safety_screened"] == 29_240
         assert catalog.json()["reference_molecules_connected"] == 29_240
-        assert catalog.json()["conditional_trace_candidates_active"] == 637
-        assert catalog.json()["formulation_ready"] == 671
+        assert catalog.json()["conditional_trace_candidates_active"] == 29_212
+        assert catalog.json()["formulation_ready"] == 29_246
+        assert catalog.json()["experimental_formula_candidates"] == 29_259
 
         response = client.post(
             "/v1/formulas",
@@ -52,7 +53,7 @@ def test_modal_cpu_app_health_catalog_and_formula():
         assert payload["deployment"]["provider"] == "modal"
         assert payload["deployment"]["gpu_required"] is False
         assert payload["deployment"]["registry_connected_total"] == 29_240
-        assert payload["deployment"]["registry_conditional_trace_active"] == 637
+        assert payload["deployment"]["registry_conditional_trace_active"] == 29_212
 
         expanded = client.post(
             "/v1/formulas",
@@ -70,9 +71,10 @@ def test_modal_cpu_app_health_catalog_and_formula():
         assert expanded_payload["status"] == "experimental_registry_candidate"
         assert any(
             line["data_source"]
-            == "industrial-registry-public-descriptor-conditional-v1"
+            == "industrial-registry-public-descriptor-conditional-v2"
             for line in expanded_payload["recipe"]
         )
+        assert expanded_payload["safety"]["status"] == "experimental_safety_disabled"
 
 
 def test_modal_request_schema_rejects_expansion_and_invalid_risk():
@@ -100,7 +102,7 @@ def test_full_registry_release_evidence_matches_sealed_artifacts():
     )
 
     assert evidence["coverage"]["reference_molecules_connected"] == 29_240
-    assert evidence["coverage"]["conditional_trace_candidates_active"] == 637
+    assert evidence["coverage"]["unlinked_registry_candidates_active"] == 29_212
     assert evidence["remote_checks"]["expanded_manufacturing_ready"] is False
     assert evidence["remote_checks"]["unauthenticated_status"] == 401
     assert release["wheel"]["bytes"] == wheel.stat().st_size

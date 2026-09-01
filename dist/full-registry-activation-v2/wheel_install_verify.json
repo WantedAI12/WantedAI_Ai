@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.4",
+  "generated_at": "2026-09-01T21:55:16.084662+00:00",
+  "passed": true,
+  "wheel": "C:\\Users\\user\\Desktop\\Newera\\perfumery-ai-core\\dist\\full-registry-activation-v2\\perfumery_ai_core-1.4.0-py3-none-any.whl",
+  "wheel_sha256": "aa24cc7e12d1cddb3d5cb37118b8079cc428b13b481f0aea24c1ae66ae6668a1",
+  "venv": "C:\\Users\\user\\Desktop\\Newera\\perfumery-ai-core\\tmp\\wheel_verify_full_registry_v2_final",
+  "package_version": "1.4.0",
+  "expected_package_version": "1.4.0",
+  "probe": {
+    "package_version": "1.4.0",
+    "package_root": "C:\\Users\\user\\Desktop\\Newera\\perfumery-ai-core\\tmp\\wheel_verify_full_registry_v2_final\\Lib\\site-packages\\fragrance_ai",
+    "missing_assets": [],
+    "desired_dimensions": [
+      "aquatic",
+      "woody"
+    ],
+    "avoided_dimensions": [
+      "gourmand"
+    ],
+    "semantic_backend": "hybrid_lexical+bundled_signed_hash_ngram",
+    "ontology_version": "scent-ontology-2.0.0",
+    "reference_database_packaged": false,
+    "reference_corpus_total_perfumes": 0,
+    "reference_corpus_fallback_safe": true,
+    "service_fallback_status": "prototype_ready",
+    "service_fallback_error": null,
+    "model_inference": {
+      "requested": true,
+      "concentration_low": 33.77030872846332,
+      "concentration_high": 48.54996066809699,
+      "concentration_in_domain": true,
+      "r2_status": "checkpoint_loaded_weight_zero",
+      "r2_similarity": 66.5333,
+      "r2_member_predictions": [
+        69.0279,
+        65.4642
+      ],
+      "runtime_model_classes": [
+        "NumpyR2Model",
+        "NumpyR2Model"
+      ],
+      "forbidden_runtime_modules_loaded": [],
+      "passed": true
+    },
+    "unsafe_serialized_assets_packaged": []
+  },
+  "model_inference_required": true,
+  "install_spec": "C:\\Users\\user\\Desktop\\Newera\\perfumery-ai-core\\dist\\full-registry-activation-v2\\perfumery_ai_core-1.4.0-py3-none-any.whl",
+  "wheelhouse": null,
+  "offline_install": false,
+  "install_returncode": 0,
+  "probe_returncode": 0,
+  "install_stderr_tail": "",
+  "probe_stderr_tail": "",
+  "unsafe_serialized_wheel_members": []
+}

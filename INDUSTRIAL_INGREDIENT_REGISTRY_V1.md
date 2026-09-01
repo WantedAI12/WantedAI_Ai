@@ -18,9 +18,8 @@ source manifest의 SHA-256과 byte size를 다시 검증한다.
 | Risk-2 조건부 prototype active | 5 |
 | 전체 prototype 조향 가능 pool | **34** |
 | 런타임 전체 레지스트리 연결 | **29,240** |
-| 엄격 조건부 trace 심사 입력 | 850 |
-| Risk-2 R&D trace 자동 활성 | **637** |
-| Tier-2 전체 조향 후보 pool | **671** |
+| 실험 모드 미연결 후보 활성 | **29,212** |
+| 실험 모드 전체 조향 후보 pool | **29,259** |
 | 분자 구조까지 연결된 formulation material | 28 |
 | 전 분자 안전 스크리닝 | **29,240** |
 | 증거 승격 큐 | **29,212** |
@@ -60,18 +59,16 @@ Ed25519로 서명해야 한다.
 cedarwood oil, patchouli oil이다. 기존 카탈로그에 이미 formulation-ready와 사용상한이
 있던 고가용 risk-tier-2 원료만 분리했으며, 기본 risk-tier-1 요청에는 들어가지 않는다.
 
-배포 런타임은 레지스트리 29,240개 전체를 해시 검증된 DB로 연결한다. 그중 구조 경고
-없음, IFRA archive 참조, 2개 이상 독립 source, 냄새 descriptor, 단일 분자 구조와
-50--350 Da 조건을 모두 충족한 850개만 조건부 trace 심사에 들어간다. 알려진 정책
-차단 원료 4개와 현재 조향 축으로 안전하게 투영할 수 없는 descriptor 원료 209개를
-제외한 637개가 risk-tier-2 prototype trace 후보가 된다. 각 후보의 농축액 상한은
-0.05%이며, `max_risk_tier=2`와 `enable_registry_trace_candidates=true`를 동시에
-명시해야 열린다. Tier 1·qualified·commercial 요청에는 절대 들어가지 않는다.
+배포 런타임은 레지스트리 29,240개 전체를 해시 검증된 DB로 연결한다. 실험 모드에서는
+기존 formulation material과 연결되지 않은 29,212개를 모두 후보로 활성화한다.
+descriptor가 없거나 기존 19축에 투영되지 않는 원료는 번들 의미 모델과 결정론적
+fallback 프로필을 사용한다. 개별 후보 상한은 100%이며 최종 레시피 라인 수는 최대
+20개다. 모든 후보가 점수 계산에 참여하고 내부 8개 목적 후보 중 최적 1개만 반환한다.
 
-이 637개는 공개 descriptor와 구조 스크리닝 기반 R&D 가설이다. 가격은 supplier
-quotation이 아닌 보수적 정렬용 추정치이고, 공급사 lot·COA·SDS·IFRA certificate와
-독립 독성/규제 서명이 없다. 따라서 사용된 결과는 `experimental_registry_candidate`
-상태로 반환되며 `prototype_ready`, 제조 가능 또는 상용 승인으로 표시되지 않는다.
+이 모드는 `experimental_disable_safety=true`로 내부 안전·가격 승인 차단을 사용하지
+않는다. 가격은 supplier quotation이 아닌 정렬용 추정치이며, 결과는
+`experimental_registry_candidate`/`experimental_safety_disabled`로 반환된다.
+qualified·commercial·제조 승인은 계속 허용하지 않는다.
 
 ## 사용
 

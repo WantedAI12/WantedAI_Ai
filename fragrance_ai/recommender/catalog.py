@@ -219,9 +219,11 @@ class IngredientCatalog:
 
     def mentioned_ingredient_spans(self, text: str) -> list[IngredientMention]:
         raw: list[IngredientMention] = []
+        normalized_text = normalize_name(text)
         for ingredient in self.ingredients:
             for alias in sorted(ingredient.all_names(), key=len, reverse=True):
-                if len(normalize_name(alias)) < 2:
+                normalized_alias = normalize_name(alias)
+                if len(normalized_alias) < 2 or normalized_alias not in normalized_text:
                     continue
                 for start, end in find_text_spans(text, alias):
                     raw.append(IngredientMention(ingredient, alias, start, end))

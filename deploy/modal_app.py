@@ -6,6 +6,7 @@ Deploy with::
 """
 
 import hashlib
+import threading
 from pathlib import Path
 
 import modal
@@ -15,14 +16,16 @@ ROOT = Path(__file__).resolve().parents[1]
 WHEEL = (
     ROOT
     / "dist"
-    / "full-registry-activation-v1"
+    / "full-registry-activation-v2"
     / "perfumery_ai_core-1.4.0-py3-none-any.whl"
 )
 REGISTRY = ROOT / "benchmarks" / "industrial_ingredient_registry_v1.db"
 REMOTE_WHEEL = "/opt/perfumery/perfumery_ai_core-1.4.0-py3-none-any.whl"
 REMOTE_REGISTRY = "/opt/perfumery/industrial_ingredient_registry_v1.db"
-WHEEL_SHA256 = "f7b79713d4930baee87abdabef1e3a10522e9d1b5c14997068e5f95b65af51d0"
+WHEEL_SHA256 = "aa24cc7e12d1cddb3d5cb37118b8079cc428b13b481f0aea24c1ae66ae6668a1"
 REGISTRY_SHA256 = "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765"
+_RUNTIME_CATALOG_CACHE = {}
+_RUNTIME_CATALOG_CACHE_LOCK = threading.Lock()
 
 
 def _sha256_file(path: Path) -> str:
@@ -95,7 +98,6 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY):
     """Build the exact FastAPI application used locally and on Modal."""
 
     from collections import deque
-    import threading
     import time
 
     from fastapi import FastAPI, HTTPException
@@ -122,6 +124,7 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY):
         product_concentration_percent: float = Field(default=15.0, gt=0, le=30)
         max_ingredients: int = Field(default=12, ge=6, le=20)
         enable_registry_trace_candidates: bool = False
+        experimental_disable_safety: bool = True
         target_region: str = Field(default="EU", pattern=r"^(EU|KR|US)$")
         product_category: str = Field(
             default="eau_de_parfum",
@@ -146,13 +149,24 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY):
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["content-type"],
     )
-    with IndustrialIngredientRegistry(registry_path) as registry:
-        registry_stats = registry.stats()
-    runtime_catalog, activation_report = activate_registry_conditionals(
-        IngredientCatalog.load_builtin(),
-        registry_path,
-        expected_sha256=REGISTRY_SHA256,
-    )
+    cache_key = str(Path(registry_path).expanduser().resolve())
+    with _RUNTIME_CATALOG_CACHE_LOCK:
+        cached = _RUNTIME_CATALOG_CACHE.get(cache_key)
+        if cached is None:
+            with IndustrialIngredientRegistry(registry_path) as registry:
+                registry_stats = registry.stats()
+            runtime_catalog, activation_report = activate_registry_conditionals(
+                IngredientCatalog.load_builtin(),
+                registry_path,
+                expected_sha256=REGISTRY_SHA256,
+            )
+            _RUNTIME_CATALOG_CACHE[cache_key] = (
+                runtime_catalog,
+                activation_report,
+                registry_stats,
+            )
+        else:
+            runtime_catalog, activation_report, registry_stats = cached
     catalog_snapshot = {
         **registry_stats,
         **runtime_catalog.stats(),
@@ -208,10 +222,14 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY):
             enable_registry_trace_candidates=(
                 request.enable_registry_trace_candidates
             ),
+            experimental_disable_safety=(
+                request.experimental_disable_safety
+                and request.enable_registry_trace_candidates
+            ),
             target_region=request.target_region,
             product_category=request.product_category,
             simulation_draws=64,
-            physics_search_population=2,
+            physics_search_population=7,
             minimum_realism_score=50.0,
         )
         try:
