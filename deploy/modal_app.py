@@ -16,13 +16,13 @@ ROOT = Path(__file__).resolve().parents[1]
 WHEEL = (
     ROOT
     / "dist"
-    / "full-registry-activation-v2"
+    / "temporal-evolution-v3"
     / "perfumery_ai_core-1.4.0-py3-none-any.whl"
 )
 REGISTRY = ROOT / "benchmarks" / "industrial_ingredient_registry_v1.db"
 REMOTE_WHEEL = "/opt/perfumery/perfumery_ai_core-1.4.0-py3-none-any.whl"
 REMOTE_REGISTRY = "/opt/perfumery/industrial_ingredient_registry_v1.db"
-WHEEL_SHA256 = "aa24cc7e12d1cddb3d5cb37118b8079cc428b13b481f0aea24c1ae66ae6668a1"
+WHEEL_SHA256 = "0cf3beb6d6ae3d8e7b36eda151a029336709c617d8e632f91df1b5f599832c28"
 REGISTRY_SHA256 = "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765"
 _RUNTIME_CATALOG_CACHE = {}
 _RUNTIME_CATALOG_CACHE_LOCK = threading.Lock()
@@ -86,11 +86,19 @@ table{width:100%;border-collapse:collapse;background:white}th,td{padding:9px;bor
 <label>최대 원료 수<input id="count" type="number" value="12" min="6" max="20"></label></div>
 <button id="run">조향식 생성</button><div id="status" class="status"></div>
 <table><thead><tr><th>원료</th><th>노트</th><th>농축액 %</th><th>위험</th><th>$/kg</th></tr></thead><tbody id="formula"></tbody></table>
+<h2>시간별 향 변화</h2>
+<table><thead><tr><th>시간</th><th>구간</th><th>오프닝 대비 강도</th><th>주요 향축</th></tr></thead><tbody id="temporal"></tbody></table>
+<h2>원료별 잔존 농도 예측</h2>
+<p class="note">도포 표면의 1차 증발 프록시이며 밀폐 용기 실측 농도가 아닙니다.</p>
+<table><thead><tr><th>원료</th><th>0분</th><th>15분</th><th>60분</th><th>240분</th><th>480분</th></tr></thead><tbody id="concentration"></tbody></table>
 <details><summary>전체 계산 결과</summary><pre id="raw"></pre></details></main><script>
-const q=id=>document.getElementById(id);q('run').onclick=async()=>{q('status').textContent='계산 중...';q('formula').replaceChildren();
+const q=id=>document.getElementById(id);q('run').onclick=async()=>{q('status').textContent='계산 중...';for(const id of ['formula','temporal','concentration'])q(id).replaceChildren();
 try{const risk=Number(q('risk').value);const response=await fetch('/v1/formulas',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({brief:q('brief').value,max_risk_tier:risk,enable_registry_trace_candidates:risk===2,target_region:q('region').value,product_category:q('category').value,max_ingredient_price_per_kg:Number(q('price').value),max_ingredients:Number(q('count').value)})});
 const data=await response.json();if(!response.ok)throw new Error(data.detail||'요청 실패');q('status').textContent=`${data.status} · 안전 게이트 ${data.safety.internal_gate_passed?'PASS':'BLOCK'} · 원료 ${data.recipe.length}개`;
-for(const line of data.recipe){const tr=document.createElement('tr');for(const value of [line.name,line.pyramid,line.concentrate_percent,line.risk_tier,line.price_per_kg]){const td=document.createElement('td');td.textContent=String(value);tr.appendChild(td)}q('formula').appendChild(tr)}q('raw').textContent=JSON.stringify(data,null,2)}catch(error){q('status').textContent=error.message}};
+for(const line of data.recipe){const tr=document.createElement('tr');for(const value of [line.name,line.pyramid,line.concentrate_percent,line.risk_tier,line.price_per_kg]){const td=document.createElement('td');td.textContent=String(value);tr.appendChild(td)}q('formula').appendChild(tr)}
+for(const point of data.temporal_profile||[]){const tr=document.createElement('tr');for(const value of [`${point.minutes}분`,point.phase,`${point.relative_to_opening_intensity_percent}%`,(point.dominant_dimensions||[]).join(', ')]){const td=document.createElement('td');td.textContent=String(value);tr.appendChild(td)}q('temporal').appendChild(tr)}
+for(const profile of data.ingredient_temporal_profile||[]){const tr=document.createElement('tr');const values=[profile.name,...profile.points.map(point=>`${point.estimated_remaining_concentrate_percent}%`)];for(const value of values){const td=document.createElement('td');td.textContent=String(value);tr.appendChild(td)}q('concentration').appendChild(tr)}
+q('raw').textContent=JSON.stringify(data,null,2)}catch(error){q('status').textContent=error.message}};
 </script></body></html>"""
 
 

@@ -12,7 +12,7 @@ import csv
 import hashlib
 import math
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Collection
 
@@ -23,12 +23,19 @@ from .optimizer import semantic_brief_similarity
 from .sqlite_lifecycle import SQLiteConnectionOwner
 
 
-SCIENTIFIC_MODEL_VERSION = "headspace-olfactory-twin-2.1"
+SCIENTIFIC_MODEL_VERSION = "headspace-olfactory-twin-2.2"
 TIMEPOINTS_MINUTES = (0, 15, 60, 240, 480)
 TIMEPOINT_WEIGHTS = np.asarray((0.25, 0.25, 0.20, 0.18, 0.12), dtype=float)
 ATMOSPHERIC_PRESSURE_PA = 101_325.0
 ETHANOL_MOLECULAR_WEIGHT = 46.06844
 DEFAULT_MONTE_CARLO_DRAWS = 256
+TEMPORAL_CONCENTRATION_BASIS = (
+    "first_order_application_surface_evaporation_proxy"
+)
+TEMPORAL_MODEL_CLAIM_BOUNDARY = (
+    "Estimated post-application surface residue and headspace/odor contribution; "
+    "not a sealed-bottle concentration assay, GC-MS measurement, or human sensory result."
+)
 
 
 @dataclass(frozen=True)
@@ -57,6 +64,33 @@ class TemporalPoint:
     total_relative_intensity: float
     similarity_p05: float = 0.0
     similarity_p95: float = 0.0
+    phase: str = ""
+    relative_to_opening_intensity_percent: float = 0.0
+    scent_profile: dict[str, float] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class IngredientTemporalPoint:
+    minutes: int
+    application_surface_remaining_fraction_percent: float
+    estimated_remaining_concentrate_percent: float
+    estimated_remaining_finished_product_percent: float
+    estimated_evaporated_concentrate_percent: float
+    headspace_contribution_percent: float
+    odor_contribution_percent: float
+
+
+@dataclass(frozen=True)
+class IngredientTemporalProfile:
+    ingredient_id: str
+    name: str
+    pyramid: str
+    initial_concentrate_percent: float
+    initial_finished_product_percent: float
+    estimated_half_life_minutes: float
+    volatility_basis: str
+    odor_threshold_basis: str
+    points: tuple[IngredientTemporalPoint, ...]
 
 
 @dataclass(frozen=True)
@@ -70,6 +104,9 @@ class ScientificTwinResult:
     temporal_points: tuple[TemporalPoint, ...]
     confidence: str
     flags: tuple[str, ...]
+    ingredient_temporal_profiles: tuple[IngredientTemporalProfile, ...] = ()
+    temporal_concentration_basis: str = TEMPORAL_CONCENTRATION_BASIS
+    temporal_model_claim_boundary: str = TEMPORAL_MODEL_CLAIM_BOUNDARY
     vapor_pressure_coverage_percent: float = 0.0
     odor_threshold_coverage_percent: float = 0.0
     model_applicability_percent: float = 0.0
@@ -296,6 +333,28 @@ class TemporalMixtureSimulator:
     VAPOR_PRESSURE_PRIOR_PA = {"top": 20.0, "heart": 0.8, "base": 0.03}
     THRESHOLD_PRIOR_PPM = {"top": 0.5, "heart": 0.05, "base": 0.005}
     PYRAMID_PERSISTENCE = {"top": 0.55, "heart": 1.0, "base": 2.2}
+
+    @staticmethod
+    def _phase_for_time(minutes: int) -> str:
+        if minutes <= 15:
+            return "opening"
+        if minutes <= 240:
+            return "heart"
+        return "drydown"
+
+    @staticmethod
+    def _volatility_basis(item: _PreparedMaterial) -> str:
+        if item.properties and item.properties.vapor_pressure_pa_25c is not None:
+            return "measured_vapor_pressure"
+        if item.properties and item.properties.boiling_point_c is not None:
+            return "measured_boiling_point_fallback"
+        return "pyramid_prior"
+
+    @staticmethod
+    def _odor_threshold_basis(item: _PreparedMaterial) -> str:
+        if item.properties and item.properties.odor_threshold_ppm is not None:
+            return "measured_odor_threshold"
+        return "pyramid_odor_impact_prior"
 
     @staticmethod
     def _air_to_receptor_transport(props: MolecularProperties | None) -> float:
@@ -545,6 +604,115 @@ class TemporalMixtureSimulator:
             )
         return prepared
 
+    @classmethod
+    def _build_ingredient_temporal_profiles(
+        cls,
+        prepared: list[_PreparedMaterial],
+        interaction: np.ndarray,
+    ) -> tuple[IngredientTemporalProfile, ...]:
+        """Build deterministic central curves for application-surface evolution.
+
+        The Monte Carlo path below remains the source of mixture uncertainty.
+        These ingredient curves deliberately expose the nominal-property
+        central estimate so API consumers can render stable, reproducible time
+        series without mistaking prior draws for physical measurements.
+        """
+
+        vapor = np.asarray(
+            [item.vapor_pressure_pa for item in prepared], dtype=float
+        )
+        threshold = np.asarray(
+            [item.odor_threshold_ppm for item in prepared], dtype=float
+        )
+        activity = np.asarray(
+            [item.activity_coefficient for item in prepared], dtype=float
+        )
+        mole_fraction = np.asarray(
+            [item.mole_fraction for item in prepared], dtype=float
+        )
+        gas_ppm = (
+            mole_fraction
+            * activity
+            * vapor
+            / ATMOSPHERIC_PRESSURE_PA
+            * 1_000_000.0
+        )
+        odor_activity = np.maximum(1e-12, gas_ppm / np.maximum(threshold, 1e-12))
+        activation = odor_activity**0.55
+        activation /= 1.0 + activation
+        activation *= np.asarray(
+            [cls._air_to_receptor_transport(item.properties) for item in prepared],
+            dtype=float,
+        )
+        half_lives = np.asarray(
+            [
+                cls._half_life_minutes(
+                    item.ingredient,
+                    item.properties,
+                    item.vapor_pressure_pa,
+                )
+                for item in prepared
+            ],
+            dtype=float,
+        )
+        point_series: list[list[IngredientTemporalPoint]] = [
+            [] for _ in prepared
+        ]
+        for minutes in TIMEPOINTS_MINUTES:
+            remaining = np.power(0.5, float(minutes) / half_lives)
+            headspace = gas_ppm * remaining
+            headspace_total = max(1e-12, float(headspace.sum()))
+            headspace_percent = headspace / headspace_total * 100.0
+            current = activation * remaining
+            suppressed = current / (1.0 + 0.20 * (interaction @ current))
+            odor_total = max(1e-12, float(suppressed.sum()))
+            odor_percent = suppressed / odor_total * 100.0
+            for index, item in enumerate(prepared):
+                initial_concentrate = max(0.0, item.line.concentrate_percent)
+                initial_finished = max(0.0, item.line.finished_product_percent)
+                fraction = float(remaining[index])
+                point_series[index].append(
+                    IngredientTemporalPoint(
+                        minutes=minutes,
+                        application_surface_remaining_fraction_percent=round(
+                            fraction * 100.0, 6
+                        ),
+                        estimated_remaining_concentrate_percent=round(
+                            initial_concentrate * fraction, 6
+                        ),
+                        estimated_remaining_finished_product_percent=round(
+                            initial_finished * fraction, 6
+                        ),
+                        estimated_evaporated_concentrate_percent=round(
+                            initial_concentrate * (1.0 - fraction), 6
+                        ),
+                        headspace_contribution_percent=round(
+                            float(headspace_percent[index]), 6
+                        ),
+                        odor_contribution_percent=round(
+                            float(odor_percent[index]), 6
+                        ),
+                    )
+                )
+        return tuple(
+            IngredientTemporalProfile(
+                ingredient_id=item.line.ingredient_id,
+                name=item.line.name,
+                pyramid=item.line.pyramid,
+                initial_concentrate_percent=round(
+                    max(0.0, item.line.concentrate_percent), 6
+                ),
+                initial_finished_product_percent=round(
+                    max(0.0, item.line.finished_product_percent), 6
+                ),
+                estimated_half_life_minutes=round(float(half_lives[index]), 4),
+                volatility_basis=cls._volatility_basis(item),
+                odor_threshold_basis=cls._odor_threshold_basis(item),
+                points=tuple(point_series[index]),
+            )
+            for index, item in enumerate(prepared)
+        )
+
     def evaluate(
         self,
         lines: list[RecipeLine],
@@ -628,6 +796,9 @@ class TemporalMixtureSimulator:
         )
 
         interaction = self._interaction_matrix(prepared)
+        ingredient_temporal_profiles = self._build_ingredient_temporal_profiles(
+            prepared, interaction
+        )
         profiles = np.asarray(
             [item.ingredient.vector() for item in prepared], dtype=float
         )
@@ -696,6 +867,9 @@ class TemporalMixtureSimulator:
                 )
 
         temporal: list[TemporalPoint] = []
+        opening_intensity = max(
+            1e-12, float(np.mean(time_intensities[:, 0]))
+        )
         for time_index, minutes in enumerate(TIMEPOINTS_MINUTES):
             similarity_values = time_similarities[:, time_index]
             mixture = np.mean(time_mixtures[:, time_index, :], axis=0)
@@ -716,6 +890,17 @@ class TemporalMixtureSimulator:
                     similarity_p95=round(
                         float(np.percentile(similarity_values, 95)), 4
                     ),
+                    phase=self._phase_for_time(minutes),
+                    relative_to_opening_intensity_percent=round(
+                        float(np.mean(time_intensities[:, time_index]))
+                        / opening_intensity
+                        * 100.0,
+                        4,
+                    ),
+                    scent_profile={
+                        dimension: round(float(mixture[index]), 6)
+                        for index, dimension in enumerate(SCENT_DIMENSIONS)
+                    },
                 )
             )
         per_draw_mean = time_similarities @ TIMEPOINT_WEIGHTS
@@ -743,6 +928,7 @@ class TemporalMixtureSimulator:
             "nonadditive_competitive_mixture_model",
             "applicability_uses_direct_property_evidence_only",
             "monte_carlo_interval_is_prior_propagation_not_empirical_error_coverage",
+            "temporal_concentration_is_application_surface_decay_proxy",
         ]
         if vapor_coverage < 100.0:
             flags.append("vapor_pressure_or_boiling_point_prior_sampled")
@@ -781,6 +967,7 @@ class TemporalMixtureSimulator:
             temporal_points=tuple(temporal),
             confidence=confidence,
             flags=tuple(flags),
+            ingredient_temporal_profiles=ingredient_temporal_profiles,
             vapor_pressure_coverage_percent=round(vapor_coverage, 4),
             odor_threshold_coverage_percent=round(threshold_coverage, 4),
             model_applicability_percent=round(applicability, 4),

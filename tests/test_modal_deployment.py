@@ -12,8 +12,8 @@ from deploy.modal_app import REGISTRY_SHA256, WHEEL_SHA256, create_web_app
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "benchmarks" / "industrial_ingredient_registry_v1.db"
-REMOTE_EVIDENCE = ROOT / "benchmarks" / "modal_full_registry_activation_v2.json"
-RELEASE_MANIFEST = ROOT / "dist" / "full-registry-activation-v2" / "release_manifest.json"
+REMOTE_EVIDENCE = ROOT / "benchmarks" / "modal_temporal_evolution_v3.json"
+RELEASE_MANIFEST = ROOT / "dist" / "temporal-evolution-v3" / "release_manifest.json"
 
 
 def test_modal_cpu_app_health_catalog_and_formula():
@@ -54,6 +54,21 @@ def test_modal_cpu_app_health_catalog_and_formula():
         assert payload["deployment"]["gpu_required"] is False
         assert payload["deployment"]["registry_connected_total"] == 29_240
         assert payload["deployment"]["registry_conditional_trace_active"] == 29_212
+        assert payload["temporal_timepoints_minutes"] == [0, 15, 60, 240, 480]
+        assert [point["phase"] for point in payload["temporal_profile"]] == [
+            "opening",
+            "opening",
+            "heart",
+            "heart",
+            "drydown",
+        ]
+        assert payload["ingredient_temporal_profile"]
+        assert payload["ingredient_temporal_profile"][0]["points"][0][
+            "application_surface_remaining_fraction_percent"
+        ] == 100.0
+        assert payload["temporal_concentration_basis"] == (
+            "first_order_application_surface_evaporation_proxy"
+        )
 
         expanded = client.post(
             "/v1/formulas",
@@ -103,12 +118,21 @@ def test_full_registry_release_evidence_matches_sealed_artifacts():
 
     assert evidence["coverage"]["reference_molecules_connected"] == 29_240
     assert evidence["coverage"]["unlinked_registry_candidates_active"] == 29_212
-    assert evidence["remote_checks"]["expanded_manufacturing_ready"] is False
     assert evidence["remote_checks"]["unauthenticated_status"] == 401
+    assert evidence["remote_checks"]["timepoints_minutes"] == [0, 15, 60, 240, 480]
+    assert evidence["remote_checks"]["scent_dimensions_per_timepoint"] == 19
+    assert evidence["remote_checks"]["remaining_concentration_monotonic"] is True
+    assert evidence["remote_checks"]["headspace_and_odor_contribution_sums_100"] is True
     assert release["wheel"]["bytes"] == wheel.stat().st_size
     assert release["wheel"]["sha256"] == hashlib.sha256(wheel.read_bytes()).hexdigest()
     assert release["registry"]["sha256"] == hashlib.sha256(REGISTRY.read_bytes()).hexdigest()
     assert release["deployment"]["remote_smoke_passed"] is True
+    assert release["temporal_output"]["model_version"] == (
+        "headspace-olfactory-twin-2.2"
+    )
+    assert release["deployment"]["remote_evidence_sha256"] == hashlib.sha256(
+        REMOTE_EVIDENCE.read_bytes()
+    ).hexdigest()
     assert release["supply_chain"]["sbom_sha256"] == hashlib.sha256(sbom.read_bytes()).hexdigest()
     assert release["supply_chain"]["release_policy_sha256"] == hashlib.sha256(
         policy.read_bytes()

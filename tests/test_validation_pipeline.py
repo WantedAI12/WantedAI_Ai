@@ -12,6 +12,7 @@ from fragrance_ai.recommender import NaturalLanguagePerfumeryAI, RecipeConstrain
 from fragrance_ai.recommender.brief_parser import NaturalLanguageBriefParser
 from fragrance_ai.recommender.catalog import IngredientCatalog
 from fragrance_ai.recommender.manufacturing import REQUIRED_STABILITY_TESTS
+from fragrance_ai.recommender.models import SCENT_DIMENSIONS
 from fragrance_ai.recommender.odor_profiles import OdorProfileStore
 from fragrance_ai.recommender.quality import QualityEvidenceStore
 from fragrance_ai.recommender.sensory import SensoryEvaluationStore
@@ -453,6 +454,51 @@ def test_temporal_scientific_twin_requires_complete_properties():
     assert twin.odor_threshold_coverage_percent == 100.0
     assert twin.model_applicability_percent == 100.0
     assert twin.monte_carlo_draws == 256
+    assert [point.minutes for point in twin.temporal_points] == [0, 15, 60, 240, 480]
+    assert [point.phase for point in twin.temporal_points] == [
+        "opening",
+        "opening",
+        "heart",
+        "heart",
+        "drydown",
+    ]
+    assert twin.temporal_points[0].relative_to_opening_intensity_percent == 100.0
+    assert all(
+        set(point.scent_profile) == set(SCENT_DIMENSIONS)
+        and sum(point.scent_profile.values()) == pytest.approx(1.0, abs=1e-5)
+        for point in twin.temporal_points
+    )
+    assert len(twin.ingredient_temporal_profiles) == len(result.closest_candidate)
+    for profile, line in zip(
+        twin.ingredient_temporal_profiles, result.closest_candidate
+    ):
+        assert profile.ingredient_id == line.ingredient_id
+        assert len(profile.points) == 5
+        assert profile.points[0].estimated_remaining_concentrate_percent == (
+            pytest.approx(line.concentrate_percent, abs=1e-6)
+        )
+        remaining = [
+            point.estimated_remaining_concentrate_percent
+            for point in profile.points
+        ]
+        assert remaining == sorted(remaining, reverse=True)
+        assert profile.points[0].application_surface_remaining_fraction_percent == 100.0
+    for time_index in range(5):
+        assert sum(
+            profile.points[time_index].headspace_contribution_percent
+            for profile in twin.ingredient_temporal_profiles
+        ) == pytest.approx(100.0, abs=1e-4)
+        assert sum(
+            profile.points[time_index].odor_contribution_percent
+            for profile in twin.ingredient_temporal_profiles
+        ) == pytest.approx(100.0, abs=1e-4)
+    assert (
+        twin.temporal_concentration_basis
+        == "first_order_application_surface_evaporation_proxy"
+    )
+    assert "not a sealed-bottle concentration assay" in (
+        twin.temporal_model_claim_boundary
+    )
 
 
 def test_scientific_twin_fails_closed_outside_nonhuman_applicability():

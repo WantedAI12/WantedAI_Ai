@@ -1,0 +1,53 @@
+{
+  "schema": "perfumery-ai-release-manifest/v3",
+  "release_id": "temporal-evolution-v3",
+  "generated_at": "2026-09-02T01:46:00Z",
+  "wheel": {
+    "path": "perfumery_ai_core-1.4.0-py3-none-any.whl",
+    "bytes": 3271479,
+    "sha256": "0cf3beb6d6ae3d8e7b36eda151a029336709c617d8e632f91df1b5f599832c28"
+  },
+  "registry": {
+    "path": "../../benchmarks/industrial_ingredient_registry_v1.db",
+    "bytes": 77615104,
+    "sha256": "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765",
+    "connected": 29240,
+    "unlinked_candidates_active": 29212,
+    "runtime_formula_candidates": 29259,
+    "candidate_cap_percent": 100.0
+  },
+  "temporal_output": {
+    "model_version": "headspace-olfactory-twin-2.2",
+    "timepoints_minutes": [0, 15, 60, 240, 480],
+    "scent_dimensions": 19,
+    "ingredient_residue_curves": true,
+    "headspace_contribution_curves": true,
+    "odor_contribution_curves": true,
+    "concentration_basis": "first_order_application_surface_evaporation_proxy"
+  },
+  "deployment": {
+    "provider": "modal",
+    "runtime": "cpu",
+    "gpu_required": false,
+    "url": "https://junseong2im--perfumery-ai-core-web.modal.run",
+    "proxy_auth_required": true,
+    "remote_smoke_passed": true,
+    "remote_evidence_path": "../../benchmarks/modal_temporal_evolution_v3.json",
+    "remote_evidence_bytes": 1699,
+    "remote_evidence_sha256": "20a3b40f3505f4ad4e08682a3a13af58904217e9ed329ba4eb41a2c9b41f7f6a"
+  },
+  "supply_chain": {
+    "sbom_path": "sbom.cdx.json",
+    "sbom_bytes": 185140,
+    "sbom_sha256": "aa8b976a9a8f915f63d90e27f9ed25e415e95e56a452763c030485ebc5940723",
+    "release_policy_path": "release_policy_report.json",
+    "release_policy_bytes": 5675,
+    "release_policy_sha256": "0c19b29164e21c7c845ffb80076c5a553ebd42f4867aeb1afdea40e7414ed987",
+    "release_policy_passed": true,
+    "wheel_install_verify_path": "wheel_install_verify.json",
+    "wheel_install_verify_bytes": 2164,
+    "wheel_install_verify_sha256": "7a4cf1d351c3e484c42103150a99be2f20ba35b6257355c4c779277f60103b9e",
+    "wheel_install_verify_passed": true
+  },
+  "claim_boundary": "Time curves estimate post-application surface residue and relative headspace/odor contribution. They are not sealed-bottle concentration assays, GC-MS measurements, human sensory results, safety approvals, or manufacturing authority."
+}

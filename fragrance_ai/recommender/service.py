@@ -1190,6 +1190,19 @@ class NaturalLanguagePerfumeryAI:
             temporal_profile=[
                 asdict(point) for point in scientific_twin.temporal_points
             ],
+            ingredient_temporal_profile=[
+                asdict(profile)
+                for profile in scientific_twin.ingredient_temporal_profiles
+            ],
+            temporal_timepoints_minutes=[
+                point.minutes for point in scientific_twin.temporal_points
+            ],
+            temporal_concentration_basis=(
+                scientific_twin.temporal_concentration_basis
+            ),
+            temporal_model_claim_boundary=(
+                scientific_twin.temporal_model_claim_boundary
+            ),
             scientific_flags=list(scientific_twin.flags),
             vapor_pressure_coverage_percent=scientific_twin.vapor_pressure_coverage_percent,
             odor_threshold_coverage_percent=scientific_twin.odor_threshold_coverage_percent,

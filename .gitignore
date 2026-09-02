@@ -6,6 +6,7 @@ __pycache__/
 build/
 *.egg-info/
 tmp/
+.wheel_verify*/
 .benchmarks/
 catboost_info/
 .env
