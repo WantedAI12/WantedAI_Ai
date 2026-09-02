@@ -37,6 +37,7 @@ jobs:
           git lfs ls-files
           test -s benchmarks/industrial_ingredient_registry_v1.db
           test -s dist/automatic-safe-activation-v1/perfumery_ai_core-1.4.0-py3-none-any.whl
+          test -s dist/full-registry-activation-v2/perfumery_ai_core-1.4.0-py3-none-any.whl
       - name: Static checks
         run: |
           python -m ruff check --select E4,E7,E9,F fragrance_ai/api.py fragrance_ai/api_cli.py \
@@ -45,6 +46,7 @@ jobs:
             scripts/audit_data.py tests/test_core_smoke.py \
             tests/test_recommender.py tests/test_olfactory_upgrade.py \
             tests/test_industrial_catalog.py tests/test_promotion_activation.py \
+            tests/test_registry_activation.py \
             tests/test_modal_deployment.py tests/test_modal_auth_contract.py \
             tests/test_evidence_trust.py tests/test_release_security.py \
             tests/test_validation_pipeline.py \
@@ -61,6 +63,7 @@ jobs:
           tests/test_olfactory_upgrade.py
           tests/test_industrial_catalog.py
           tests/test_promotion_activation.py
+          tests/test_registry_activation.py
           tests/test_modal_deployment.py
           tests/test_modal_auth_contract.py
           tests/test_evidence_trust.py

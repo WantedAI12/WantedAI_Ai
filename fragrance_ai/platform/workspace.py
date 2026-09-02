@@ -33,6 +33,8 @@ _BOOLEAN_CONSTRAINTS = (
     "enable_semantic_ontology",
     "enable_concentration_response",
     "enable_learned_r2",
+    "enable_registry_trace_candidates",
+    "experimental_disable_safety",
     "require_evidenced_olfactory_target",
     "require_catalog_dimension_support",
 )
@@ -587,6 +589,12 @@ class FormulaWorkspaceService:
                 "temporal_similarity_score": 0.0,
                 "minimum_temporal_similarity": 0.0,
                 "temporal_profile": [],
+                "ingredient_temporal_profile": [],
+                "temporal_timepoints_minutes": [],
+                "temporal_concentration_basis": "",
+                "temporal_model_claim_boundary": (
+                    "Manual formula edit invalidated the previous temporal model."
+                ),
                 "scientific_flags": [
                     "manual_edit_invalidated_previous_scientific_twin"
                 ],

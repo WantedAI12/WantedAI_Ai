@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import Counter
+from dataclasses import replace
 from datetime import date, datetime
 
 from fragrance_ai.rules.ifra_rules import ProductCategory, check_compliance
@@ -12,6 +13,7 @@ from fragrance_ai.rules.ifra_rules import ProductCategory, check_compliance
 from .catalog import IngredientCatalog, normalize_name
 from .models import Ingredient, RecipeConstraints, RecipeLine, SafetyReport, ScentBrief
 from .promotion_activation import formulation_scope_allows
+from .registry_activation import REGISTRY_CONDITIONAL_DATA_SOURCE
 from .supplier import SupplierRegistry
 
 
@@ -65,11 +67,43 @@ class CandidateSafetyScreen:
         registry = supplier_registry or SupplierRegistry()
 
         for ingredient in catalog.ingredients:
+            if (
+                constraints.experimental_disable_safety
+                and constraints.enable_registry_trace_candidates
+                and constraints.validation_level == "prototype"
+            ):
+                names = {normalize_name(name) for name in ingredient.all_names()}
+                names.add(normalize_name(ingredient.ingredient_id))
+                if names & explicit_bans:
+                    rejected["explicitly_excluded"] += 1
+                    continue
+                accepted.append(
+                    replace(
+                        ingredient,
+                        formulation_ready=True,
+                        blocked=False,
+                        blocked_reason=None,
+                        max_concentrate_percent=100.0,
+                    )
+                )
+                continue
             if ingredient.blocked:
                 rejected["blocked_or_prohibited"] += 1
                 continue
             if not ingredient.formulation_ready:
                 rejected["reference_only"] += 1
+                continue
+            if (
+                ingredient.data_source == REGISTRY_CONDITIONAL_DATA_SOURCE
+                and not constraints.enable_registry_trace_candidates
+            ):
+                rejected["registry_conditional_not_requested"] += 1
+                continue
+            if (
+                ingredient.data_source == REGISTRY_CONDITIONAL_DATA_SOURCE
+                and constraints.validation_level != "prototype"
+            ):
+                rejected["registry_conditional_prototype_only"] += 1
                 continue
             if ingredient.approved_formulation_scopes:
                 if not formulation_scope_allows(
@@ -166,6 +200,7 @@ class FormulaSafetyGate:
         missing_documents: set[str] = set()
         evidence_materials = 0
         allergen_materials = 0
+        registry_conditionals: list[str] = []
 
         if constraints.validation_level not in VALIDATION_LEVELS:
             violations.append("지원하지 않는 검증 단계입니다.")
@@ -194,6 +229,11 @@ class FormulaSafetyGate:
 
         for line in lines:
             ingredient = ingredients_by_id[line.ingredient_id]
+            if ingredient.data_source == REGISTRY_CONDITIONAL_DATA_SOURCE:
+                registry_conditionals.append(ingredient.name)
+                missing_documents.add(
+                    f"{ingredient.name}: independently signed safety and supplier dossier"
+                )
             if ingredient.blocked or not ingredient.formulation_ready:
                 violations.append(f"{ingredient.name}: 제조 후보로 허용되지 않는 원료")
             if ingredient.approved_formulation_scopes:
@@ -247,6 +287,14 @@ class FormulaSafetyGate:
                 )
                 if assessment.offer is None:
                     missing_documents.add(f"{ingredient.name}: supplier quotation")
+
+        if registry_conditionals:
+            warnings.append(
+                "조건부 산업 레지스트리 실험 후보 사용: "
+                + ", ".join(sorted(registry_conditionals))
+                + ". 공개 냄새 기술과 구조 스크리닝만 연결된 R&D 가설이며 "
+                "공급사·독성·규제 승인 원료가 아닙니다."
+            )
 
         ifra_result = check_compliance(
             finished_recipe,

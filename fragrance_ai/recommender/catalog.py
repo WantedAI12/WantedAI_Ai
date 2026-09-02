@@ -219,9 +219,11 @@ class IngredientCatalog:
 
     def mentioned_ingredient_spans(self, text: str) -> list[IngredientMention]:
         raw: list[IngredientMention] = []
+        normalized_text = normalize_name(text)
         for ingredient in self.ingredients:
             for alias in sorted(ingredient.all_names(), key=len, reverse=True):
-                if len(normalize_name(alias)) < 2:
+                normalized_alias = normalize_name(alias)
+                if len(normalized_alias) < 2 or normalized_alias not in normalized_text:
                     continue
                 for start, end in find_text_spans(text, alias):
                     raw.append(IngredientMention(ingredient, alias, start, end))
@@ -294,7 +296,7 @@ class IngredientCatalog:
         }
 
     def stats(self) -> dict[str, int | str]:
-        return {
+        stats: dict[str, int | str] = {
             "embedded_total": len(self.ingredients),
             "formulation_ready": len(self.formulation_candidates()),
             "reference_only_or_blocked": len(self.ingredients)
@@ -307,6 +309,16 @@ class IngredientCatalog:
             ),
             "catalog_version": str(self.metadata.get("catalog_version", "unknown")),
         }
+        stats.update(
+            {
+                key: value
+                for key, value in self.metadata.items()
+                if key.startswith("industrial_registry_")
+                and isinstance(value, (int, str))
+                and not isinstance(value, bool)
+            }
+        )
+        return stats
 
     @staticmethod
     def read_ifra_transparency_csv(path: str | Path) -> list[dict[str, str]]:

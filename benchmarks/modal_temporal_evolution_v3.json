@@ -1,0 +1,40 @@
+{
+  "schema": "perfumery-ai-modal-temporal-evolution/v1",
+  "status": "deployed_proxy_authenticated_and_remote_smoke_passed",
+  "verified_at": "2026-09-02T01:46:00Z",
+  "deployment": {
+    "provider": "modal",
+    "url": "https://junseong2im--perfumery-ai-core-web.modal.run",
+    "runtime": "cpu",
+    "gpu_required": false,
+    "proxy_auth_required": true,
+    "temporary_verification_token_deleted": true,
+    "wheel_sha256": "0cf3beb6d6ae3d8e7b36eda151a029336709c617d8e632f91df1b5f599832c28",
+    "registry_sha256": "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765"
+  },
+  "coverage": {
+    "reference_molecules_connected": 29240,
+    "unlinked_registry_candidates_active": 29212,
+    "runtime_formula_candidates": 29259
+  },
+  "remote_checks": {
+    "unauthenticated_status": 401,
+    "health_status": 200,
+    "catalog_status": 200,
+    "formula_status": 200,
+    "ui_status": 200,
+    "formula_result_status": "prototype_ready",
+    "recipe_lines": 9,
+    "timepoints_minutes": [0, 15, 60, 240, 480],
+    "temporal_points": 5,
+    "scent_dimensions_per_timepoint": 19,
+    "ingredient_curves": 9,
+    "points_per_ingredient_curve": 5,
+    "opening_relative_intensity_percent": 100.0,
+    "remaining_concentration_monotonic": true,
+    "headspace_and_odor_contribution_sums_100": true,
+    "temporal_concentration_basis": "first_order_application_surface_evaporation_proxy",
+    "ui_temporal_table_present": true
+  },
+  "claim_boundary": "Time curves estimate post-application surface residue and relative headspace/odor contribution. They are not sealed-bottle concentration assays, GC-MS measurements, human sensory results, safety approvals, or manufacturing authority."
+}

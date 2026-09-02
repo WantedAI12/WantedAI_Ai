@@ -1,0 +1,62 @@
+{
+  "schema": "perfumery-ai-modal-full-registry-activation/v1",
+  "generated_at": "2026-09-01T20:30:49.5162383Z",
+  "status": "deployed_proxy_authenticated_and_remote_smoke_passed",
+  "artifacts": {
+    "wheel_path": "dist/full-registry-activation-v1/perfumery_ai_core-1.4.0-py3-none-any.whl",
+    "wheel_bytes": 3278049,
+    "wheel_sha256": "f7b79713d4930baee87abdabef1e3a10522e9d1b5c14997068e5f95b65af51d0",
+    "registry_path": "benchmarks/industrial_ingredient_registry_v1.db",
+    "registry_bytes": 77615104,
+    "registry_sha256": "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765"
+  },
+  "coverage": {
+    "reference_molecules_connected": 29240,
+    "curated_active": 34,
+    "tier_1_default_active": 29,
+    "strict_conditional_rows": 850,
+    "conditional_trace_candidates_active": 637,
+    "tier_2_expanded_formula_candidates": 671,
+    "structurally_blocked": 8455,
+    "evidence_pending": 20785,
+    "conditional_trace_cap_percent": 0.05,
+    "conditional_trace_requires": [
+      "max_risk_tier=2",
+      "enable_registry_trace_candidates=true",
+      "validation_level=prototype"
+    ]
+  },
+  "remote_checks": {
+    "url": "https://junseong2im--perfumery-ai-core-web.modal.run",
+    "unauthenticated_status": 401,
+    "authenticated_health_status": 200,
+    "authenticated_health_cold_seconds": 13.307,
+    "authenticated_catalog_status": 200,
+    "authenticated_catalog_warm_seconds": 0.651,
+    "tier_1_formula_status": "prototype_ready",
+    "tier_1_formula_lines": 12,
+    "tier_1_registry_lines": 0,
+    "tier_1_formula_seconds": 1.663,
+    "expanded_formula_status": "experimental_registry_candidate",
+    "expanded_formula_lines": 12,
+    "expanded_registry_lines": 2,
+    "expanded_max_trace_percent": 0.05,
+    "expanded_manufacturing_ready": false,
+    "expanded_formula_seconds": 1.434,
+    "temporary_smoke_proxy_token_deleted": true
+  },
+  "verification": {
+    "collected_tests": 345,
+    "passed_tests": 344,
+    "skipped_postgresql_environment": 1,
+    "failed_tests": 0,
+    "data_audit_passed": true,
+    "changed_scope_ruff_passed": true,
+    "compileall_passed": true,
+    "sbom_generated": true,
+    "release_policy_passed": true,
+    "isolated_wheel_tier_1_passed": true,
+    "isolated_wheel_expanded_formula_passed": true
+  },
+  "claim_boundary": "All 29,240 registry molecules are connected for runtime coverage. Only 637 strict public-data rows become opt-in risk-tier-2 trace hypotheses. They are not independently safety-approved, supplier-qualified, manufacturing-ready, commercial materials, or evidence of human olfactory accuracy."
+}

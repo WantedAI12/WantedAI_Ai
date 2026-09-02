@@ -1,0 +1,40 @@
+{
+  "schema": "perfumery-ai-release-manifest/v1",
+  "release_id": "full-registry-activation-v1",
+  "generated_at": "2026-09-01T20:30:49.5162383Z",
+  "wheel": {
+    "path": "perfumery_ai_core-1.4.0-py3-none-any.whl",
+    "bytes": 3278049,
+    "sha256": "f7b79713d4930baee87abdabef1e3a10522e9d1b5c14997068e5f95b65af51d0"
+  },
+  "registry": {
+    "path": "../../benchmarks/industrial_ingredient_registry_v1.db",
+    "bytes": 77615104,
+    "sha256": "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765",
+    "connected": 29240,
+    "conditional_trace_active": 637,
+    "tier_2_formula_candidates": 671
+  },
+  "deployment": {
+    "provider": "modal",
+    "runtime": "cpu",
+    "gpu_required": false,
+    "url": "https://junseong2im--perfumery-ai-core-web.modal.run",
+    "proxy_auth_required": true,
+    "remote_smoke_passed": true
+  },
+  "supply_chain": {
+    "sbom_path": "sbom.cdx.json",
+    "sbom_bytes": 182006,
+    "sbom_sha256": "6f0c5679b9b5e576792eea49e8a7d80be9aa520159527911051807709b2142d7",
+    "release_policy_path": "release_policy_report.json",
+    "release_policy_bytes": 5607,
+    "release_policy_sha256": "da1e415906cc487135918f4172b4a495c4a4a796d40368ccb0dac4026f66d8c9",
+    "release_policy_passed": true,
+    "wheel_install_verify_path": "wheel_install_verify.json",
+    "wheel_install_verify_bytes": 2109,
+    "wheel_install_verify_sha256": "07d609ddb063a748cb0d643072835548a2256e4d3c5892013cb327d997976efa",
+    "wheel_install_verify_passed": true
+  },
+  "claim_boundary": "Registry trace candidates are opt-in prototype hypotheses, not supplier-qualified, independently safety-approved, manufacturing-ready, or commercial materials."
+}

@@ -1,0 +1,133 @@
+{
+  "checks": {
+    "hash_pinned_ci_dependencies": {
+      "hash_count": 460,
+      "missing_required_pins": [],
+      "passed": true,
+      "path": "C:\\Users\\user\\Desktop\\Newera\\perfumery-ai-core\\requirements-ci.lock",
+      "scope": "protected CI dependency resolution; not a cross-platform bit-for-bit claim",
+      "sha256": "64a9f8a0371b3055e9ff21fab3723b18f2f9162f91c764e9352610d99d1b1aba"
+    },
+    "hash_pinned_runtime_dependencies": {
+      "hash_count": 418,
+      "missing_required_pins": [],
+      "passed": true,
+      "path": "C:\\Users\\user\\Desktop\\Newera\\perfumery-ai-core\\requirements-runtime.lock",
+      "scope": "commercial container runtime dependency resolution",
+      "sha256": "86845640f1c4a333911c738a9a6d142c6808d36773dc0f436e975a6a7a3e37d3"
+    },
+    "manifest_and_model_integrity": {
+      "checked": [
+        "concentration_response_manifest.json",
+        "concentration_response_model.joblib",
+        "concentration_response_runtime.json",
+        "continuous_improvement_policy.json",
+        "epa_comptox_extract.db",
+        "human_mixture_calibration.json",
+        "moga_ingredients.db",
+        "natural_material_compositions.json",
+        "nonhuman_data_hub.db",
+        "odor_descriptor_projections.json",
+        "odor_threshold_registry.json",
+        "physsim_r2_checkpoint.pt",
+        "physsim_r2_checkpoint_seed_20260713.pt",
+        "physsim_r2_ensemble_manifest.json",
+        "physsim_r2_manifest.json",
+        "physsim_r2_runtime_manifest.json",
+        "physsim_r2_runtime_weights.npz",
+        "r2_ingredient_components.npz",
+        "r2_ingredient_components_manifest.json",
+        "reference_fragrances.db",
+        "safe_ingredient_catalog.json",
+        "scientific_properties.db",
+        "supplier_registry.json"
+      ],
+      "failures": [],
+      "passed": true
+    },
+    "packaged_asset_license_policy": {
+      "asset_license_statuses": {
+        "concentration_response_manifest.json": "declared_provenance",
+        "concentration_response_model.joblib": "declared_provenance",
+        "concentration_response_runtime.json": "declared_provenance",
+        "continuous_improvement_policy.json": "declared_provenance",
+        "epa_comptox_extract.db": "declared_provenance",
+        "human_mixture_calibration.json": "declared_provenance",
+        "moga_ingredients.db": "declared_provenance",
+        "natural_material_compositions.json": "declared_provenance",
+        "nonhuman_data_hub.db": "declared_provenance",
+        "odor_descriptor_projections.json": "declared_provenance",
+        "odor_threshold_registry.json": "declared_provenance",
+        "physsim_r2_checkpoint.pt": "declared_provenance",
+        "physsim_r2_checkpoint_seed_20260713.pt": "declared_provenance",
+        "physsim_r2_ensemble_manifest.json": "declared_provenance",
+        "physsim_r2_manifest.json": "declared_provenance",
+        "physsim_r2_runtime_manifest.json": "declared_provenance",
+        "physsim_r2_runtime_weights.npz": "declared_provenance",
+        "r2_ingredient_components.npz": "declared_provenance",
+        "r2_ingredient_components_manifest.json": "declared_provenance",
+        "reference_fragrances.db": "unknown_or_unverified",
+        "safe_ingredient_catalog.json": "declared_provenance",
+        "scientific_properties.db": "declared_provenance",
+        "supplier_registry.json": "declared_provenance"
+      },
+      "packaged_data_assets": [
+        "concentration_response_manifest.json",
+        "concentration_response_runtime.json",
+        "continuous_improvement_policy.json",
+        "data_manifest.json",
+        "epa_comptox_extract.db",
+        "human_mixture_calibration.json",
+        "moga_ingredients.db",
+        "natural_material_compositions.json",
+        "nonhuman_data_hub.db",
+        "odor_descriptor_projections.json",
+        "odor_threshold_registry.json",
+        "physsim_r2_ensemble_manifest.json",
+        "physsim_r2_manifest.json",
+        "physsim_r2_runtime_manifest.json",
+        "physsim_r2_runtime_weights.npz",
+        "r2_ingredient_components.npz",
+        "r2_ingredient_components_manifest.json",
+        "safe_ingredient_catalog.json",
+        "scientific_properties.db",
+        "supplier_registry.json"
+      ],
+      "passed": true,
+      "unknown_or_forbidden_assets": [],
+      "unmanifested_assets": [],
+      "unsafe_serialized_assets": [],
+      "wheel_checked": "C:\\Users\\user\\Desktop\\Newera\\perfumery-ai-core\\dist\\full-registry-activation-v2\\perfumery_ai_core-1.4.0-py3-none-any.whl"
+    },
+    "project_license_consistency": {
+      "mode": "proprietary_license_pair",
+      "passed": true
+    },
+    "required_tests_present": {
+      "passed": true,
+      "path": "C:\\Users\\user\\Desktop\\Newera\\perfumery-ai-core\\tests\\test_release_pipeline.py"
+    },
+    "sbom_contract": {
+      "dependency_ref_integrity": true,
+      "files_ok": true,
+      "format_ok": true,
+      "passed": true,
+      "wheel_hash_ok": true,
+      "wheel_ok": true
+    },
+    "wheel_exists": {
+      "passed": true,
+      "path": "C:\\Users\\user\\Desktop\\Newera\\perfumery-ai-core\\dist\\full-registry-activation-v2\\perfumery_ai_core-1.4.0-py3-none-any.whl"
+    },
+    "workflow_contract": {
+      "missing": [],
+      "passed": true,
+      "path": "C:\\Users\\user\\Desktop\\Newera\\perfumery-ai-core\\.github\\workflows\\release.yml"
+    }
+  },
+  "passed": true,
+  "release_scope": "automated software supply-chain checks only",
+  "schema_version": "1.0",
+  "status": "passed",
+  "wheel_sha256": "aa24cc7e12d1cddb3d5cb37118b8079cc428b13b481f0aea24c1ae66ae6668a1"
+}

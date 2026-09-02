@@ -145,6 +145,8 @@ class RecipeConstraints:
     enable_semantic_ontology: bool = True
     enable_concentration_response: bool = True
     enable_learned_r2: bool = True
+    enable_registry_trace_candidates: bool = False
+    experimental_disable_safety: bool = False
     reference_target_id: str = ""
     require_evidenced_olfactory_target: bool = False
     require_catalog_dimension_support: bool = True
@@ -325,6 +327,10 @@ class RecipeResult:
     temporal_similarity_score: float = 0.0
     minimum_temporal_similarity: float = 0.0
     temporal_profile: list[dict[str, Any]] = field(default_factory=list)
+    ingredient_temporal_profile: list[dict[str, Any]] = field(default_factory=list)
+    temporal_timepoints_minutes: list[int] = field(default_factory=list)
+    temporal_concentration_basis: str = ""
+    temporal_model_claim_boundary: str = ""
     scientific_flags: list[str] = field(default_factory=list)
     vapor_pressure_coverage_percent: float = 0.0
     odor_threshold_coverage_percent: float = 0.0

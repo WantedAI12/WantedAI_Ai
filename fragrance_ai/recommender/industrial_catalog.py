@@ -40,6 +40,28 @@ class IndustrialIngredientRecord:
 
 
 @dataclass(frozen=True)
+class IndustrialConditionalCandidateRecord:
+    """Public-data candidate that may only enter prototype risk tier 2.
+
+    These rows have broad identity/odor evidence and no structural alert from
+    the registry screen, but they do not have supplier-lot or regulatory
+    dossiers.  Converting one into an Ingredient must therefore preserve the
+    conditional, non-manufacturing claim boundary.
+    """
+
+    registry_id: str
+    preferred_name: str
+    canonical_smiles: str
+    molecular_weight: float | None
+    source_count: int
+    descriptor_count: int
+    evidence_score: int
+    cas_number: str | None
+    descriptors: tuple[str, ...]
+    aliases: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class SafetyScreeningRecord:
     registry_id: str
     screening_status: str
@@ -384,6 +406,99 @@ class IndustrialIngredientRegistry:
             """
         ).fetchall()
         return [dict(row) for row in rows]
+
+    def conditional_runtime_candidates(
+        self,
+        *,
+        limit: int = 30_000,
+    ) -> list[IndustrialConditionalCandidateRecord]:
+        """Return the strict public-data subset eligible for full-range R&D use.
+
+        This experimental query includes every unlinked registry molecule.
+        It is not a safety approval; the caller must retain an experimental
+        result status and non-manufacturing boundary.
+        """
+
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 30_000:
+            raise ValueError("runtime candidate limit must be between 1 and 30000")
+        rows = self._connection.execute(
+            """
+            SELECT i.registry_id, i.preferred_name, i.canonical_smiles,
+                   i.molecular_weight, i.source_count, i.descriptor_count,
+                   p.evidence_score,
+                   (SELECT x.identifier_value
+                    FROM ingredient_identifiers x
+                    WHERE x.registry_id = i.registry_id
+                      AND x.identifier_type = 'CAS'
+                    ORDER BY x.identifier_value LIMIT 1) AS cas_number
+            FROM promotion_candidates p
+            JOIN ingredients i ON i.registry_id = p.registry_id
+            WHERE NOT EXISTS (
+                  SELECT 1 FROM formulation_materials f
+                  WHERE f.linked_registry_id = i.registry_id
+              )
+            ORDER BY p.evidence_score DESC, i.registry_id
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        if not rows:
+            return []
+
+        registry_ids = [str(row["registry_id"]) for row in rows]
+        descriptor_map: dict[str, set[str]] = {key: set() for key in registry_ids}
+        alias_map: dict[str, set[str]] = {key: set() for key in registry_ids}
+        # Keep each IN clause below SQLite's commonly compiled 999-variable
+        # ceiling.  The public method permits a larger future registry pool.
+        for start in range(0, len(registry_ids), 800):
+            chunk = registry_ids[start : start + 800]
+            placeholders = ",".join("?" for _ in chunk)
+            for row in self._connection.execute(
+                f"""
+                SELECT registry_id, normalized_descriptor
+                FROM odor_descriptors
+                WHERE registry_id IN ({placeholders})
+                ORDER BY registry_id, normalized_descriptor
+                """,
+                chunk,
+            ):
+                value = str(row["normalized_descriptor"]).strip()
+                if value:
+                    descriptor_map[str(row["registry_id"])].add(value)
+            for row in self._connection.execute(
+                f"""
+                SELECT registry_id, name
+                FROM ingredient_names
+                WHERE registry_id IN ({placeholders})
+                ORDER BY registry_id, normalized_name, name
+                """,
+                chunk,
+            ):
+                value = str(row["name"]).strip()
+                if value:
+                    alias_map[str(row["registry_id"])].add(value)
+
+        return [
+            IndustrialConditionalCandidateRecord(
+                registry_id=str(row["registry_id"]),
+                preferred_name=str(row["preferred_name"] or "").strip(),
+                canonical_smiles=str(row["canonical_smiles"]),
+                molecular_weight=(
+                    None
+                    if row["molecular_weight"] is None
+                    else float(row["molecular_weight"])
+                ),
+                source_count=int(row["source_count"]),
+                descriptor_count=int(row["descriptor_count"]),
+                evidence_score=int(row["evidence_score"]),
+                cas_number=(
+                    None if row["cas_number"] is None else str(row["cas_number"])
+                ),
+                descriptors=tuple(sorted(descriptor_map[str(row["registry_id"])])),
+                aliases=tuple(sorted(alias_map[str(row["registry_id"])])),
+            )
+            for row in rows
+        ]
 
     def safety_screening(self, registry_id: str) -> SafetyScreeningRecord | None:
         row = self._connection.execute(
