@@ -12,11 +12,14 @@ from .recommender import NaturalLanguagePerfumeryAI, RecipeConstraints
 from .recommender.artifact_trust import EvidenceTrustRoot
 from .recommender.data_hub import NonHumanDataHub
 from .recommender.odor_profiles import OdorProfileStore
+from .recommender.perception_guidance import PerceptionGuidance
 from .recommender.quality import QualityEvidenceStore
 from .recommender.release import CommercialReleaseStore
 from .recommender.science import ScientificPropertyStore
 from .recommender.sensory import CalibrationArtifact, SensoryEvaluationStore
 from .recommender.supplier import SupplierRegistry
+from .recommender.runtime import load_configured_catalog
+from .recommender.models import MAX_FORMULA_INGREDIENTS
 from .rules.ifra_rules import ProductCategory, check_compliance
 
 
@@ -92,7 +95,16 @@ def main() -> None:
     parser.add_argument("--brief", help="원하는 향을 한국어 또는 영어 자연어로 설명")
     parser.add_argument("--population", type=int, default=8)
     parser.add_argument("--generations", type=int, default=2)
-    parser.add_argument("--target-similarity", type=float, default=90.0)
+    parser.add_argument("--target-similarity", type=float, default=95.0)
+    parser.add_argument("--minimum-profile-target", type=float, default=95.0)
+    parser.add_argument("--runtime-catalog-manifest")
+    parser.add_argument("--runtime-catalog-manifest-sha256")
+    parser.add_argument("--max-ingredients", type=int, default=MAX_FORMULA_INGREDIENTS)
+    parser.add_argument("--enable-registry-candidates", action="store_true")
+    parser.add_argument(
+        "--require-full-profile-match", action="store_true",
+        help="전체 모델 향 프로필 점수를 주 점수로 사용하고 목표 미달 후보는 승인하지 않음",
+    )
     parser.add_argument(
         "--max-price", type=float, default=300.0, help="개별 원료 kg당 가격 상한"
     )
@@ -126,6 +138,12 @@ def main() -> None:
         "--calibration", help="서명 검증 데이터로 생성된 관능 보정 JSON"
     )
     parser.add_argument("--odor-db", help="원료별 실측 관능 프로필 SQLite DB")
+    parser.add_argument(
+        "--experimental-perception-model",
+        help="연구 전용: 고정 conditional v2 모델로 원료 선택·배합비 검색 보조",
+    )
+    parser.add_argument("--perception-registry", help="가이드 모델의 고정 산업 원료 registry DB")
+    parser.add_argument("--perception-solvent", help="실험적 용매 시나리오(예: pg); 실제 제품 베이스 인증이 아님")
     parser.add_argument("--scientific-db", help="분자·증기압·후각역치 물성 SQLite DB")
     parser.add_argument("--release-db", help="외부 규제 서명·보고서 인덱스 SQLite DB")
     parser.add_argument("--data-hub", help="비인간 데이터 근거·참조 SQLite DB")
@@ -166,6 +184,11 @@ def main() -> None:
         help="중간 위험 등급 2 원료 허용(기본값은 등급 1 이하)",
     )
     args = parser.parse_args()
+    perception_options = (args.experimental_perception_model, args.perception_registry, args.perception_solvent)
+    if any(perception_options) and not all(perception_options):
+        parser.error("perception guidance requires model, registry, and explicit solvent scenario together")
+    if args.experimental_perception_model and args.validation_level != "prototype":
+        parser.error("experimental perception guidance is prototype-only")
 
     if not args.brief:
         print(
@@ -207,6 +230,8 @@ def main() -> None:
         commercial_model_version=args.model_version,
         commercial_supplier_evidence=supplier_evidence,
         reference_target_id=args.reference_target_id,
+        max_ingredients=args.max_ingredients,
+        enable_registry_trace_candidates=args.enable_registry_candidates,
     )
     supplier_registry = (
         SupplierRegistry.from_csv(args.supplier_csv)
@@ -238,7 +263,14 @@ def main() -> None:
             trusted_signers=release_policy.get("signers", release_policy),
         )
     data_hub = NonHumanDataHub(args.data_hub) if args.data_hub else None
-    result = NaturalLanguagePerfumeryAI(
+    perception_guidance = (
+        PerceptionGuidance(args.experimental_perception_model, args.perception_registry,
+                           solvent=args.perception_solvent, experimental=True)
+        if args.experimental_perception_model else None
+    )
+    catalog, _ = load_configured_catalog(args.runtime_catalog_manifest, args.runtime_catalog_manifest_sha256)
+    with NaturalLanguagePerfumeryAI(
+        catalog=catalog,
         supplier_registry=supplier_registry,
         sensory_store=sensory_store,
         quality_store=quality_store,
@@ -247,7 +279,12 @@ def main() -> None:
         scientific_store=scientific_store,
         release_store=release_store,
         data_hub=data_hub,
-    ).create_recipe(args.brief, constraints)
+        perception_guidance=perception_guidance,
+        require_full_profile_match=args.require_full_profile_match,
+        minimum_profile_target=args.minimum_profile_target,
+        allow_experimental_safety=False,
+    ) as ai:
+        result = ai.create_recipe(args.brief, constraints)
     print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
     if result.status not in {
         "prototype_ready",

@@ -8,6 +8,11 @@ from .recommender import (
     CalibrationArtifact,
     ManufacturingPlan,
     NaturalLanguagePerfumeryAI,
+    PerceptionGuidance,
+    StockAliquot,
+    StockMass,
+    StockControlAliquot,
+    StockMixturePredictor,
     OdorProfileStore,
     QualityEvidenceStore,
     ActivatedIngredientPromotion,
@@ -47,7 +52,14 @@ from .recommender import (
 __version__ = "1.4.0"
 
 __all__ = [
+    "StockAliquot",
+    "StockMass",
+    "StockControlAliquot",
+    "StockMixturePredictor",
+    "UnifiedTransportModel",
+    "UnifiedProductPredictor",
     "NaturalLanguagePerfumeryAI",
+    "PerceptionGuidance",
     "RecipeConstraints",
     "RecipeResult",
     "ManufacturingPlan",
@@ -91,6 +103,12 @@ __all__ = [
 
 
 def __getattr__(name: str):
+    if name == 'UnifiedTransportModel':
+        from .recommender.unified_transport import UnifiedTransportModel
+        return UnifiedTransportModel
+    if name == 'UnifiedProductPredictor':
+        from .recommender.unified_product import UnifiedProductPredictor
+        return UnifiedProductPredictor
     if name in {"UnifiedAIConfig", "UnifiedFragranceAI", "create_unified_ai_system"}:
         from .ai.unified_ai_system import (
             UnifiedAIConfig,

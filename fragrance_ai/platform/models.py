@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from typing import Any
+from ..recommender.odor_integrity import legacy_registry_line_ids, quarantine_legacy_payload
 
 
 @dataclass(frozen=True)
@@ -37,6 +38,12 @@ class FormulaVersionRecord:
 
     def to_dict(self, *, include_payload: bool = True) -> dict[str, Any]:
         result = asdict(self)
+        if legacy_registry_line_ids(self.payload):
+            result["odor_data_integrity"] = "legacy_registry_profile_quarantined"
+            if include_payload:
+                result["payload"] = quarantine_legacy_payload(self.payload)
+                result["payload_view_transformed"] = True
+                result["content_sha256_scope"] = "immutable_stored_historical_payload"
         if not include_payload:
             result.pop("payload")
         return result
@@ -85,4 +92,7 @@ class JobRecord:
         return self.status in {"succeeded", "failed", "cancelled"}
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        result = asdict(self)
+        if isinstance(result.get("result"), dict):
+            result["result"] = quarantine_legacy_payload(result["result"])
+        return result

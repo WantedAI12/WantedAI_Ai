@@ -2,6 +2,8 @@
 
 from .models import ManufacturingPlan, RecipeConstraints, RecipeResult, ScentBrief
 from .odor_profiles import OdorProfileStore
+from .perception_guidance import PerceptionGuidance
+from .stock_mixture import StockAliquot, StockMass, StockControlAliquot, StockMixturePredictor
 from .quality import QualityEvidenceStore
 from .promotion_activation import (
     ActivatedIngredientPromotion,
@@ -43,6 +45,11 @@ from .service import NaturalLanguagePerfumeryAI
 from .supplier import SupplierRegistry
 
 __all__ = [
+    "StockAliquot",
+    "StockMass",
+    "StockControlAliquot",
+    "StockMixturePredictor",
+    "PerceptionGuidance",
     "NaturalLanguagePerfumeryAI",
     "RecipeConstraints",
     "RecipeResult",

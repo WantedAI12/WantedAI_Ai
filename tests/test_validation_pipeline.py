@@ -628,7 +628,7 @@ def test_physsim_is_exposed_as_a_nonhuman_recipe_ranking_component():
         as_of=AS_OF,
     )
     assert result.physsim_model_version.startswith(
-        "concentration-headspace-physsim-core-1.1"
+        "concentration-headspace-physsim-core-1.2"
     )
     assert result.physsim_status == "target_unavailable"
     assert not result.physsim_comparison_authorized

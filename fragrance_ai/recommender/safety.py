@@ -14,6 +14,7 @@ from .catalog import IngredientCatalog, normalize_name
 from .models import Ingredient, RecipeConstraints, RecipeLine, SafetyReport, ScentBrief
 from .promotion_activation import formulation_scope_allows
 from .registry_activation import REGISTRY_CONDITIONAL_DATA_SOURCE
+from .odor_integrity import is_registry_material, registry_odor_rejection
 from .supplier import SupplierRegistry
 
 
@@ -67,6 +68,9 @@ class CandidateSafetyScreen:
         registry = supplier_registry or SupplierRegistry()
 
         for ingredient in catalog.ingredients:
+            if reason := registry_odor_rejection(ingredient):
+                rejected[reason] += 1
+                continue
             if (
                 constraints.experimental_disable_safety
                 and constraints.enable_registry_trace_candidates
@@ -94,13 +98,13 @@ class CandidateSafetyScreen:
                 rejected["reference_only"] += 1
                 continue
             if (
-                ingredient.data_source == REGISTRY_CONDITIONAL_DATA_SOURCE
+                is_registry_material(ingredient)
                 and not constraints.enable_registry_trace_candidates
             ):
                 rejected["registry_conditional_not_requested"] += 1
                 continue
             if (
-                ingredient.data_source == REGISTRY_CONDITIONAL_DATA_SOURCE
+                is_registry_material(ingredient)
                 and constraints.validation_level != "prototype"
             ):
                 rejected["registry_conditional_prototype_only"] += 1
@@ -229,6 +233,8 @@ class FormulaSafetyGate:
 
         for line in lines:
             ingredient = ingredients_by_id[line.ingredient_id]
+            if reason := registry_odor_rejection(ingredient):
+                violations.append(f"odor-integrity: {ingredient.name}: {reason}")
             if ingredient.data_source == REGISTRY_CONDITIONAL_DATA_SOURCE:
                 registry_conditionals.append(ingredient.name)
                 missing_documents.add(
@@ -377,4 +383,5 @@ class FormulaSafetyGate:
             validation_level=constraints.validation_level,
             audit_id=self._audit_id(lines, constraints, as_of),
             internal_evidence_complete=internal_evidence_complete,
+            ifra_screen=ifra_result["ifra"],
         )

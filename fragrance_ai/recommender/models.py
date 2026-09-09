@@ -48,6 +48,9 @@ TRIGEMINAL_DIMENSIONS: tuple[str, ...] = (
 TEMPORAL_DIMENSIONS: tuple[str, ...] = ("opening", "heart", "drydown")
 
 PYRAMID_LEVELS: tuple[str, ...] = ("top", "heart", "base")
+# Operational input bound, not a shortlist of candidate molecules. The search
+# always considers the complete eligible catalog and may return a sparse formula.
+MAX_FORMULA_INGREDIENTS = 50_000
 
 
 def normalize_profile(profile: dict[str, float]) -> dict[str, float]:
@@ -95,6 +98,16 @@ class Ingredient:
     approval_expires_at: str | None = None
     promotion_artifact_id: str | None = None
     promotion_registry_sha256: str | None = None
+    odor_integrity_version: str = ""
+    odor_projection_version: str = ""
+    odor_evidence_status: str = ""
+    odor_assertions: tuple[str, ...] = ()
+    odor_evidence_refs: tuple[str, ...] = ()
+    odor_registry_sha256: str = ""
+    registry_structural_alerts: tuple[str, ...] = ()
+    structure_smiles: str = ""
+    structure_properties: dict[str, float | int] = field(default_factory=dict)
+    structure_properties_version: str = ""
 
     def vector(self) -> np.ndarray:
         return profile_vector(self.profile)
@@ -117,7 +130,7 @@ class RecipeConstraints:
     target_similarity: float = 90.0
     product_concentration_percent: float = 15.0
     finished_volume_ml: float = 50.0
-    max_ingredients: int = 12
+    max_ingredients: int = MAX_FORMULA_INGREDIENTS
     allow_rare: bool = False
     explicit_bans: set[str] = field(default_factory=set)
     validation_level: str = "prototype"
@@ -192,6 +205,18 @@ class ScentBrief:
         default_factory=lambda: {"opening": 0.25, "heart": 0.40, "drydown": 0.35}
     )
     perceptual_intent_version: str = "perceptual-intent-1.0"
+    phase_target_profiles: dict[str, dict[str, float]] = field(default_factory=dict)
+    phase_desired_dimensions: dict[str, list[str]] = field(default_factory=dict)
+    phase_avoided_dimensions: dict[str, list[str]] = field(default_factory=dict)
+    language_representation_version: str = "scent-span-concepts-1"
+    target_profile_source: str = "natural_language_keyword_profile_proxy"
+    phase_recognized_descriptors: dict[str, list[str]] = field(default_factory=dict)
+    phase_avoided_descriptors: dict[str, list[str]] = field(default_factory=dict)
+    phase_brief_texts: dict[str, str] = field(default_factory=dict)
+    expression_targets: dict[str, float] = field(default_factory=dict)
+    expression_avoided: dict[str, float] = field(default_factory=dict)
+    expression_matches: list[dict] = field(default_factory=list)
+    phase_expressions: dict[str, dict] = field(default_factory=dict)
 
 
 @dataclass
@@ -216,6 +241,8 @@ class RecipeLine:
     approved_formulation_scopes: tuple[str, ...] = ()
     approval_expires_at: str | None = None
     promotion_artifact_id: str | None = None
+    odor_integrity_version: str = ""
+    odor_projection_version: str = ""
 
 
 @dataclass
@@ -239,6 +266,7 @@ class SafetyReport:
     validation_level: str = "prototype"
     audit_id: str = ""
     internal_evidence_complete: bool = False
+    ifra_screen: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -323,6 +351,7 @@ class RecipeResult:
     scientific_twin_status: str = "not_run"
     scientific_model_version: str = ""
     scientific_data_coverage_percent: float = 0.0
+    calculated_structure_coverage_percent: float = 0.0
     molecular_descriptor_coverage_percent: float = 0.0
     temporal_similarity_score: float = 0.0
     minimum_temporal_similarity: float = 0.0
@@ -385,6 +414,8 @@ class RecipeResult:
     release_scope_verified: bool = False
     evidence_scope_id: str = ""
     candidate_variants_evaluated: int = 0
+    ingredient_sets_evaluated: int = 0
+    ingredient_swaps_evaluated: int = 0
     physics_guided_search: bool = False
     physics_search_objective: float = 0.0
     catalog_profile_rank: int = 0
@@ -400,8 +431,11 @@ class RecipeResult:
     human_similarity_90_claim_authorized: bool = False
 
     def to_dict(self) -> dict[str, Any]:
+        from .regulatory_status import regulatory_summary
+
         result = asdict(self)
         result["brief"]["constraints"]["explicit_bans"] = sorted(
             self.brief.constraints.explicit_bans
         )
+        result["regulatory"] = regulatory_summary(result)
         return result

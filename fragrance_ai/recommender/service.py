@@ -8,6 +8,8 @@ from datetime import date
 from types import TracebackType
 from typing import Self
 
+import numpy as np
+
 from .brief_parser import NaturalLanguageBriefParser
 from .catalog import HistoricalReferenceCorpus, IngredientCatalog
 from .data_hub import NonHumanDataHub
@@ -26,7 +28,13 @@ from .optimizer import ConstrainedFormulaOptimizer, NoFeasibleFormula
 from .odor_profiles import OdorProfileStore
 from .quality import QualityEvidenceStore, formula_fingerprint
 from .promotion_activation import PromotionActivationBundle
+from .perception_guidance import PerceptionGuidance, attach_guidance
+from .profile_match import assess_recipe_profiles, attach_profile_assessment, full_profile_similarity
+from .global_profile_search import optimize_full_pool, profile_upper_bound
+from .adaptive_pyramid import actual_pyramid, blended_proposals, check_adaptive_response, prepare_adaptive_policy
+from .dose_refinement import dose_refinement_proposals, full_inferred_note_policy
 from .registry_activation import REGISTRY_CONDITIONAL_DATA_SOURCE
+from .odor_integrity import registry_odor_rejection
 from .release_spec import ReleaseSpec
 from .realism import assess_realism
 from .reference_targets import ReferenceTargetStore, ResolvedReferenceTarget
@@ -48,7 +56,7 @@ from .supplier import SupplierRegistry
 LIMITATIONS = [
     "90점은 구조·물성·헤드스페이스 기반 비인간 시뮬레이션 점수이며 실제 인간 후각 90%의 증명이 아닙니다.",
     "처방 후보는 내장 검토 원료와 서명된 안전·공급 dossier를 통과한 자동 승격 원료로 제한됩니다.",
-    "가격·재고·COA·SDS·IFRA 증명과 규제 값은 검증된 공급사 원료 자료가 연결된 경우에만 사용합니다.",
+    "산업 레지스트리 실험 후보의 가격·가용성은 순위 계산용 추정치이며 실제 견적·재고가 아닙니다. 공급 적격성은 별도의 검증 자료로 판정합니다.",
     "상용 출시는 안정성, 용기 적합성, 실제 배치, 시장별 전문가 검토와 서명된 외부 승인이 별도로 필요합니다.",
     "과거 향수 DB의 노트 정보는 참고 신호이며 측정된 분자 조성으로 취급하지 않습니다.",
     "물리 모델은 불완전한 물성·역치 자료와 모델 가정을 포함하므로 실제 헤드스페이스 측정을 대체하지 않습니다.",
@@ -125,18 +133,66 @@ class NaturalLanguagePerfumeryAI:
         human_mixture_calibration: HumanMixtureCalibration | None = None,
         concentration_response: FrozenConcentrationResponse | None = None,
         promotion_bundle: PromotionActivationBundle | None = None,
+        perception_guidance: PerceptionGuidance | None = None,
+        require_full_profile_match: bool = False,
+        enable_full_pool_search: bool = True,
+        enable_adaptive_pyramid: bool = True,
+        enable_dose_refinement: bool = True,
+        minimum_profile_target: float | None = None,
+        allow_experimental_safety: bool = True,
     ):
+        if not isinstance(require_full_profile_match, bool):
+            raise ValueError("require_full_profile_match must be boolean")
+        if minimum_profile_target is not None and (
+            isinstance(minimum_profile_target, bool) or not isinstance(minimum_profile_target, (int, float))
+            or not math.isfinite(minimum_profile_target) or not 0 < minimum_profile_target <= 100
+        ):
+            raise ValueError("minimum_profile_target must be finite and in (0, 100]")
+        if not isinstance(allow_experimental_safety, bool):
+            raise ValueError("allow_experimental_safety must be boolean")
+        self.minimum_profile_target = minimum_profile_target
+        self.allow_experimental_safety = allow_experimental_safety
+        self.require_full_profile_match = require_full_profile_match or minimum_profile_target is not None
+        if not isinstance(enable_full_pool_search, bool):
+            raise ValueError("enable_full_pool_search must be boolean")
+        self.enable_full_pool_search = enable_full_pool_search
+        if not isinstance(enable_adaptive_pyramid, bool):
+            raise ValueError("enable_adaptive_pyramid must be boolean")
+        self.enable_adaptive_pyramid = enable_adaptive_pyramid
+        if not isinstance(enable_dose_refinement, bool):
+            raise ValueError("enable_dose_refinement must be boolean")
+        self.enable_dose_refinement = enable_dose_refinement
+        from .perception_runtime import configured_perception, assert_provider_product
+        self.perception_guidance = perception_guidance if perception_guidance is not None else configured_perception()
+        assert_provider_product(self.perception_guidance, 'perfume')
         self.promotion_bundle = (
             promotion_bundle
             if promotion_bundle is not None
             else PromotionActivationBundle.from_environment()
         )
-        base_catalog = catalog or IngredientCatalog.load_builtin()
+        if catalog is None:
+            from .runtime import load_configured_catalog
+            base_catalog, self.local_catalog_manifest_sha256 = load_configured_catalog()
+            if self.local_catalog_manifest_sha256 is not None:
+                # The local SDK must not silently use a weaker policy than the
+                # API/factory just because it was constructed directly.
+                self.minimum_profile_target = 95. if minimum_profile_target is None else minimum_profile_target
+                self.require_full_profile_match = True
+        else:
+            base_catalog = catalog
+            self.local_catalog_manifest_sha256 = None
         base_catalog = self.promotion_bundle.merge_catalog(base_catalog)
         self.odor_store = odor_store
         self.catalog = (
             odor_store.apply_to_catalog(base_catalog) if odor_store else base_catalog
         )
+        invalid_active = {item.ingredient_id: reason for item in self.catalog.ingredients
+                          if (item.formulation_ready or not item.blocked) and (reason := registry_odor_rejection(item))}
+        if invalid_active:
+            repaired = [replace(item, formulation_ready=False, blocked=True, blocked_reason=invalid_active[item.ingredient_id],
+                                profile={} if "legacy" in invalid_active[item.ingredient_id] else item.profile)
+                        if item.ingredient_id in invalid_active else item for item in self.catalog.ingredients]
+            self.catalog = IngredientCatalog(repaired, {**self.catalog.metadata, "industrial_registry_in_memory_quarantined": len(invalid_active)})
         self._owned_resources: list[object] = []
         self._closed = False
         self.data_hub = data_hub or NonHumanDataHub()
@@ -334,7 +390,8 @@ class NaturalLanguagePerfumeryAI:
                     f"{name} must be within the supported percentage range"
                 )
         integer("simulation_draws", constraints.simulation_draws, 64, 100_000)
-        integer("max_ingredients", constraints.max_ingredients, 3, 50)
+        from .models import MAX_FORMULA_INGREDIENTS
+        integer("max_ingredients", constraints.max_ingredients, 3, MAX_FORMULA_INGREDIENTS)
         integer(
             "physics_search_population",
             constraints.physics_search_population,
@@ -436,12 +493,125 @@ class NaturalLanguagePerfumeryAI:
         as_of: date | None = None,
         *,
         target_profile_override: dict[str, float] | None = None,
+        intent_controls: dict | None = None,
+    ) -> RecipeResult:
+        snapshot_guard = getattr(self, "_runtime_snapshot_guard", None)
+        from .perception_runtime import assert_provider_current
+        assert_provider_current(self.perception_guidance)
+        if snapshot_guard is not None:
+            snapshot_guard()
+        if constraints is not None:
+            self._validate_constraints(constraints)
+        requested = self.parser.parse(natural_language_brief, constraints).constraints
+        automatic = bool(self.require_full_profile_match and requested.max_ingredients > 12
+                         and requested.validation_level == "prototype" and not requested.reference_target_id)
+        budgets = []
+        support_results = []
+
+        def run_budget(limit):
+            budgets.append(limit)
+            return self._create_recipe_impl(natural_language_brief,
+                replace(requested, max_ingredients=limit), as_of, target_profile_override=target_profile_override,
+                **({"intent_controls": intent_controls} if intent_controls else {}))
+
+        def assessed(candidate):
+            return assess_recipe_profiles(candidate.brief, candidate.achieved_profile, candidate.temporal_profile,
+                                          self.temporal_simulator.time_weights(candidate.brief))
+
+        def record(candidate):
+            assessment = assessed(candidate)
+            support_results.append({"max_ingredients": budgets[-1], "score": assessment["score"],
+                                    "target_met": assessment["target_met"], "usable_recipe": bool(candidate.recipe)})
+            return assessment
+
+        def rank(candidate, assessment):
+            return (bool(candidate.recipe), -1. if assessment["score"] is None else assessment["score"])
+
+        result = run_budget(12 if automatic else requested.max_ingredients)
+        best = record(result)
+        if automatic:
+            # The small-support trajectory is an incumbent, not a restriction
+            # on the eligible pool. Keep its winner when wider searches regress.
+            latest = result
+            for limit in dict.fromkeys((min(24, requested.max_ingredients), requested.max_ingredients)):
+                if best["target_met"] and result.recipe:
+                    break
+                # Preserve the complete V15 24-first path when the small
+                # search fails; only the full-limit retry uses its old bound.
+                if limit > 24:
+                    bound = getattr(latest, "_full_profile_search", {}).get("full_pool_search", {}).get("bound", {}).get("upper_score")
+                    if bound is not None and bound + 1e-8 < latest.brief.constraints.target_similarity:
+                        break
+                alternative = run_budget(limit)
+                second = record(alternative)
+                latest = alternative
+                if rank(alternative, second) > rank(result, best):
+                    result, best = alternative, second
+            # Search budgets are not user constraints. Restore the actual
+            # maximum; every candidate satisfied a tighter or identical cap.
+            result.brief = replace(result.brief, constraints=replace(result.brief.constraints,
+                                    max_ingredients=requested.max_ingredients))
+        if self.perception_guidance is not None and getattr(result, 'perception_guidance', None) is None:
+            session = self.perception_guidance.begin(result.brief)
+            report = session.report(None, None, changed=False, variants=0)
+            report.update(status='not_evaluated_no_eligible_candidate', operation='create_recipe', recipe_returned=False)
+            result = attach_guidance(result, report)
+        assessment = assess_recipe_profiles(
+            result.brief, result.achieved_profile, result.temporal_profile,
+            self.temporal_simulator.time_weights(result.brief),
+        )
+        assessment["search"] = getattr(result, "_full_profile_search", {})
+        if result.brief.constraints.reference_target_id.strip():
+            assessment.update(score=None, target_met=False,
+                              scope="explicit_reference_uses_existing_reference_comparison_contract")
+        output = attach_profile_assessment(result, assessment, strict=self.require_full_profile_match)
+        output.score_contract.update(runtime_minimum_profile_target=self.minimum_profile_target,
+                                     effective_target=output.brief.constraints.target_similarity,
+                                     search_support_budgets=budgets,
+                                     search_support_results=support_results,
+                                     legacy_preference_screen_target=self._preference_screen_target(output.brief.constraints),
+                                     actual_human_similarity_proven_by_this_score=False)
+        from .odor_expression import recipe_expression
+        output.score_contract['fine_odor_expression'] = recipe_expression(
+            output.recipe or output.closest_candidate,output.brief,self.catalog)
+        if snapshot_guard is not None:
+            snapshot_guard()
+        assert_provider_current(self.perception_guidance)
+        return output
+
+    def _preference_screen_target(self, constraints):
+        # The compatibility preference proxy is not the full-profile score.
+        # Raising the requested full-profile goal must not erase useful search
+        # intermediates. Final full-profile acceptance still uses the exact
+        # requested goal, and evidenced/qualified flows keep their old gates.
+        if self.require_full_profile_match and constraints.validation_level == "prototype" and not constraints.reference_target_id:
+            return min(90., constraints.target_similarity)
+        return constraints.target_similarity
+
+    def _create_recipe_impl(
+        self,
+        natural_language_brief: str,
+        constraints: RecipeConstraints | None = None,
+        as_of: date | None = None,
+        *,
+        target_profile_override: dict[str, float] | None = None,
+        intent_controls: dict | None = None,
     ) -> RecipeResult:
         as_of = as_of or date.today()
         if constraints is not None:
             self._validate_constraints(constraints)
         brief = self.parser.parse(natural_language_brief, constraints)
+        if intent_controls:
+            from .intent_controls import apply_intent_controls
+            brief = apply_intent_controls(brief, intent_controls)
         self._validate_constraints(brief.constraints)
+        if not self.allow_experimental_safety and brief.constraints.experimental_disable_safety:
+            raise ValueError("runtime policy does not allow experimental safety overrides")
+        if self.minimum_profile_target is not None:
+            brief = replace(brief, constraints=replace(brief.constraints,
+                target_similarity=max(brief.constraints.target_similarity, self.minimum_profile_target)))
+        if self.perception_guidance is not None and brief.constraints.validation_level != "prototype":
+            raise ValueError("experimental perception guidance is restricted to prototype research")
         if target_profile_override is not None:
             if not isinstance(target_profile_override, dict):
                 raise ValueError("target profile override must be an object")
@@ -471,19 +641,18 @@ class NaturalLanguagePerfumeryAI:
                 raise ValueError(
                     "target profile override must contain positive scent mass"
                 )
+            if any(target_profile.get(axis, 0.) > 0 for axis in brief.avoided_dimensions):
+                raise ValueError('target profile conflicts with an explicit avoidance constraint')
             brief = replace(
                 brief,
                 target_profile=target_profile,
+                target_profile_source='explicit_structured_relative_weights',
                 desired_dimensions=sorted(
                     dimension
                     for dimension, value in target_profile.items()
                     if value >= 0.01
                 ),
-                avoided_dimensions=sorted(
-                    dimension
-                    for dimension in brief.avoided_dimensions
-                    if target_profile.get(dimension, 0.0) <= 1e-12
-                ),
+                avoided_dimensions=sorted(brief.avoided_dimensions),
             )
         candidates, rejected = self.screen.screen(
             self.catalog,
@@ -493,7 +662,7 @@ class NaturalLanguagePerfumeryAI:
         )
 
         for pyramid in brief.pyramid_ratios:
-            if not any(item.pyramid == pyramid for item in candidates):
+            if brief.pyramid_ratios[pyramid] > 0 and not any(item.pyramid == pyramid for item in candidates):
                 level_hint = (
                     " 검증 단계에서는 실제 공급사 문서가 연결된 원료를 먼저 등록해야 합니다."
                     if brief.constraints.validation_level != "prototype"
@@ -561,6 +730,16 @@ class NaturalLanguagePerfumeryAI:
                 as_of,
             )
 
+        guide = self.perception_guidance.begin(brief) if self.perception_guidance is not None else None
+        guide_sets = []
+        guidance_variants_added = 0
+        full_profile_variants_added = 0
+        phase_context_matrices = {}
+        response_index = {}
+        nominal_responses = None
+        time_targets = self.temporal_simulator.targets_by_time(brief)
+        time_weights = self.temporal_simulator.time_weights(brief)
+
         def formula_context_objective(weights, selected_ingredients) -> float:
             if reference_target is not None:
                 candidate_weights = {
@@ -583,6 +762,19 @@ class NaturalLanguagePerfumeryAI:
                 )
                 return 100.0 * numerator / max(denominator, 1e-12)
 
+            if brief.phase_target_profiles:
+                key = tuple(item.ingredient_id for item in selected_ingredients)
+                if key not in phase_context_matrices:
+                    rows = np.asarray([response_index[identifier] for identifier in key])
+                    vectors = np.asarray([item.vector() for item in selected_ingredients])
+                    phase_context_matrices[key] = nominal_responses[rows, :, None] * vectors[:, None, :]
+                matrix = phase_context_matrices[key]
+                profiles = np.einsum("i,itd->td", weights, matrix)
+                profiles /= np.maximum(1e-12, profiles.sum(axis=1, keepdims=True))
+                return sum(float(weight) * self.temporal_simulator.temporal_target_similarity(target, profiles[index], desired, avoided)
+                           for index, ((target, desired, avoided), weight) in enumerate(zip(time_targets, time_weights))
+                           if weight > 0)
+
             impact = sum(
                 max(0.0, float(weight))
                 / 100.0
@@ -603,7 +795,37 @@ class NaturalLanguagePerfumeryAI:
             ) + 0.30 * abs(diffusion - brief.diffusion_target)
             return max(0.0, 100.0 * (1.0 - error))
 
+        def internally_eligible(variant, context_brief=None) -> bool:
+            context_brief = context_brief or brief
+            if variant[1] + 1e-8 < self._preference_screen_target(context_brief.constraints):
+                return False
+            if variant[3] > context_brief.constraints.max_formula_cost_per_kg:
+                return False
+            if assess_realism(variant[0], ingredient_map, context_brief, self.corpus).score < context_brief.constraints.minimum_realism_score:
+                return False
+            if not context_brief.constraints.experimental_disable_safety and not self.safety_gate.evaluate(
+                variant[0], ingredient_map, context_brief.constraints, as_of=as_of
+            ).internal_gate_passed:
+                return False
+            return True
+
         try:
+            selected_candidates = self.optimizer._select_candidates(candidates, brief)
+            property_ids = [item.ingredient_id for item in candidates]
+            if reference_target is not None:
+                property_ids.extend(line.ingredient_id for line in reference_target.lines)
+            scientific_properties = self.scientific_store.get_many(property_ids)
+            scientific_properties = ScientificPropertyStore.with_catalog_structures(candidates, scientific_properties)
+            response_inputs = self.temporal_simulator.prepare_response_inputs(candidates, scientific_properties)
+            response_index = {identifier: index for index, identifier in enumerate(response_inputs.identifiers)}
+            response_matrices = {}
+
+            def responses_at(concentration):
+                if concentration not in response_matrices:
+                    response_matrices[concentration] = self.temporal_simulator.ingredient_response_matrix(response_inputs, concentration)
+                return response_matrices[concentration]
+
+            nominal_responses = responses_at(brief.constraints.product_concentration_percent)
             # Build a deterministic candidate population under balanced, early,
             # middle, late, low-dilution and high-dilution headspace objectives.
             # The expensive twin and learned R2 score every unique member, so
@@ -620,6 +842,8 @@ class NaturalLanguagePerfumeryAI:
             requested_temporal = tuple(
                 value / requested_total for value in requested_temporal
             )
+            if brief.phase_target_profiles:
+                requested_temporal = tuple(time_weights)
             search_specs = (
                 ("requested", 1.0, requested_temporal),
                 ("balanced", 1.0, None),
@@ -640,37 +864,120 @@ class NaturalLanguagePerfumeryAI:
                 if fingerprint not in variant_fingerprints:
                     variant_fingerprints.add(fingerprint)
                     formula_variants.append(variant)
+                    return True
+                return False
 
             for _, concentration_scale, temporal_weights in search_specs[
                 :requested_population
             ]:
-                perceptual_factors = (
-                    self.temporal_simulator.ingredient_perceptual_factors(
-                        candidates,
-                        self.scientific_store,
-                        max(
-                            0.1,
-                            brief.constraints.product_concentration_percent
-                            * concentration_scale,
-                        ),
-                        timepoint_weights=temporal_weights,
-                    )
+                perceptual_factors = self.temporal_simulator.factors_from_responses(
+                    response_inputs.identifiers,
+                    responses_at(max(0.1, brief.constraints.product_concentration_percent * concentration_scale)),
+                    temporal_weights,
                 )
                 add_variant(
-                    self.optimizer.optimize(
-                        candidates,
+                    self.optimizer._optimize_selected(
+                        selected_candidates,
                         brief,
                         perceptual_factors=perceptual_factors,
                         formula_objective=formula_context_objective,
                     )
                 )
             add_variant(
-                self.optimizer.optimize(
-                    candidates,
+                self.optimizer._optimize_selected(
+                    selected_candidates,
                     brief,
                     formula_objective=formula_context_objective,
                 )
             )
+            baseline_variant_count = len(formula_variants)
+            replacement_sets = self.optimizer.replacement_selections(
+                candidates, selected_candidates, brief,
+                limit=6 if brief.phase_target_profiles else 3,
+            )
+            nominal_factors = self.temporal_simulator.factors_from_responses(
+                response_inputs.identifiers, nominal_responses, requested_temporal,
+            )
+            for replacement in replacement_sets:
+                try:
+                    replacement_variant = self.optimizer._optimize_selected(
+                        replacement, brief, perceptual_factors=nominal_factors,
+                        formula_objective=formula_context_objective,
+                    )
+                except NoFeasibleFormula:
+                    continue
+                if replacement_variant[1] + 1e-8 < self._preference_screen_target(brief.constraints):
+                    continue
+                if replacement_variant[3] > brief.constraints.max_formula_cost_per_kg:
+                    continue
+                if assess_realism(replacement_variant[0], ingredient_map, brief, self.corpus).score < brief.constraints.minimum_realism_score:
+                    continue
+                if not brief.constraints.experimental_disable_safety and not self.safety_gate.evaluate(replacement_variant[0], ingredient_map, brief.constraints, as_of=as_of).internal_gate_passed:
+                    continue
+                add_variant(replacement_variant)
+            unguided_variant_count = len(formula_variants)
+            unguided_swap_count = len(formula_variants) - baseline_variant_count
+            if guide is not None and guide.enabled:
+                supported = [item for item in candidates if guide.supports(item)]
+                required_ids = {
+                    item.ingredient_id for name in brief.requested_ingredients
+                    if (item := self.catalog.lookup(name)) is not None
+                }
+                if required_ids.issubset({item.ingredient_id for item in supported}):
+                    try:
+                        guided_selection = self.optimizer._select_candidates(supported, brief)
+                        proposed_sets = [guided_selection, *self.optimizer.replacement_selections(
+                            supported, guided_selection, brief, limit=3
+                        )]
+                        if all(guide.supports(item) for item in selected_candidates):
+                            proposed_sets.insert(0, selected_candidates)
+                        set_ids = set()
+                        for selection in proposed_sets:
+                            identity = tuple(sorted(item.ingredient_id for item in selection))
+                            if identity not in set_ids:
+                                set_ids.add(identity)
+                                guide_sets.append(selection)
+                    except NoFeasibleFormula:
+                        # Unsupported naturals/insufficient modeled pyramid
+                        # capacity cannot be replaced by zero odor vectors.
+                        guide_sets = []
+                guided_brief = replace(brief, constraints=replace(
+                    brief.constraints, surrogate_objective_weight=guide.weight
+                ))
+
+                def learned_objective(weights, ingredients):
+                    value = guide.score(weights, ingredients)
+                    # Invalid proposed formulas are not given the high legacy
+                    # context score as a way to escape the learned objective.
+                    return 0.0 if value is None else value
+
+                for selection in guide_sets:
+                    try:
+                        variant = self.optimizer._optimize_selected(
+                            selection, guided_brief, formula_objective=learned_objective
+                        )
+                    except NoFeasibleFormula:
+                        continue
+                    if not required_ids.issubset({line.ingredient_id for line in variant[0]}):
+                        continue
+                    if internally_eligible(variant):
+                        guidance_variants_added += int(add_variant(variant))
+            legacy_search_count = len(formula_variants)
+            if reference_target is None:
+                # Keep every compatibility candidate, and add full-vector
+                # refinements. No goal profile is reconstructed from a candidate.
+                full_sets = [selected_candidates, *replacement_sets]
+                for selection in full_sets:
+                    try:
+                        refined = self.optimizer._optimize_selected(
+                            selection, brief, perceptual_factors=nominal_factors,
+                            formula_objective=formula_context_objective,
+                            profile_scorer=full_profile_similarity,
+                        )
+                    except NoFeasibleFormula:
+                        continue
+                    if internally_eligible(refined):
+                        full_profile_variants_added += int(add_variant(refined))
         except NoFeasibleFormula as error:
             return self._blocked_result(brief, str(error), rejected, as_of)
         evaluated_variants = []
@@ -681,14 +988,14 @@ class NaturalLanguagePerfumeryAI:
                 variant_lines,
                 ingredient_map,
                 brief,
-                self.scientific_store,
+                scientific_properties,
                 draws=screening_draws,
             )
             variant_physsim = self.physsim_engine.evaluate(
                 variant_lines,
                 ingredient_map,
                 brief,
-                self.scientific_store,
+                scientific_properties,
                 reference_target_lines=(
                     list(reference_target.lines) if reference_target else None
                 ),
@@ -733,35 +1040,412 @@ class NaturalLanguagePerfumeryAI:
                 + 0.25 * twin_result.temporal_similarity_p05
             )
 
-        selected_variant, scientific_twin, physsim, simulation = max(
-            evaluated_variants,
+        original_choice = max(
+            evaluated_variants[:unguided_variant_count],
             key=lambda item: (
                 item[3].status == "evidenced_nonhuman_pass",
                 physics_objective(item),
                 item[0][1],
             ),
         )
+        chosen = original_choice
+        baseline_guidance = selected_guidance = None
+        if guide is not None and guide.enabled:
+            baseline_guidance = guide.evaluate_lines(original_choice[0][0], ingredient_map)
+            eligible = []
+            required_ids = {
+                item.ingredient_id for name in brief.requested_ingredients
+                if (item := self.catalog.lookup(name)) is not None
+            }
+            for item in evaluated_variants[:legacy_search_count]:
+                if not internally_eligible(item[0]):
+                    continue
+                if not required_ids.issubset({line.ingredient_id for line in item[0][0]}):
+                    continue
+                exact = guide.evaluate_lines(item[0][0], ingredient_map)
+                if exact is None:
+                    continue
+                if baseline_guidance is not None and exact["score"] + 1e-8 < baseline_guidance["score"]:
+                    continue
+                # A research prior cannot erase existing requested-target,
+                # safety or evidence gates. Bound legacy proxy regression too.
+                if physics_objective(item) < physics_objective(original_choice) - 3.0:
+                    continue
+                if original_choice[3].status == "evidenced_nonhuman_pass" and item[3].status != "evidenced_nonhuman_pass":
+                    continue
+                eligible.append((item, exact))
+            if eligible:
+                chosen, selected_guidance = max(eligible, key=lambda pair: (
+                    (1.0 - guide.weight) * physics_objective(pair[0]) + guide.weight * pair[1]["score"],
+                    pair[0][0][1],
+                ))
+        before_full_choice = chosen
+        full_before = full_after = None
+        if reference_target is None:
+            def complete_score(item):
+                assessment = assess_recipe_profiles(
+                    brief, item[0][2], [asdict(point) for point in item[1].temporal_points], time_weights
+                )
+                return assessment["score"]
+
+            full_before = complete_score(chosen)
+            guide_before = guide.evaluate_lines(chosen[0][0], ingredient_map) if guide is not None and guide.enabled else None
+            legacy_was_eligible = internally_eligible(chosen[0])
+            named_ids = {item.ingredient_id for name in brief.requested_ingredients
+                         if (item := self.catalog.lookup(name)) is not None}
+            preserved_named_ids = named_ids & {line.ingredient_id for line in chosen[0][0]}
+            ranked = []
+            for item in evaluated_variants:
+                if not internally_eligible(item[0]):
+                    continue
+                if not preserved_named_ids.issubset({line.ingredient_id for line in item[0][0]}):
+                    continue
+                if chosen[3].status == "evidenced_nonhuman_pass" and item[3].status != "evidenced_nonhuman_pass":
+                    continue
+                score = complete_score(item)
+                if score is None or (not self.require_full_profile_match and not legacy_was_eligible and score + 1e-8 < brief.constraints.target_similarity):
+                    continue
+                if guide_before is not None:
+                    candidate_guide = guide.evaluate_lines(item[0][0], ingredient_map)
+                    if candidate_guide is None or candidate_guide["score"] + 1e-8 < guide_before["score"]:
+                        continue
+                ranked.append((score, item))
+            if ranked:
+                full_after, chosen = max(ranked, key=lambda pair: (pair[0], physics_objective(pair[1]), pair[1][0][1]))
+            else:
+                full_after = full_before
+        screening_full_before, screening_full_after = full_before, full_after
         if brief.constraints.simulation_draws > screening_draws:
-            selected_lines = selected_variant[0]
-            scientific_twin = self.temporal_simulator.evaluate(
-                selected_lines,
-                ingredient_map,
-                brief,
-                self.scientific_store,
-                draws=brief.constraints.simulation_draws,
+            def final_evaluation(item):
+                variant, _, variant_physsim, _ = item
+                twin = self.temporal_simulator.evaluate(
+                    variant[0], ingredient_map, brief, scientific_properties,
+                    draws=brief.constraints.simulation_draws,
+                )
+                simulated = self.simulation_engine.evaluate(
+                    variant[0], ingredient_map, brief, self.corpus,
+                    target=brief.constraints.target_similarity,
+                    draws=brief.constraints.simulation_draws,
+                    calibration=self.calibration, scientific_twin=twin,
+                    physsim=variant_physsim, target_evidenced=reference_target is not None,
+                )
+                return variant, twin, variant_physsim, simulated
+
+            chosen = final_evaluation(chosen)
+            if reference_target is None:
+                # Screening means use fewer prior draws. Verify the improvement
+                # at the actual output draw count, never compare 64 with 200.
+                if formula_fingerprint(before_full_choice[0][0]) != formula_fingerprint(chosen[0][0]):
+                    final_baseline = final_evaluation(before_full_choice)
+                    full_before, full_after = complete_score(final_baseline), complete_score(chosen)
+                    if full_after is None or (full_before is not None and full_after + 1e-8 < full_before):
+                        chosen, full_after = final_baseline, full_before
+                else:
+                    full_before = full_after = complete_score(chosen)
+        # V7's final-draw choice remains the baseline. New full-pool solutions
+        # are evaluated at that same final draw count, never promoted by an LP
+        # bound or a shorter screening run.
+        pool_diagnostic = {"enabled": self.enable_full_pool_search, "status": "not_applicable", "attempts": []}
+        pool_variants_evaluated = 0
+        pool_sets_evaluated = set()
+        dose_seeds = []
+        if reference_target is None:
+            current_full = complete_score(chosen)
+            optimistic_bound = profile_upper_bound(candidates, brief.target_profile)
+            pool_diagnostic.update(
+                candidate_count=len(candidates), bound=optimistic_bound,
+                baseline_v7_score=current_full, selected_score=current_full, candidate_changed=False,
+                baseline_v7_formula_id=formula_fingerprint(chosen[0][0]),
+                selected_formula_id=formula_fingerprint(chosen[0][0]),
+                requested_target_ruled_out_by_bound=(optimistic_bound["upper_score"] is not None
+                                                    and optimistic_bound["upper_score"] + 1e-8 < brief.constraints.target_similarity),
             )
-            simulation = self.simulation_engine.evaluate(
-                selected_lines,
-                ingredient_map,
-                brief,
-                self.corpus,
-                target=brief.constraints.target_similarity,
-                draws=brief.constraints.simulation_draws,
-                calibration=self.calibration,
-                scientific_twin=scientific_twin,
-                physsim=physsim,
-                target_evidenced=reference_target is not None,
-            )
+            if self.enable_full_pool_search and current_full is not None and current_full + 1e-8 < brief.constraints.target_similarity:
+                pool_diagnostic["status"] = "evaluated_entire_screened_pool"
+                minimums = {
+                    line.ingredient_id: line.concentrate_percent for line in chosen[0][0]
+                    if line.ingredient_id in preserved_named_ids
+                }
+                # Risk-tier permission does not require retaining an automatic
+                # ingredient choice. All reviewed UPPER dose caps still apply;
+                # unnamed materials can be reduced or replaced to fit the brief.
+                contexts = [("structural", None, brief.target_profile), ("headspace", nominal_factors, brief.target_profile)]
+                if brief.phase_target_profiles:
+                    for phase, profile in brief.phase_target_profiles.items():
+                        if sum(profile.values()) > 0:
+                            phase_weights = tuple(float(point.phase == phase) for point in chosen[1].temporal_points)
+                            contexts.append((phase, self.temporal_simulator.factors_from_responses(
+                                response_inputs.identifiers, nominal_responses, phase_weights,
+                            ), profile))
+                else:
+                    contexts.append(("drydown", self.temporal_simulator.factors_from_responses(
+                        response_inputs.identifiers, nominal_responses, (0., 0., 0., .4, .6),
+                    ), brief.target_profile))
+                prior_guide = guide.evaluate_lines(chosen[0][0], ingredient_map) if guide is not None and guide.enabled else None
+                new_fingerprints = {formula_fingerprint(chosen[0][0])}
+                for context, factors, target in contexts:
+                    proposal = optimize_full_pool(candidates, brief, factors=factors, target=target, minimum_percent=minimums)
+                    attempt = {"context": context, "status": proposal.status, "relaxed_overlap_score": proposal.relaxed_overlap_score,
+                               "restricted_support": proposal.restricted_support, "ingredient_count": len(proposal.weights_percent)}
+                    pool_diagnostic["attempts"].append(attempt)
+                    if not proposal.weights_percent:
+                        continue
+                    dose_seeds.append(proposal.weights_percent)
+                    used = [ingredient_map[key] for key in proposal.weights_percent]
+                    variant = self.optimizer.variant_from_weights(used, brief, np.asarray(list(proposal.weights_percent.values())))
+                    if (any(line.concentrate_percent <= 0 for line in variant[0])
+                            or abs(sum(line.concentrate_percent for line in variant[0]) - 100.) > .001
+                            or not internally_eligible(variant)):
+                        attempt["status"] = "rejected_existing_recipe_constraints"
+                        continue
+                    identity = formula_fingerprint(variant[0])
+                    if identity in new_fingerprints:
+                        attempt["status"] = "duplicate_recipe"
+                        continue
+                    new_fingerprints.add(identity)
+                    twin = self.temporal_simulator.evaluate(variant[0], ingredient_map, brief, scientific_properties, draws=brief.constraints.simulation_draws)
+                    pool_variants_evaluated += 1
+                    pool_sets_evaluated.add(tuple(sorted(line.ingredient_id for line in variant[0])))
+                    comparison = assess_recipe_profiles(brief, variant[2], [asdict(point) for point in twin.temporal_points], time_weights)["score"]
+                    attempt["full_profile_score"] = comparison
+                    if (comparison is None or comparison <= current_full + 1e-8
+                            or (not self.require_full_profile_match and not legacy_was_eligible and comparison + 1e-8 < brief.constraints.target_similarity)):
+                        attempt["status"] = "no_verified_full_profile_improvement"
+                        continue
+                    if prior_guide is not None:
+                        exact_guide = guide.evaluate_lines(variant[0], ingredient_map)
+                        if exact_guide is None or exact_guide["score"] + 1e-8 < prior_guide["score"]:
+                            attempt["status"] = "rejected_existing_perception_guidance"
+                            continue
+                    variant_physsim = self.physsim_engine.evaluate(variant[0], ingredient_map, brief, scientific_properties)
+                    variant_simulation = self.simulation_engine.evaluate(
+                        variant[0], ingredient_map, brief, self.corpus, target=brief.constraints.target_similarity,
+                        draws=brief.constraints.simulation_draws, calibration=self.calibration,
+                        scientific_twin=twin, physsim=variant_physsim, target_evidenced=False,
+                    )
+                    if chosen[3].status == "evidenced_nonhuman_pass" and variant_simulation.status != "evidenced_nonhuman_pass":
+                        attempt["status"] = "rejected_existing_evidence_gate"
+                        continue
+                    chosen = (variant, twin, variant_physsim, variant_simulation)
+                    current_full = comparison
+                    full_after = comparison
+                    if prior_guide is not None:
+                        prior_guide = exact_guide
+                    pool_diagnostic.update(selected_score=comparison, candidate_changed=True, selected_formula_id=identity)
+                    attempt["status"] = "selected_full_profile_improvement"
+            elif self.enable_full_pool_search:
+                pool_diagnostic["status"] = "undefined_complete_target" if current_full is None else "requested_target_already_met"
+            else:
+                pool_diagnostic["status"] = "disabled_for_control_comparison"
+        # Preserve V8's completed result as the control. Note allocation is
+        # inferred policy, while the odor target and user constraints stay fixed.
+        adaptive = {"enabled": self.enable_adaptive_pyramid and self.enable_full_pool_search, "status": "not_applicable", "attempts": []}
+        if reference_target is None:
+            baseline_v8 = chosen
+            baseline_assessment = assess_recipe_profiles(brief, chosen[0][2], [asdict(p) for p in chosen[1].temporal_points], time_weights)
+            adaptive.update(baseline_v8_score=baseline_assessment["score"], selected_score=baseline_assessment["score"],
+                            baseline_v8_formula_id=formula_fingerprint(chosen[0][0]), candidate_changed=False,
+                            original_inferred_pyramid=dict(brief.pyramid_ratios), selected_pyramid=actual_pyramid(chosen[0][0]))
+            if not adaptive["enabled"]:
+                adaptive["status"] = "disabled_for_control_comparison"
+            elif brief.constraints.validation_level != "prototype":
+                adaptive["status"] = "qualified_release_scope_preserved"
+            elif baseline_assessment["score"] is None:
+                adaptive["status"] = "undefined_complete_target"
+            elif baseline_assessment["score"] + 1e-8 >= brief.constraints.target_similarity:
+                adaptive["status"] = "requested_target_already_met"
+            else:
+                policy = prepare_adaptive_policy(brief, chosen[0][0], ingredient_map)
+                adaptive["policy"] = policy
+                if all(low == high for low, high in policy["bounds"].values()):
+                    adaptive["status"] = "explicit_pyramid_locked"
+                else:
+                    adaptive["status"] = "evaluated_bounded_note_allocations"
+                    source_brief = brief
+                    modeled = [item for item in candidates if item.vector().sum() > 0]
+                    minimums = {line.ingredient_id: line.concentrate_percent for line in chosen[0][0]
+                                if line.ingredient_id in preserved_named_ids}
+                    adaptive_contexts = [("structural", None, source_brief.target_profile),
+                                         ("headspace", nominal_factors, source_brief.target_profile)]
+                    if source_brief.phase_target_profiles:
+                        for phase, target in source_brief.phase_target_profiles.items():
+                            if sum(target.values()) > 0:
+                                weights_by_time = tuple(float(point.phase == phase) for point in chosen[1].temporal_points)
+                                adaptive_contexts.append((phase, self.temporal_simulator.factors_from_responses(
+                                    response_inputs.identifiers, nominal_responses, weights_by_time), target))
+                    else:
+                        adaptive_contexts.append(("drydown", self.temporal_simulator.factors_from_responses(
+                            response_inputs.identifiers, nominal_responses, (0., 0., 0., .4, .6)), source_brief.target_profile))
+                    seen_adaptive = {formula_fingerprint(chosen[0][0])}
+                    current_adaptive_score = baseline_assessment["score"]
+                    prior_guide = guide.evaluate_lines(chosen[0][0], ingredient_map) if guide is not None and guide.enabled else None
+                    for context, factors, target in adaptive_contexts:
+                        proposal = optimize_full_pool(modeled, source_brief, factors=factors, target=target, minimum_percent=minimums,
+                                                      pyramid_bounds=policy["bounds"], intensity_range=policy["intensity_range"],
+                                                      diffusion_range=policy["diffusion_range"])
+                        attempt = {"context": "adaptive_" + context, "status": proposal.status,
+                                   "relaxed_overlap_score": proposal.relaxed_overlap_score}
+                        if not proposal.weights_percent:
+                            adaptive["attempts"].append(attempt)
+                            pool_diagnostic["attempts"].append(attempt)
+                            continue
+                        if context == "structural":
+                            dose_seeds.insert(0, proposal.weights_percent)
+                        else:
+                            dose_seeds.append(proposal.weights_percent)
+                        for fraction, mixture_weights in blended_proposals(
+                            baseline_v8[0][0], proposal.weights_percent, source_brief.constraints.max_ingredients,
+                            {item.ingredient_id for item in modeled},
+                        ):
+                            attempt = {"context": "adaptive_" + context, "status": "proposed", "blend_fraction": fraction,
+                                       "endpoint_lp_overlap_score": proposal.relaxed_overlap_score}
+                            adaptive["attempts"].append(attempt)
+                            pool_diagnostic["attempts"].append(attempt)
+                            used = [ingredient_map[key] for key in mixture_weights]
+                            variant = self.optimizer.variant_from_weights(used, source_brief, np.asarray(list(mixture_weights.values())))
+                            ratios = actual_pyramid(variant[0])
+                            actual_cost = sum(line.concentrate_percent / 100 * line.price_per_kg for line in variant[0])
+                            if (not internally_eligible(variant) or any(line.concentrate_percent <= 0 for line in variant[0])
+                                    or abs(sum(ratios.values()) - 100) > .001
+                                    or actual_cost > source_brief.constraints.max_formula_cost_per_kg + 1e-6
+                                    or any(not low - .001 <= ratios[group] <= high + .001 for group, (low, high) in policy["bounds"].items())):
+                                attempt["status"] = "rejected_existing_or_allocation_constraints"
+                                continue
+                            identity = formula_fingerprint(variant[0])
+                            if identity in seen_adaptive:
+                                attempt["status"] = "duplicate_recipe"
+                                continue
+                            seen_adaptive.add(identity)
+                            candidate_brief = replace(source_brief, pyramid_ratios=ratios)
+                            twin = self.temporal_simulator.evaluate(variant[0], ingredient_map, candidate_brief, scientific_properties,
+                                                                    draws=source_brief.constraints.simulation_draws)
+                            pool_variants_evaluated += 1
+                            pool_sets_evaluated.add(tuple(sorted(line.ingredient_id for line in variant[0])))
+                            assessment = assess_recipe_profiles(candidate_brief, variant[2], [asdict(p) for p in twin.temporal_points], time_weights)
+                            score = assessment["score"]
+                            attempt.update(full_profile_score=score, pyramid_ratios=ratios)
+                            if score is None or score <= current_adaptive_score + 1e-8 or (not self.require_full_profile_match and not legacy_was_eligible and score + 1e-8 < source_brief.constraints.target_similarity):
+                                attempt["status"] = "no_verified_full_profile_improvement"
+                                continue
+                            violations = check_adaptive_response(source_brief, baseline_assessment, assessment,
+                                                                 baseline_v8[1], twin, variant[0], ingredient_map, policy)
+                            if violations:
+                                attempt.update(status="rejected_response_preservation", violations=violations)
+                                continue
+                            if prior_guide is not None:
+                                exact = guide.evaluate_lines(variant[0], ingredient_map)
+                                if exact is None or exact["score"] + 1e-8 < prior_guide["score"]:
+                                    attempt["status"] = "rejected_existing_perception_guidance"
+                                    continue
+                            candidate_physsim = self.physsim_engine.evaluate(variant[0], ingredient_map, candidate_brief, scientific_properties)
+                            candidate_simulation = self.simulation_engine.evaluate(variant[0], ingredient_map, candidate_brief, self.corpus,
+                                target=source_brief.constraints.target_similarity, draws=source_brief.constraints.simulation_draws,
+                                calibration=self.calibration, scientific_twin=twin, physsim=candidate_physsim, target_evidenced=False)
+                            if chosen[3].status == "evidenced_nonhuman_pass" and candidate_simulation.status != "evidenced_nonhuman_pass":
+                                attempt["status"] = "rejected_existing_evidence_gate"
+                                continue
+                            chosen, brief = (variant, twin, candidate_physsim, candidate_simulation), candidate_brief
+                            current_adaptive_score = full_after = score
+                            if prior_guide is not None:
+                                prior_guide = exact
+                            adaptive.update(candidate_changed=True, selected_score=score, selected_pyramid=ratios)
+                            pool_diagnostic.update(selected_score=score, candidate_changed=True, selected_formula_id=identity)
+                            attempt["status"] = "selected_adaptive_improvement"
+                            if score + 1e-8 >= source_brief.constraints.target_similarity:
+                                break
+                        if current_adaptive_score + 1e-8 >= source_brief.constraints.target_similarity:
+                            break
+        pool_diagnostic["adaptive_pyramid"] = adaptive
+        dose = {"enabled": bool(self.enable_dose_refinement and self.enable_adaptive_pyramid and self.enable_full_pool_search),
+                "status": "not_applicable", "attempts": []}
+        if reference_target is None:
+            dose_baseline, dose_brief = chosen, brief
+            dose_assessment = assess_recipe_profiles(brief, chosen[0][2], [asdict(p) for p in chosen[1].temporal_points], time_weights)
+            dose_score = dose_assessment["score"]
+            dose.update(baseline_v9_score=dose_score, selected_score=dose_score, candidate_changed=False,
+                        baseline_v9_formula_id=formula_fingerprint(chosen[0][0]),
+                        original_pyramid=dict(brief.pyramid_ratios), selected_pyramid=actual_pyramid(chosen[0][0]))
+            if not dose["enabled"]:
+                dose["status"] = "disabled_for_control_comparison"
+            elif brief.constraints.validation_level != "prototype":
+                dose["status"] = "qualified_release_scope_preserved"
+            elif dose_score is None:
+                dose.update(status="undefined_complete_target", missing_positive_phase_targets=sorted({
+                    point["phase"] for point in dose_assessment["temporal"]
+                    if point["weight"] > 0 and not sum(point["target_profile"].values())
+                }))
+            elif dose_score + 1e-8 >= brief.constraints.target_similarity:
+                dose["status"] = "requested_target_already_met"
+            else:
+                dose["status"] = "evaluated_actual_dose_joint_time_proposals"
+                policy = prepare_adaptive_policy(brief, chosen[0][0], ingredient_map)
+                minimums = {line.ingredient_id: line.concentrate_percent for line in chosen[0][0]
+                            if line.ingredient_id in preserved_named_ids}
+                seen_dose = {formula_fingerprint(chosen[0][0])}
+                prior_guide = guide.evaluate_lines(chosen[0][0], ingredient_map) if guide is not None and guide.enabled else None
+                modeled_ids = {item.ingredient_id for item in candidates if item.vector().sum() > 0}
+                for proposal in dose_refinement_proposals(candidates, dose_brief, scientific_properties, dose_baseline[0][0], policy, dose_seeds, minimums,
+                                                         current_lines=lambda: chosen[0][0], current_score=lambda: dose_score):
+                    allocation_bounds = (full_inferred_note_policy(policy)["bounds"] if proposal.get("allocation_mode") == "inferred_full_range" else policy["bounds"])
+                    blends = list(blended_proposals(dose_baseline[0][0], proposal["weights_percent"], brief.constraints.max_ingredients, modeled_ids))
+                    for fraction, weights in reversed(blends):
+                        attempt = {key: value for key, value in proposal.items() if key != "weights_percent"}
+                        attempt.update(context="actual_dose_joint_time", blend_fraction=fraction, status="proposed")
+                        dose["attempts"].append(attempt)
+                        pool_diagnostic["attempts"].append(attempt)
+                        variant = self.optimizer.variant_from_weights([ingredient_map[key] for key in weights], dose_brief, np.asarray(list(weights.values())))
+                        ratios = actual_pyramid(variant[0])
+                        context_brief = replace(dose_brief, pyramid_ratios=ratios)
+                        if (not internally_eligible(variant, context_brief) or any(line.concentrate_percent <= 0 for line in variant[0])
+                                or abs(sum(ratios.values()) - 100) > .001
+                                or sum(line.concentrate_percent / 100 * line.price_per_kg for line in variant[0]) > brief.constraints.max_formula_cost_per_kg + 1e-6
+                                or any(not low - .001 <= ratios[group] <= high + .001 for group, (low, high) in allocation_bounds.items())):
+                            attempt["status"] = "rejected_existing_or_allocation_constraints"
+                            continue
+                        identity = formula_fingerprint(variant[0])
+                        if identity in seen_dose:
+                            attempt["status"] = "duplicate_recipe"
+                            continue
+                        seen_dose.add(identity)
+                        twin = self.temporal_simulator.evaluate(variant[0], ingredient_map, context_brief, scientific_properties, draws=brief.constraints.simulation_draws)
+                        pool_variants_evaluated += 1
+                        pool_sets_evaluated.add(tuple(sorted(line.ingredient_id for line in variant[0])))
+                        assessment = assess_recipe_profiles(context_brief, variant[2], [asdict(p) for p in twin.temporal_points], time_weights)
+                        score = assessment["score"]
+                        attempt.update(full_profile_score=score, pyramid_ratios=ratios)
+                        if score is None or score <= dose_score + 1e-8 or (not self.require_full_profile_match and not legacy_was_eligible and score + 1e-8 < brief.constraints.target_similarity):
+                            attempt["status"] = "no_verified_full_profile_improvement"
+                            continue
+                        violations = check_adaptive_response(dose_brief, dose_assessment, assessment, dose_baseline[1], twin, variant[0], ingredient_map, policy)
+                        if violations:
+                            attempt.update(status="rejected_response_preservation", violations=violations)
+                            continue
+                        exact = guide.evaluate_lines(variant[0], ingredient_map) if prior_guide is not None else None
+                        if prior_guide is not None and (exact is None or exact["score"] + 1e-8 < prior_guide["score"]):
+                            attempt["status"] = "rejected_existing_perception_guidance"
+                            continue
+                        candidate_physsim = self.physsim_engine.evaluate(variant[0], ingredient_map, context_brief, scientific_properties)
+                        candidate_simulation = self.simulation_engine.evaluate(variant[0], ingredient_map, context_brief, self.corpus,
+                            target=brief.constraints.target_similarity, draws=brief.constraints.simulation_draws,
+                            calibration=self.calibration, scientific_twin=twin, physsim=candidate_physsim, target_evidenced=False)
+                        if chosen[3].status == "evidenced_nonhuman_pass" and candidate_simulation.status != "evidenced_nonhuman_pass":
+                            attempt["status"] = "rejected_existing_evidence_gate"
+                            continue
+                        chosen, brief = (variant, twin, candidate_physsim, candidate_simulation), context_brief
+                        dose_score = full_after = score
+                        if prior_guide is not None:
+                            prior_guide = exact
+                        dose.update(candidate_changed=True, selected_score=score, selected_formula_id=identity, selected_pyramid=ratios)
+                        pool_diagnostic.update(selected_score=score, candidate_changed=True, selected_formula_id=identity)
+                        attempt["status"] = "selected_actual_dose_improvement"
+                        if score + 1e-8 >= brief.constraints.target_similarity:
+                            break
+                    if dose_score + 1e-8 >= brief.constraints.target_similarity:
+                        break
+        pool_diagnostic["dose_refinement"] = dose
+        selected_variant, scientific_twin, physsim, simulation = chosen
+        if guide is not None:
+            selected_guidance = guide.evaluate_lines(selected_variant[0], ingredient_map)
         lines, raw_similarity, achieved, cost, support = selected_variant
         human_calibration = self.human_mixture_calibration.compare(
             lines,
@@ -780,7 +1464,7 @@ class NaturalLanguagePerfumeryAI:
             and brief.constraints.enable_registry_trace_candidates
             and brief.constraints.validation_level == "prototype"
         )
-        if experimental_safety_disabled:
+        if experimental_safety_disabled and not any(registry_odor_rejection(ingredient_map[line.ingredient_id]) for line in lines):
             safety = replace(
                 safety,
                 internal_gate_passed=True,
@@ -883,7 +1567,7 @@ class NaturalLanguagePerfumeryAI:
             experimental_safety_disabled
             or cost <= brief.constraints.max_formula_cost_per_kg
         )
-        semantic_ok = raw_similarity + 1e-8 >= brief.constraints.target_similarity
+        semantic_ok = raw_similarity + 1e-8 >= self._preference_screen_target(brief.constraints)
         sensory_ok = bool(sensory and sensory.passed)
         quality_ok = bool(quality and quality.passed)
         release_ok = bool(
@@ -1112,7 +1796,7 @@ class NaturalLanguagePerfumeryAI:
                 clean_reasons.append("상용 과학 커버리지·시간축 기준 미충족")
             message = "; ".join(clean_reasons) or "승인 조건을 충족하지 못했습니다."
 
-        return RecipeResult(
+        result = RecipeResult(
             status=status,
             message=message,
             brief=brief,
@@ -1184,6 +1868,7 @@ class NaturalLanguagePerfumeryAI:
             scientific_twin_status=scientific_twin.status,
             scientific_model_version=scientific_twin.model_version,
             scientific_data_coverage_percent=scientific_twin.scientific_data_coverage_percent,
+            calculated_structure_coverage_percent=scientific_twin.calculated_structure_coverage_percent,
             molecular_descriptor_coverage_percent=scientific_twin.molecular_descriptor_coverage_percent,
             temporal_similarity_score=scientific_twin.temporal_similarity_mean,
             minimum_temporal_similarity=scientific_twin.minimum_temporal_similarity,
@@ -1292,7 +1977,9 @@ class NaturalLanguagePerfumeryAI:
             release_spec_id=(release_spec.release_spec_id if release_spec else ""),
             release_scope_verified=release_assessment.scope_verified,
             evidence_scope_id=evidence_scope_id,
-            candidate_variants_evaluated=len(evaluated_variants),
+            candidate_variants_evaluated=len(evaluated_variants) + pool_variants_evaluated,
+            ingredient_sets_evaluated=1 + len(replacement_sets) + len(guide_sets) + len(pool_sets_evaluated),
+            ingredient_swaps_evaluated=unguided_swap_count,
             physics_guided_search=len(evaluated_variants) > 1,
             physics_search_objective=round(
                 physics_objective(
@@ -1318,6 +2005,34 @@ class NaturalLanguagePerfumeryAI:
                 human_calibration.similarity_90_claim_authorized
             ),
         )
+        if guide is not None:
+            guidance_report = guide.report(
+                baseline_guidance, selected_guidance,
+                changed=formula_fingerprint(original_choice[0][0]) != formula_fingerprint(selected_variant[0]),
+                variants=guidance_variants_added,
+            )
+            guidance_report["recipe_returned"] = bool(result.recipe)
+            guidance_report["candidate_changed"] = guidance_report["recipe_changed"]
+            if not result.recipe:
+                guidance_report["recipe_changed"] = False
+                guidance_report["status"] = "candidate_only_no_approved_recipe"
+            result = attach_guidance(result, guidance_report)
+            result.limitations.append(
+                "관능모델 가이드는 원료 선택·배합비 검색에 사용한 연구용 가산 혼합 추정입니다. "
+                "지정 용매 시나리오는 실제 제품 베이스 검증이 아니며, 점수는 실제 향 유사도/90% 인증이 아닙니다."
+            )
+        result._full_profile_search = {
+            "enabled": reference_target is None,
+            "additional_variants": full_profile_variants_added,
+            "baseline_score": full_before, "selected_score": full_after,
+            "screening_baseline_score": screening_full_before, "screening_selected_score": screening_full_after,
+            "screening_draws": screening_draws, "final_comparison_draws": scientific_twin.monte_carlo_draws,
+            "candidate_changed": formula_fingerprint(before_full_choice[0][0]) != formula_fingerprint(selected_variant[0]),
+            "legacy_request_gate_preserved": True,
+            "not_human_perception_validation": True,
+            "full_pool_search": pool_diagnostic,
+        }
+        return result
 
     def create_recipe_with_target_profile(
         self,

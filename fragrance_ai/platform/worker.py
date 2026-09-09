@@ -11,7 +11,7 @@ import time
 import uuid
 from typing import Any, Callable
 
-from ..recommender.service import NaturalLanguagePerfumeryAI
+from ..recommender.runtime import RuntimeAIFactory
 from .audit import audit_log_from_env
 from .observability import ServiceMetrics, configure_json_logging
 from .store import WorkspaceStore, workspace_store_from_env
@@ -213,6 +213,7 @@ def run_worker(
         store=store,
         ai_factory=ai_factory,
         ai_instance=ai,
+        catalog=getattr(ai, "catalog", None),
     )
     try:
         processed = 0
@@ -246,12 +247,22 @@ def main() -> None:
     parser.add_argument("--poll-seconds", type=float, default=1.0)
     parser.add_argument("--lease-seconds", type=int, default=300)
     parser.add_argument("--once", action="store_true")
+    parser.add_argument("--minimum-profile-target", type=float, default=95.0)
+    parser.add_argument("--runtime-catalog-manifest")
+    parser.add_argument("--runtime-catalog-manifest-sha256")
+    parser.add_argument(
+        "--require-full-profile-match", action="store_true",
+        help="Reject queued recipes below the complete model-profile target; not human validation",
+    )
     args = parser.parse_args()
     if not 0.05 <= args.poll_seconds <= 60:
         raise SystemExit("--poll-seconds must be between 0.05 and 60")
     if not 10 <= args.lease_seconds <= 3600:
         raise SystemExit("--lease-seconds must be between 10 and 3600")
     configure_json_logging(os.environ.get("PERFUMERY_AI_LOG_LEVEL", "INFO"))
+    ai_factory = RuntimeAIFactory.from_environment(minimum_profile_target=args.minimum_profile_target,
+        require_full_profile_match=args.require_full_profile_match, manifest_path=args.runtime_catalog_manifest,
+        expected_manifest_sha256=args.runtime_catalog_manifest_sha256)
     store = workspace_store_from_env()
     audit_log = audit_log_from_env()
     metrics = ServiceMetrics()
@@ -259,7 +270,7 @@ def main() -> None:
         try:
             run_worker(
                 store=store,
-                ai_factory=NaturalLanguagePerfumeryAI,
+                ai_factory=ai_factory,
                 worker_id=args.worker_id,
                 poll_seconds=args.poll_seconds,
                 lease_seconds=args.lease_seconds,

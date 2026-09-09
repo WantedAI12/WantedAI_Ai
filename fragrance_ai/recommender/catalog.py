@@ -67,6 +67,14 @@ class IngredientCatalog:
                 if key:
                     self._alias_index[key] = ingredient
         self._validate()
+        # Aliases belong to this catalog snapshot. Normalize once when loading
+        # it, instead of scanning every character of 29k materials per brief.
+        self._mention_aliases = tuple(
+            (ingredient, alias, normalized)
+            for ingredient in self.ingredients
+            for alias in sorted(ingredient.all_names(), key=len, reverse=True)
+            if len(normalized := normalize_name(alias)) >= 2
+        )
 
     @classmethod
     def load_builtin(cls) -> "IngredientCatalog":
@@ -220,13 +228,11 @@ class IngredientCatalog:
     def mentioned_ingredient_spans(self, text: str) -> list[IngredientMention]:
         raw: list[IngredientMention] = []
         normalized_text = normalize_name(text)
-        for ingredient in self.ingredients:
-            for alias in sorted(ingredient.all_names(), key=len, reverse=True):
-                normalized_alias = normalize_name(alias)
-                if len(normalized_alias) < 2 or normalized_alias not in normalized_text:
-                    continue
-                for start, end in find_text_spans(text, alias):
-                    raw.append(IngredientMention(ingredient, alias, start, end))
+        for ingredient, alias, normalized_alias in self._mention_aliases:
+            if normalized_alias not in normalized_text:
+                continue
+            for start, end in find_text_spans(text, alias):
+                raw.append(IngredientMention(ingredient, alias, start, end))
         raw.sort(key=lambda item: (item.start, -(item.end - item.start), item.alias))
         selected: list[IngredientMention] = []
         for mention in raw:
