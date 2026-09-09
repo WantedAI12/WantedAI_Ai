@@ -17,6 +17,11 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      PYTHONUNBUFFERED: "1"
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -58,7 +63,7 @@ jobs:
           node --check fragrance_ai/ui/app.js
       - name: Deployment-focused regression
         run: >-
-          python -m pytest -W error
+          python -m pytest -W error -vv --durations=15
           tests/test_core_smoke.py
           tests/test_recommender.py
           tests/test_olfactory_upgrade.py
