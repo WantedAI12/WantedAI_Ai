@@ -31,6 +31,7 @@ from .promotion_activation import PromotionActivationBundle
 from .perception_guidance import PerceptionGuidance, attach_guidance
 from .profile_match import assess_recipe_profiles, attach_profile_assessment, full_profile_similarity
 from .global_profile_search import optimize_full_pool, profile_upper_bound
+from .linear_program_cache import linear_program_request
 from .adaptive_pyramid import actual_pyramid, blended_proposals, check_adaptive_response, prepare_adaptive_policy
 from .dose_refinement import dose_refinement_proposals, full_inferred_note_policy
 from .registry_activation import REGISTRY_CONDITIONAL_DATA_SOURCE
@@ -486,6 +487,7 @@ class NaturalLanguagePerfumeryAI:
             if not isinstance(value, str) or len(value) > 256:
                 raise ValueError(f"{name} must be text of at most 256 characters")
 
+    @linear_program_request
     def create_recipe(
         self,
         natural_language_brief: str,

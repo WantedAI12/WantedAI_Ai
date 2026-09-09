@@ -29,7 +29,7 @@ from .clarification import ProductPreferences, apply_question_answers, unsupport
 from ..recommender.lotion import simulate_lotion
 from ..recommender.lotion_optimizer import prepare_lotion_optimization, optimize_lotion
 from ..recommender.lotion_estimation import LotionEstimateRequest, estimate_lotion_recipe
-from ..recommender.compact_language import AssistantRequest, assistant_reply
+from ..recommender.compact_language import AssistantRequest, assistant_reply, validate_proposal
 from ..recommender.perception_runtime import configured_perception, model_contract, assert_provider_current, assert_provider_product, environment_snapshot
 from ..recommender.lotion_evaluation import evaluation_contract
 
@@ -255,6 +255,9 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
     if catalog_contract is not None:
         lotion_contract['catalog_snapshot'] = dict(catalog_contract)
     language_slot = threading.BoundedSemaphore(1)
+    language_cache = InferenceCache(ttl_seconds=120., max_entries=64, max_bytes=1024 * 1024,
+                                    max_pending=1, max_followers=8, wait_seconds=150.)
+    app.state.language_cache = language_cache
 
     @app.post('/v1/formulation-workflows/plan')
     def plan_formulation(request: WorkflowRequest):
@@ -264,12 +267,42 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
         return formulation_workflow(request)
 
     @app.post('/v1/ai/assistant')
-    def assistant(request: AssistantRequest):
+    def assistant(request: AssistantRequest, response: Response):
         rate_limit()
+        if runtime_guard is not None:
+            runtime_guard()
         if not language_slot.acquire(blocking=False):
             raise HTTPException(status_code=503, detail='assistant busy; retry', headers={'Retry-After': '2'})
         try:
-            return assistant_reply(request, parser, language_backend)
+            calls, cache_status = 0, 'not_used'
+
+            def cached_language(message):
+                nonlocal cache_status
+                contract = getattr(language_backend, 'contract', None)
+                identity = contract() if callable(contract) else None
+                key = hashlib.sha256(json.dumps({'message': message, 'backend': identity},
+                    sort_keys=True, ensure_ascii=False, allow_nan=False).encode()).hexdigest()
+
+                def compute():
+                    nonlocal calls, cache_status
+                    calls += 1
+                    cache_status = 'error'
+                    # Invalid output and transient model failures never enter
+                    # the cache. The existing parser fallback still handles them.
+                    proposal = validate_proposal(language_backend(message)).model_dump()
+                    if callable(contract) and contract() != identity:
+                        raise ValueError('language model changed during inference')
+                    return proposal
+
+                proposal, cache_status = language_cache.run(key, compute)
+                return proposal
+
+            result = assistant_reply(request, parser, cached_language if language_backend is not None else None)
+            if runtime_guard is not None:
+                runtime_guard()
+            response.headers['X-Perfumery-Language-Cache'] = cache_status
+            response.headers['X-Perfumery-LLM-Calls'] = str(calls)
+            return result
         finally:
             language_slot.release()
 

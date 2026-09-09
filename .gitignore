@@ -87,3 +87,6 @@ tests/*
 !tests/test_unified_product_v60.py
 !tests/test_runtime_release_v62.py
 !tests/test_modal_v62_verifier.py
+!tests/test_latency_v63.py
+!tests/test_runtime_release_v63.py
+!tests/test_modal_v63_evidence.py

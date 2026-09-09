@@ -15,6 +15,7 @@ from scipy.optimize import linprog
 from scipy.sparse import csr_matrix, diags, hstack, vstack
 
 from .models import Ingredient, PYRAMID_LEVELS, SCENT_DIMENSIONS, ScentBrief, profile_vector
+from .linear_program_cache import cached_linprog
 
 
 @dataclass
@@ -156,8 +157,8 @@ def _fractional_lp(
     objective = np.zeros(width)
     objective[-1] = -1.
     bounds = [(0., None)] * (n + 1) + [(0., float(value)) for value in p] + [(0., 1.)]
-    solution = linprog(
-        objective, A_ub=vstack(ub_rows, format="csr"), b_ub=np.concatenate(rhs),
+    solution = cached_linprog(
+        linprog, objective, A_ub=vstack(ub_rows, format="csr"), b_ub=np.concatenate(rhs),
         A_eq=vstack(eq_rows, format="csr"), b_eq=np.asarray(eq_rhs), bounds=bounds,
         method="highs-ds" if n > 1024 else "highs",
         # Dense presolve reductions on the 29k-column experimental registry
@@ -175,7 +176,7 @@ def _fractional_lp(
         floor = float(solution.x[-1])-1e-9
         preference = np.r_[-fine*gain, np.zeros(dimensions+2)]
         extra = csr_matrix(([ -1. ], ([0],[width-1])),shape=(1,width))
-        refined = linprog(preference, A_ub=vstack([*ub_rows,extra],format='csr'),
+        refined = cached_linprog(linprog, preference, A_ub=vstack([*ub_rows,extra],format='csr'),
             b_ub=np.r_[np.concatenate(rhs),-floor], A_eq=vstack(eq_rows,format='csr'),
             b_eq=np.asarray(eq_rhs),bounds=bounds,method='highs-ds',
             options={'time_limit':2.,'presolve':n<=1024})

@@ -114,7 +114,10 @@ def assess_realism(
     if not 4 <= len(lines) <= 10:
         balance -= 8.0
     balance = max(0.0, balance)
-    sourcing = sum(item.availability for item in ingredients.values() if item.ingredient_id in {line.ingredient_id for line in lines}) / max(1, len(lines)) * 100.0
+    # Assess only this formula. Rebuilding the ID set for every catalog row
+    # made every candidate evaluation O(catalog_size * formula_size).
+    selected_ids = dict.fromkeys(line.ingredient_id for line in lines)
+    sourcing = sum(ingredients[key].availability for key in selected_ids) / max(1, len(lines)) * 100.0
     observed = sum(
         1 for line in lines if ingredients[line.ingredient_id].data_source.startswith("odor-observed:")
     )
