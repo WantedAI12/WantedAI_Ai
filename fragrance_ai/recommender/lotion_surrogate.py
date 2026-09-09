@@ -101,9 +101,9 @@ def request_features(request):
     v = np.full(len(p), request.air_exchange_per_min)
     k = np.full(len(p), request.water_loss_per_min)
     w = water*(1-request.retained_water_fraction)/capacity
-    l = lipid*np.array([m.lipid_water_partition for m in p])/capacity
+    lipid_fraction = lipid*np.array([m.lipid_water_partition for m in p])/capacity
     rates = np.column_stack((e, u, h, r, v, k))
-    return np.concatenate([np.column_stack((rates*t, w, l)) for t in request.times_minutes[1:]])
+    return np.concatenate([np.column_stack((rates*t, w, lipid_fraction)) for t in request.times_minutes[1:]])
 
 
 class LotionReleaseSurrogate:

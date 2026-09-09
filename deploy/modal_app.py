@@ -7,7 +7,6 @@ Deploy with::
 
 import hashlib
 import json
-import os
 import threading
 from datetime import date
 from pathlib import Path

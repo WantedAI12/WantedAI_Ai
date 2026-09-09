@@ -142,7 +142,8 @@ def trajectory(rates, fractions, times, *, operator=baseline_kernel, steps=32, i
         # Batch display and mesh transitions for this interval in one forward.
         stops = []
         while index < len(times) and times[index] <= right:
-            stops.append(float(times[index])); index += 1
+            stops.append(float(times[index]))
+            index += 1
         include_mesh = not stops or stops[-1] != right
         all_stops = [*stops, right] if include_mesh else stops
         raw = np.concatenate([interval_features(rates, fractions, left, stop) for stop in all_stops])

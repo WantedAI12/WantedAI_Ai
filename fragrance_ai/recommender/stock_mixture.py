@@ -139,7 +139,8 @@ class StockMixturePredictor:
                 if values.shape != (len(batch),584) or not np.isfinite(values).all():
                     raise ValueError('invalid V54 molecular output')
                 for graph,value in zip(batch,values):
-                    value.setflags(write=False); self._atlas_cache[graph] = value
+                    value.setflags(write=False)
+                    self._atlas_cache[graph] = value
                 forwards += 2
             vectors = np.asarray([self._atlas_cache[g] if ok else np.zeros(584) for g,ok in zip(graphs,supported)])
             for graph in wanted:
@@ -218,7 +219,8 @@ class StockMixturePredictor:
                 raise ValueError('conflicting records for one ingredient')
             material_records[identifier] = row.ingredient
             if identity not in positions:
-                positions[identity] = len(unique); unique.append(row)
+                positions[identity] = len(unique)
+                unique.append(row)
             elif unique[positions[identity]].ingredient != row.ingredient:
                 raise ValueError('conflicting records for one ingredient')
         brief = ScentBrief('',{},[],[],[],[],'medium',{},RecipeConstraints())
@@ -228,7 +230,9 @@ class StockMixturePredictor:
             rows = unique[offset:offset+128]
             values,basis,identity = session.predict_stock_conditions([r.ingredient for r in rows],
                 [r.stock_dilution for r in rows],[r.solvent for r in rows])
-            predictions.extend(values); details.extend(basis); keys.extend(identity)
+            predictions.extend(values)
+            details.extend(basis)
+            keys.extend(identity)
         indices = [positions[(r.ingredient.ingredient_id,r.stock_dilution,r.solvent)] for r in active]
         control_unique,control_positions = [],{}
         for row in active_controls:
@@ -246,7 +250,8 @@ class StockMixturePredictor:
                     raise ValueError('invalid frozen control profile')
                 control_positions[key] = len(predictions)
                 control_unique.append(row)
-                predictions.append(value); keys.append(key)
+                predictions.append(value)
+                keys.append(key)
             indices.append(control_positions[key])
         active_rows = active+active_controls
         profiles = np.asarray(predictions)[indices]

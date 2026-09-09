@@ -269,6 +269,12 @@ def test_signed_scoped_dossier_can_authorize_safe_tier(tmp_path: Path):
 
 
 def test_explicit_risk_two_request_uses_conditional_materials_with_caps():
+    # Test explicit material requests, not a historical optimizer preference for
+    # an unrequested ingredient in an otherwise free-form fragrance brief.
+    brief = (
+        "include methyl ionone gamma, lavender oil, sweet orange oil and "
+        "cedarwood oil virginia in an aromatic woody fragrance"
+    )
     constraints = RecipeConstraints(
         max_risk_tier=2,
         min_availability=0.75,
@@ -280,7 +286,7 @@ def test_explicit_risk_two_request_uses_conditional_materials_with_caps():
     )
     with NaturalLanguagePerfumeryAI() as ai:
         result = ai.create_recipe(
-            "lavender patchouli sweet orange cedarwood aromatic woody fragrance",
+            brief,
             constraints,
         )
     assert result.status == "prototype_ready"
@@ -306,7 +312,7 @@ def test_explicit_risk_two_request_uses_conditional_materials_with_caps():
     )
     with NaturalLanguagePerfumeryAI() as ai:
         default_result = ai.create_recipe(
-            "lavender patchouli sweet orange cedarwood aromatic woody fragrance",
+            brief,
             default_constraints,
         )
     assert all(line.risk_tier <= 1 for line in default_result.recipe)

@@ -4,7 +4,8 @@ from pathlib import Path
 
 import modal
 
-from deploy.runtime_release_v62 import ROOT,RELEASE_ID,WHEEL_REL,WHEEL_SHA256,verify
+from deploy.compact_language_worker import register_worker,backend_for
+from deploy.runtime_release_v62 import ROOT,WHEEL_REL,verify
 
 REMOTE_ROOT='/opt/perfumery/runtime'
 LOCAL_BUNDLE=ROOT/'tmp/modal-runtime-v62/release-01'
@@ -24,7 +25,6 @@ image=(modal.Image.debian_slim(python_version='3.11')
     .add_local_python_source('deploy'))
 
 app=modal.App('perfumery-ai-core')
-from deploy.compact_language_worker import register_worker,backend_for
 CompactLanguage=register_worker(app)
 
 
@@ -37,7 +37,8 @@ def create_release_app(*,language_backend=None):
     profile=local_profile()
     if not profile or os.environ.get('PERFUMERY_AI_ENV')=='production':
         raise ValueError('explicit research profile required')
-    perfume=configured_perception();lotion=local_lotion_provider(configured_perception('body_lotion'))
+    perfume=configured_perception()
+    lotion=local_lotion_provider(configured_perception('body_lotion'))
     path,digest=profile['stock_mixture']
     stock=StockMixturePredictor(perfume,path,sha256=digest,experimental=True,atlas_predictor=local_atlas_provider())
     path,digest=profile['catalog']

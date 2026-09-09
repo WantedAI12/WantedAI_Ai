@@ -31,7 +31,7 @@ jobs:
           python -m pip install -e ".[commercial,test]" \
             modal==1.5.5 build==1.3.0 ruff==0.15.15 \
             numpy==2.2.6 fastapi==0.116.1 cryptography==46.0.3 \
-            httpx==0.28.1 PyJWT==2.10.1 pytest==8.4.2
+            httpx==0.28.1 PyJWT==2.10.1 pytest==8.4.2 rdkit==2025.9.4 scipy==1.15.2
       - name: Verify tracked LFS artifacts
         run: |
           git lfs ls-files
@@ -75,6 +75,11 @@ jobs:
           tests/test_api_security.py
           tests/test_api_oidc_tenant.py
           tests/test_postgres_contract.py
+          tests/test_runtime_release_v62.py
+          tests/test_runtime_release_v63.py
+          tests/test_lotion_solver_v27.py
+          tests/test_lotion_balance_v43.py
+          tests/test_lotion_reference_objective_v59.py
       - name: Build clean wheel
         run: python -m build --wheel --outdir artifacts/dist
       - name: Reject unsafe serialized runtime assets

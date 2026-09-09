@@ -1,6 +1,31 @@
 """Bounded equivalent coordinates for badly scaled lotion linear programs."""
+import warnings
+
 import numpy as np
 from scipy import sparse
+from scipy.optimize import OptimizeWarning
+
+
+def highs_linprog(solver, objective, **kwargs):
+    """Keep the explicit HiGHS cutoff without its SciPy pass-through notice.
+
+    HiGHS supports small_matrix_value, but SciPy announces that it forwards this
+    option. Do not remove the cutoff: weak response columns must remain visible.
+    https://ergo-code.github.io/HiGHS/dev/options/definitions/#small_matrix_value
+    Only this exact notice at our supported value is handled; other solver
+    warnings, failures and invalid options still propagate unchanged.
+    """
+    if (kwargs.get('options', {}).get('small_matrix_value') != 1e-12
+            or kwargs.get('method', 'highs') not in ('highs', 'highs-ds', 'highs-ipm')):
+        return solver(objective, **kwargs)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            'ignore',
+            message=(r"^Unrecognized options detected: \{'small_matrix_value': 1e-12\}\. "
+                     r"These will be passed to HiGHS verbatim\.$"),
+            category=OptimizeWarning,
+        )
+        return solver(objective, **kwargs)
 
 
 def response_variable_scales(responses, slack_count):
@@ -28,7 +53,7 @@ def conditioned_linprog(solver, objective, *, A_ub, b_ub, A_eq, b_eq, bounds, sc
     costs = costs/max(float(np.max(np.abs(costs))), 1e-300)
     transformed_bounds = [(lo/s if lo is not None else None, hi/s if hi is not None else None)
         for (lo,hi),s in zip(bounds, scales)]
-    result = solver(costs, A_ub=matrix, b_ub=rhs, A_eq=equality, b_eq=eq_rhs,
+    result = highs_linprog(solver, costs, A_ub=matrix, b_ub=rhs, A_eq=equality, b_eq=eq_rhs,
         bounds=transformed_bounds, method='highs-ipm', options={'time_limit':2., 'presolve':True,
             'small_matrix_value':1e-12, 'primal_feasibility_tolerance':1e-9, 'dual_feasibility_tolerance':1e-9})
     if getattr(result, 'x', None) is not None:

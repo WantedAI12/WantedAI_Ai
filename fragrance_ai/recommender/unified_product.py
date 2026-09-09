@@ -30,7 +30,8 @@ class UnifiedProductPredictor:
         self.parser = NaturalLanguageBriefParser(catalog)
 
     def assert_current(self):
-        self.transport.assert_current(); self.backbone.assert_current()
+        self.transport.assert_current()
+        self.backbone.assert_current()
         if self.references is not None:
             self.references.assert_current()
         if self.fine_model is not None:
@@ -71,7 +72,9 @@ class UnifiedProductPredictor:
         mass = (context.application_mass_mg_cm2*context.fragrance_concentration_percent/100.
                 *np.array([c.concentrate_percent/100. for c in request.components]))
         parent = np.array([c.initial_parent_fraction for c in request.components])
-        state = np.zeros((len(ids), 6)); state[:, 0] = mass*parent; state[:, 4] = mass*(1-parent)
+        state = np.zeros((len(ids), 6))
+        state[:, 0] = mass*parent
+        state[:, 4] = mass*(1-parent)
         times = np.asarray(request.times_minutes)
         # Reference evaluation uses fixed integration samples, not user-chosen
         # display points (which could otherwise hide an unwanted scent phase).

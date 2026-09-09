@@ -49,8 +49,10 @@ def solve_full_profile(*, profiles, targets, responses, target_score, residual_r
     for i, (lo, hi) in enumerate(bounds):
         for sign, value in ((-1., lo), (1., hi)):
             if value is not None:
-                bound_rows.append(len(bound_rhs)); bound_cols.append(i)
-                bound_values.append(sign); bound_rhs.append(sign*value)
+                bound_rows.append(len(bound_rhs))
+                bound_cols.append(i)
+                bound_values.append(sign)
+                bound_rhs.append(sign*value)
     bounded = sparse.csr_matrix((bound_values, (bound_rows, bound_cols)), shape=(len(bound_rhs), width))
     linear = sparse.vstack([linear, bounded], format='csr')
     linear_rhs = np.r_[linear_rhs, bound_rhs]
@@ -78,7 +80,8 @@ def solve_full_profile(*, profiles, targets, responses, target_score, residual_r
         block = block.multiply(scales).tocsc()
         norm = max(float(np.abs(block).max()), 1e-300)
         # One common scale per cone: independent row scaling changes geometry.
-        blocks.append(block/norm); right.append(np.zeros(d+1))
+        blocks.append(block/norm)
+        right.append(np.zeros(d+1))
         cones.append(clarabel.SecondOrderConeT(d+1))
     matrix, rhs = sparse.vstack(blocks, format='csc'), np.concatenate(right)
     costs = np.asarray(objective)*scales

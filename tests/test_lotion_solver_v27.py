@@ -1,11 +1,57 @@
 """Exact reformulation and numerical recovery, without relaxing scoring."""
 from types import SimpleNamespace
+import warnings
+
 import numpy as np
 import pytest
+from scipy.optimize import OptimizeWarning
 
 from fragrance_ai.platform.lotion_inputs import LotionOptimizationRequest
 from fragrance_ai.recommender import lotion_optimizer as module
+from fragrance_ai.recommender.lotion_numerics import highs_linprog
 from tests.test_lotion_v21 import fixture
+
+
+PASSTHROUGH_NOTICE = (
+    "Unrecognized options detected: {'small_matrix_value': 1e-12}. "
+    "These will be passed to HiGHS verbatim."
+)
+
+
+def test_known_highs_notice_keeps_all_inputs_and_warning_policy():
+    objective = np.array([1., 2.])
+    matrix = np.array([[1e-10, 1.]])
+    options = {'small_matrix_value': 1e-12, 'time_limit': .5}
+    expected = object()
+
+    def solve(costs, **kwargs):
+        assert costs is objective and kwargs['A_ub'] is matrix
+        assert kwargs['options'] is options
+        warnings.warn(PASSTHROUGH_NOTICE, OptimizeWarning)
+        return expected
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        assert highs_linprog(solve, objective, A_ub=matrix, options=options) is expected
+        with pytest.raises(OptimizeWarning):
+            warnings.warn(PASSTHROUGH_NOTICE, OptimizeWarning)
+
+
+@pytest.mark.parametrize('message,category,options', [
+    ('numerical instability', OptimizeWarning, {'small_matrix_value': 1e-12}),
+    ("Unrecognized options detected: {'typo': 1}. These will be passed to HiGHS verbatim.",
+     OptimizeWarning, {'small_matrix_value': 1e-12, 'typo': 1}),
+    (PASSTHROUGH_NOTICE, RuntimeWarning, {'small_matrix_value': 1e-12}),
+    (PASSTHROUGH_NOTICE, OptimizeWarning, {'small_matrix_value': -1.}),
+])
+def test_other_solver_warnings_are_not_silenced(message, category, options):
+    def solve(*args, **kwargs):
+        warnings.warn(message, category)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        with pytest.raises(category):
+            highs_linprog(solve, np.ones(1), options=options)
 
 
 @pytest.mark.parametrize('active', [1, 2, 7, 19])

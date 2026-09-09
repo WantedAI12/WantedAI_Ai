@@ -17,7 +17,7 @@ from .catalog import IngredientCatalog, normalize_name
 from .lotion import _simulate_lotion_transport
 from .lotion_evaluation import compare_lotion_profiles
 from .lotion_incumbent import incumbent_weights
-from .lotion_reference_objective import VERSION, exposure_groups
+from .lotion_reference_objective import exposure_groups
 from .lotion_numerics import conditioned_linprog, response_variable_scales
 
 
@@ -116,8 +116,6 @@ def optimize_observed_reference(*, request, prepared, brief, pool, basis_request
     absolute_oav = integration@original_oav
     responses = absolute_oav/np.maximum(absolute_oav.max(axis=1,keepdims=True),1e-300)
     t_count = len(responses)
-    target_rows = [{**{k:v for k,v in g.items() if k != 'weights'}, 'scenario_index':i}
-                   for i in range(len(basis_requests)) for g in groups]
     target_info = targets * len(basis_requests)
     wanted = np.stack([t['profiles'] for t in target_info], axis=1)  # head,time,descriptor
     predictor.prefetch(pool)

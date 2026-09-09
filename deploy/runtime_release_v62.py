@@ -20,7 +20,8 @@ def sha(path):
 
 
 def collect(root=ROOT):
-    root=Path(root).resolve();path=root/'perfumery.local.json'
+    root=Path(root).resolve()
+    path=root/'perfumery.local.json'
     if sha(path)!=PROFILE_SHA256:
         raise ValueError('the selected V62 profile changed; prepare a new release')
     profile=json.loads(path.read_text(encoding='utf-8'))
@@ -30,24 +31,30 @@ def collect(root=ROOT):
         if not path.is_relative_to(root) or sha(path)!=digest:
             raise ValueError('runtime dependency path or hash mismatch')
         name=path.relative_to(root).as_posix()
-        if name in files and files[name]!=digest:raise ValueError('conflicting artifact bindings')
+        if name in files and files[name]!=digest:
+            raise ValueError('conflicting artifact bindings')
         files[name]=digest
         return path
     add(root/WHEEL_REL,WHEEL_SHA256)
     for role in ROLES:
-        item=profile[role];path=add(root/item['path'],item['sha256'])
+        item=profile[role]
+        path=add(root/item['path'],item['sha256'])
         m=json.loads(path.read_text(encoding='utf-8'))
         if role=='catalog':
-            binding=m['runtime_catalog'];add(path.parent/binding['path'],binding['sha256'])
+            binding=m['runtime_catalog']
+            add(path.parent/binding['path'],binding['sha256'])
         if role in ('perfume','body_lotion'):
             for name in ('base_model','component_model','registry'):
-                spec=m[name];add(path.parent/spec['path'],spec['sha256'])
+                spec=m[name]
+                add(path.parent/spec['path'],spec['sha256'])
         if role in ('lotion_release','unified_product','odor_expression'):
-            spec=m['weights'];add(path.parent/spec['path'],spec['sha256'])
+            spec=m['weights']
+            add(path.parent/spec['path'],spec['sha256'])
         if role=='odor_expression':
             add(path.parent/'split.json',m['evaluation_summary']['split_sha256'])
         if role=='odor_calibration':
-            spec=m['training_bank'];add(path.parent/spec['path'],spec['sha256'])
+            spec=m['training_bank']
+            add(path.parent/spec['path'],spec['sha256'])
     # The Linux service injects the private on-demand language worker. Do not
     # copy a Windows executable or silently choose a different language model.
     profile['language']=None
@@ -56,13 +63,16 @@ def collect(root=ROOT):
 
 def prepare(output):
     output=Path(output).resolve()
-    if output.exists():raise ValueError('use a new private bundle directory')
+    if output.exists():
+        raise ValueError('use a new private bundle directory')
     profile,files=collect()
     output.mkdir(parents=True)
     for name,digest in files.items():
-        target=output/name;target.parent.mkdir(parents=True,exist_ok=True)
+        target=output/name
+        target.parent.mkdir(parents=True,exist_ok=True)
         shutil.copyfile(ROOT/name,target)
-        if sha(target)!=digest:raise ValueError('copied artifact differs')
+        if sha(target)!=digest:
+            raise ValueError('copied artifact differs')
     profile_path=output/'perfumery.local.json'
     profile_path.write_text(json.dumps(profile,indent=2,ensure_ascii=False)+'\n',encoding='utf-8')
     files['perfumery.local.json']=sha(profile_path)
@@ -75,20 +85,24 @@ def prepare(output):
 
 
 def verify(root,expected=None):
-    root=Path(root).resolve();path=root/'bundle.json'
-    if expected is not None and sha(path)!=expected:raise ValueError('runtime bundle hash mismatch')
+    root=Path(root).resolve()
+    path=root/'bundle.json'
+    if expected is not None and sha(path)!=expected:
+        raise ValueError('runtime bundle hash mismatch')
     m=json.loads(path.read_text(encoding='utf-8'))
     if m['release_id']!=RELEASE_ID or m['wheel_sha256']!=WHEEL_SHA256:
         raise ValueError('wrong runtime release')
     for name,digest in m['files'].items():
         p=(root/name).resolve()
-        if not p.is_relative_to(root) or sha(p)!=digest:raise ValueError('runtime bundle file changed')
+        if not p.is_relative_to(root) or sha(p)!=digest:
+            raise ValueError('runtime bundle file changed')
     return m
 
 
 def check_installed(root):
     import os
-    root=Path(root).resolve();manifest=verify(root)
+    root=Path(root).resolve()
+    manifest=verify(root)
     if os.environ.get('PERFUMERY_AI_ENV')!='research':
         raise ValueError('this artifact is for explicitly selected research use')
     from fragrance_ai.recommender.runtime import load_configured_catalog
@@ -97,10 +111,13 @@ def check_installed(root):
     from fragrance_ai.recommender.local_runtime import local_atlas_provider,local_profile
     from fragrance_ai.recommender.unified_product import configured_unified_product
     from fragrance_ai import StockMixturePredictor
-    catalog,_=load_configured_catalog();provider=configured_perception()
+    catalog,_=load_configured_catalog()
+    provider=configured_perception()
     assert configured_perception('body_lotion') is not provider
-    fine=configured_fine_odor();fine.predict(['CCO'])
-    unified=configured_unified_product(catalog,component_provider=provider);unified.assert_current()
+    fine=configured_fine_odor()
+    fine.predict(['CCO'])
+    unified=configured_unified_product(catalog,component_provider=provider)
+    unified.assert_current()
     path,digest=local_profile()['stock_mixture']
     stock=StockMixturePredictor(provider,path,sha256=digest,experimental=True,atlas_predictor=local_atlas_provider())
     stock.assert_current()
@@ -111,8 +128,13 @@ def check_installed(root):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('--output',type=Path);p.add_argument('--check-installed',type=Path)
+    p=argparse.ArgumentParser()
+    p.add_argument('--output',type=Path)
+    p.add_argument('--check-installed',type=Path)
     args=p.parse_args()
-    if args.output:prepare(args.output)
-    elif args.check_installed:check_installed(args.check_installed)
-    else:p.error('choose --output or --check-installed')
+    if args.output:
+        prepare(args.output)
+    elif args.check_installed:
+        check_installed(args.check_installed)
+    else:
+        p.error('choose --output or --check-installed')

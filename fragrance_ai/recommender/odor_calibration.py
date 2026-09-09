@@ -107,7 +107,8 @@ class OdorCalibration:
         self.bank_path = None
         self.bank = None
         if self.method=='neighbors':
-            spec=m.get('training_bank',{}); c=m['coefficients']
+            spec=m.get('training_bank',{})
+            c=m['coefficients']
             self.neighbor_weight=c.get('neighbor_weight')
             self.neighbor_k=c.get('neighbor_k')
             self.neighbor_power=c.get('neighbor_power')
@@ -131,13 +132,15 @@ class OdorCalibration:
                     raise ValueError('odor correction bank keys mismatch')
                 if arrays['graphs'].tolist()!=list(training_graphs) or len(set(training_graphs))!=len(training_graphs):
                     raise ValueError('odor correction bank is not the parent training split')
-                fp=arrays['fingerprints'].astype(np.float32);y=arrays['targets'].astype(np.float32)
+                fp=arrays['fingerprints'].astype(np.float32)
+                y=arrays['targets'].astype(np.float32)
             if (fp.shape!=(len(training_graphs),1024) or y.shape!=(len(training_graphs),len(endpoints))
                     or spec.get('rows')!=len(training_graphs)):
                 raise ValueError('odor correction bank dimensions mismatch')
             # Shared numeric validation also rejects nonbinary/NaN bank data.
             neighbor_probabilities(np.zeros((0,1040)),fp,y,k=self.neighbor_k)
-            fp.setflags(write=False); y.setflags(write=False)
+            fp.setflags(write=False)
+            y.setflags(write=False)
             self.bank=(fp,y)
         elif 'training_bank' in m or 'neighbor_weight' in m['coefficients']:
             raise ValueError('unused neighbor bank/coefficient is not allowed')

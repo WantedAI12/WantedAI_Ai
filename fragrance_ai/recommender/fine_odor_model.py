@@ -190,7 +190,8 @@ def configured_fine_odor():
     stat = Path(path).stat()
     calibration_key=None
     if 'odor_calibration' in profile:
-        cp,ch=profile['odor_calibration'];cs=Path(cp).stat()
+        cp,ch=profile['odor_calibration']
+        cs=Path(cp).stat()
         calibration_key=(cp,ch,cs.st_size,cs.st_mtime_ns)
     with _LOCK:
         return _load(path,digest,stat.st_size,stat.st_mtime_ns,provider,calibration_key)

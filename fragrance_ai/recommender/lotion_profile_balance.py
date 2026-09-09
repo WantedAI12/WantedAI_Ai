@@ -81,7 +81,9 @@ def refine_profile_balance(*, predictor, pool, responses, target_rows, best,
     from .lotion_optimizer import _compact_profile_residuals
     shapes, targets, avoidance = prepare_balance(predictor, pool, target_rows)
     nr = len(shapes)
-    evaluate = lambda w: profile_values(shapes, targets, avoidance, responses, w)
+    def evaluate(w):
+        return profile_values(shapes, targets, avoidance, responses, w)
+
     initial = best.copy()
     initial_values = evaluate(initial)
     original_scores = np.array([row['score'] for row in assessments(initial)[1]])

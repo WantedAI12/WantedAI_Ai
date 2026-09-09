@@ -12,7 +12,7 @@ from .brief_parser import NaturalLanguageBriefParser
 from .catalog import IngredientCatalog, normalize_name
 from .lotion import _simulate_lotion_transport as simulate_lotion
 from .lotion_basis_cache import reuse_basis
-from .lotion_numerics import conditioned_linprog, response_variable_scales
+from .lotion_numerics import conditioned_linprog, highs_linprog, response_variable_scales
 from .models import RecipeConstraints, SCENT_DIMENSIONS, profile_vector
 from .lotion_evaluation import compare_lotion_profiles as compare_profiles, phase_for_time, evaluation_contract, refinement_score_floors
 from .safety import CandidateSafetyScreen
@@ -157,8 +157,6 @@ def _optimize_lotion_transport(request, catalog, parser=None, *, transport_scena
     baseline /= baseline.sum()
     # One multi-material transport calculation provides the independent linear
     # response columns. Do not rerun transport for each LP or candidate material.
-    basis_materials = [supplied[item.ingredient_id].model_copy(update={"concentrate_percent": float(100*weight)})
-        for item, weight in zip(pool, baseline)]
     if any(s.profile_weighting != simulation.profile_weighting for s in scenarios):
         raise ValueError("scenario profile weighting must match")
     all_thresholds = all(row.odor_threshold_mg_m3 is not None for s in scenarios for row in s.materials) and simulation.profile_weighting != "air_mass"
@@ -283,7 +281,7 @@ def _optimize_lotion_transport(request, catalog, parser=None, *, transport_scena
                 bounds=bounds, scales=scales)
             conditioning_calls += 1
         else:
-            result = linprog(objective, A_ub=matrix, b_ub=rhs, A_eq=a_eq, b_eq=eq_rhs, bounds=bounds,
+            result = highs_linprog(linprog, objective, A_ub=matrix, b_ub=rhs, A_eq=a_eq, b_eq=eq_rhs, bounds=bounds,
                              method="highs-ds" if n > 1024 else "highs",
                              options={"time_limit": .5, "presolve": n <= 1024,
                                       "small_matrix_value": 1e-12,
@@ -293,7 +291,7 @@ def _optimize_lotion_transport(request, catalog, parser=None, *, transport_scena
         # A different algorithm gets one bounded recovery attempt, using the
         # exact same matrix, pool, constraints, and acceptance score.
         if result.status not in (0, 2):
-            result = linprog(objective, A_ub=matrix, b_ub=rhs, A_eq=a_eq, b_eq=eq_rhs, bounds=bounds,
+            result = highs_linprog(linprog, objective, A_ub=matrix, b_ub=rhs, A_eq=a_eq, b_eq=eq_rhs, bounds=bounds,
                              method="highs-ipm", options={"time_limit": 2., "presolve": True,
                                  "small_matrix_value": 1e-12,
                                  "primal_feasibility_tolerance": 1e-9, "dual_feasibility_tolerance": 1e-9})

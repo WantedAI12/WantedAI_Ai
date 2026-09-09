@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 import re
 
-from ..platform.process_inputs import ManufacturingProcess, WorkflowRequest
+from ..platform.process_inputs import WorkflowRequest
 
 
 ASSET = "formulation_process_knowledge_v1.json"
