@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 pytest.importorskip('modal')
 
-from deploy import modal_app
+from deploy import web_app as modal_app
 from fragrance_ai.recommender import runtime
 from fragrance_ai.recommender.odor_integrity import ODOR_INTEGRITY_VERSION
 from fragrance_ai.recommender.registry_activation import RegistryActivationReport, write_runtime_catalog

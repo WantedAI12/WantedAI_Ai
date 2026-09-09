@@ -33,7 +33,7 @@ def create_release_app(*,language_backend=None):
     from fragrance_ai.recommender.local_runtime import local_profile,local_lotion_provider,local_atlas_provider
     from fragrance_ai.recommender.perception_runtime import configured_perception
     from fragrance_ai import StockMixturePredictor
-    from deploy.modal_app import create_web_app
+    from deploy.web_app import create_web_app
     profile=local_profile()
     if not profile or os.environ.get('PERFUMERY_AI_ENV')=='production':
         raise ValueError('explicit research profile required')

@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 pytest.importorskip("modal", reason="Modal CLI dependency is isolated from core runtime")
 
-from deploy.modal_app import REGISTRY_SHA256, create_web_app
+from deploy.web_app import REGISTRY_SHA256, create_web_app
 from fragrance_ai.recommender import runtime
 from fragrance_ai.recommender.industrial_catalog import IndustrialIngredientRegistry
 from fragrance_ai.recommender.odor_integrity import ODOR_INTEGRITY_VERSION

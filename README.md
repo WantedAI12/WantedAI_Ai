@@ -176,6 +176,7 @@ API 서버는 CPU 1 core / RAM 1 GiB, GPU 없이 실행합니다. 언어 도우�
 
 - fragrance_ai/: 향 해석·원료 탐색·수치 모델·API 계약
 - deploy/modal_release_v63.py: 현재 서비스 배포 진입점
+- deploy/web_app.py: 과거 배포 파일 의존 없이 가져올 수 있는 공통 API 팩토리
 - deploy/runtime_release_v63.py: 해시가 고정된 모델 의존 파일 묶음 준비
 - deploy/compact_language_worker.py: 비공개 CPU 언어 워커
 - tests/: 모델·요청·배포·안전 계약 테스트
