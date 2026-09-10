@@ -1,25 +1,93 @@
 # WantedAI Perfumery AI Backend
 
-자연어 향 요청을 안전·가격·가용성 제약을 만족하는 정량 조향식으로 변환하는
-CPU 기반 AI 백엔드입니다. `dev` 브랜치는 현재 Modal에 실제 배포된 Perfumery
-AI Core 1.4.0을 기준으로 구성했습니다.
+자연어 향 의도를 정량 조향식과 시간별 향 예측으로 연결하는 CPU 기반 AI 백엔드입니다. 향수·바디로션·바디워시의 제형 차이를 구분하며, 원료 선택·배합 탐색·후보 비교·입력 보완·제조 절차 안내를 제공합니다.
 
-## 현재 배포
+현재 릴리스는 **V63 / Perfumery AI Core 1.4.0**입니다. V62의 모델·원료·평가 기준을 유지하면서 실행 속도와 반복 요청 비용을 개선했습니다.
 
-- Modal API: `https://junseong2im--perfumery-ai-core-web.modal.run`
-- API 문서: `https://junseong2im--perfumery-ai-core-web.modal.run/docs`
-- Runtime: CPU 1 core / RAM 1 GiB / GPU 없음
-- Scaling: min 0 / max 1 / idle 300초 후 scale-to-zero
-- 인증: Modal Proxy Token 필수
-- Registry: 29,240 molecules connected / 29,259 experimental formula candidates
+## 서비스 연결
 
-무인증 요청은 Modal edge에서 `401`로 거부됩니다. Proxy Token은 저장소나
-브라우저에 넣지 않고 백엔드 환경변수 또는 Secret Manager로 전달합니다.
+- API: [Perfumery AI Core](https://junseong2im--perfumery-ai-core-web.modal.run)
+- API 문서: [OpenAPI / Swagger](https://junseong2im--perfumery-ai-core-web.modal.run/docs)
+- 저장소 브랜치: dev
+- 최신 배포: 2026-09-10, 인증·모델 식별값·세 제품 예측·조향식·입력 도우미의 원격 응답 확인 완료
+- 기존 Modal Proxy Token과 API 주소를 유지합니다.
+
+프론트엔드는 팀 백엔드를 호출하고, 팀 백엔드가 AI API를 호출합니다. API 키를 브라우저 코드에 넣지 않습니다. 외부 LLM 서비스의 API 키는 필요하지 않습니다.
 
 ```http
-Authorization: Bearer wk-<token-id>.ws-<token-secret>
+Authorization: Bearer <MODAL_TOKEN_ID>.<MODAL_TOKEN_SECRET>
 Content-Type: application/json
 ```
+
+인증 형식은 [Modal 공식 Proxy Token 문서](https://modal.com/docs/guide/webhook-proxy-auth)를 참고하세요. 실제 키는 저장소에 커밋하지 마세요.
+
+## 주요 기능
+
+- 한국어·영어 자연어 향 요청과 원하는 향 / 제외할 향 / 시간대별 조건 해석
+- 665개 향 표현 개념과 332개 한국어 별칭, 450개 세부 향 서술어 예측
+- 기존 146축 분자 향 표현과 세부 향 표현을 함께 활용하는 원료 탐색
+- 안전·원가·가용성·제품 농도·원료별 허용량을 반영한 정량 배합
+- 조향식 평가·재평가·대안 생성·후보 비교·대화형 수정
+- 향수·로션·바디워시의 제형 조건과 세척 이벤트를 구분하는 시간별 향 방출 예측
+- 로션 베이스 준비·배합 탐색·분배·방출 계산 및 조향·제조 절차 안내
+- IFRA·EU REACH·K-REACH·FDA 관련 상태와 근거를 구분하는 규제 정보 출력
+- CPU 경량 언어 모델을 통한 입력 의도 정리와 보완 질문. 정량 배합은 수치 조향 엔진이 수행
+
+규제 정보는 자동 인증이나 법률 판단이 아닙니다. 로션·바디워시의 상세 방출 예측에는 해당 제형의 계수와 공정 조건이 필요하며, 제품명만으로 실제 물성을 확정하지 않습니다.
+
+## 내부 동작 구조
+
+이 서비스는 하나의 LLM이 처방을 문장으로 만들어 내는 방식이 아닙니다. 자연어 해석, 분자 향 모델, 제형별 물리 계산, 제약 배합 최적화와 API 계층을 연결한 구조입니다. 언어 도우미는 입력 정리를 담당하고 실제 원료 선택과 배합비는 수치 엔진이 계산합니다.
+
+### 1. 자연어 요청을 구조화
+
+한국어·영어 별칭과 향 표현 사전을 이용해 원하는 향, 제외할 향, 명시 원료, 농도, 가격, 원료 수, 탑·미들·베이스 비율과 시간대별 조건을 추출합니다. 특정 원료를 제외하는 조건과 향 계열 전체를 제외하는 조건을 구분합니다. 상충하거나 불명확한 조건은 입력 보완 API로 확인합니다.
+
+19개 조향 계열, 665개 표현 개념, 146축 분자 향 프로필, 450개 세부 서술어 출력은 서로 다른 역할을 가집니다. 표현 개념 전체가 각각 독립적으로 측정된 향 강도라는 뜻은 아닙니다.
+
+### 2. 원료와 분자 향 표현을 연결
+
+원료 ID·CAS·분자 구조·공개 향 기술·물성을 연결합니다. 세부 향 모델은 분자 구조의 1,024비트 특징과 16개 물성 특징을 입력으로 사용하는 다중 레이블 신경망을 포함합니다. 450개 세부 향 출력은 비슷한 대분류에 속하는 원료의 세부 향 차이를 탐색하는 데 사용합니다.
+
+146축 분자 향 모델은 제품 조건을 고려한 향 표현 경로에 연결됩니다. 알려진 원료의 출처 있는 향 기술과 구조로부터 예측한 값은 근거 종류를 구분해 반환합니다. 구조나 프로필이 없는 원료를 임의로 무취 처리하지 않습니다.
+
+V54 계열의 stock-mixture 예측은 원액의 희석도·용매·혼합량이 명시된 혼합 시료를 위한 별도 경로입니다. 이 시료용 모델을 향수나 완성 로션의 방출 모델로 대체 사용하지 않습니다.
+
+### 3. 전체 적격 원료에서 배합 탐색
+
+요청의 안전·가격·가용성·농도 조건으로 적격 후보를 정한 뒤 해당 후보 전체를 탐색 대상으로 사용합니다. 소수 원료로 시작한 초기안에 전체 원료 선형 최적화, 원료 교체, 노트 비율 조정, 농도별 최적화와 어코드 단위 조정을 결합합니다.
+
+원료 수 상한이 넓은 요청에서는 12개·24개·사용자 상한의 탐색 경로를 단계적으로 실행하며 기존보다 나은 결과를 유지합니다. 이 숫자는 전체 후보 카탈로그의 크기 제한이 아닙니다. 배합비 합계, 원료별 상한, 원가, 제외 원료와 명시 노트 조건은 계산 제약으로 처리합니다.
+
+핵심 배합 탐색에는 선형계획법과 비선형 제약 최적화가 사용됩니다. 세부 향 표현은 후보 선택의 선호 신호로 활용하고, 최종 통과 기준 자체를 대신하지 않습니다.
+
+### 4. 시간에 따른 농도와 향을 예측
+
+향수 경로는 원료의 증기압·냄새 역치·분자량·활성 농도·휘발 속도·원료 간 상호작용을 이용해 헤드스페이스와 시간별 향 프로필을 계산합니다. 기본 엄격 모드의 최종 시뮬레이션은 200회 샘플링을 사용하며, 물성값의 불확실성을 함께 다룹니다. R2 계열 분자 혼합물 모델은 비교 대상과 적용 조건이 갖춰진 별도 비교 경로에서 사용합니다.
+
+향수·바디로션·바디워시의 통합 예측은 공통 분자 표현과 제품 조건부 시간 전이 모델을 사용합니다. 제형 잔존량, 공기 중 향료, 피부 흡수 경로, 환기 손실, 분해와 세척 손실을 구분하고 질량 보존을 확인합니다. 로션은 유·수상 분배와 베이스 조건을, 바디워시는 세척 시점과 잔존 비율을 추가로 반영합니다. 공통 모델을 사용하더라도 제품별 조건과 평가를 동일하게 취급하지 않습니다.
+
+### 5. 목표 향과 전체 프로필을 비교
+
+향수의 공개 계산 점수는 전체 19축에서 코사인 유사도·향 비중의 겹침·제외 향 억제 중 가장 낮은 값을 사용합니다. 이후 명목 프로필 점수와 시간 가중 프로필 점수 중 낮은 값으로 최종 일치도를 판정합니다. 요청한 향 축만 잘라서 원하지 않은 향의 비중을 숨기지 않습니다.
+
+기본 목표는 95점이며, 미달 후보는 `closest_candidate`로 구분합니다. 146축/450개 세부 표현, 과거 조합의 동시출현 정보, 물리 모델 진단은 각각의 의미와 적용 범위를 함께 제공합니다. 계산 점수를 실제 사람의 후각 일치율로 바꾸어 표시하지 않습니다.
+
+### 6. CPU API와 선택형 언어 워커로 제공
+
+FastAPI 서버가 고정된 원료·모델 snapshot을 로딩하고 요청별 계산 상태를 분리합니다. 물성은 배치 조회하고, 분자 구조 특징과 반복 원료 예측은 재사용합니다. 동일 조향 요청은 결과 캐시로 처리하며 동시 계산 수와 대기열을 제한해 CPU 경합을 줄입니다.
+
+입력 도우미는 별도 CPU 워커의 Qwen3-0.6B-Q8_0을 llama.cpp로 실행합니다. JSON 스키마로 출력을 제한하고 기존 파서로 조건을 다시 확인합니다. 원료 배합과 과학 점수는 언어 모델이 생성하지 않으며, 실패 시 자동 재시도를 증폭시키지 않고 기존 해석 경로로 복구합니다. 모델·카탈로그·코드의 해시를 확인해 다른 버전의 결과가 섞이지 않도록 합니다.
+
+## V63 응답속도·토큰 최적화
+
+- 한 요청 안에서 목적함수·제약 행렬·경계·해법·허용오차가 모두 동일한 선형계획 문제의 성공 결과만 재사용합니다. 서로 다른 요청의 계산 상태는 공유하지 않으며, 최대 64개·8 MiB로 제한합니다.
+- 시간초과·실패·불가능 판정은 재사용하지 않습니다. 새로운 목표나 제한값은 새 문제로 계산하고 모든 최종 평가는 유지합니다.
+- 후보 하나의 공급 가용성을 평가할 때 전체 카탈로그를 반복 탐색하지 않고 그 배합에 사용된 원료만 조회합니다.
+- 동일 메시지·동일 모델의 유효한 보완질문 해석은 120초 동안 최대 64개·1 MiB까지 재사용합니다. 캐시 적중 시 추가 LLM 추론과 토큰 생성은 없습니다. 새 질문의 프롬프트와 출력 상한 160토큰은 유지했습니다.
+- 기존 API 주소, 인증, 요청·응답 JSON은 그대로입니다. 백엔드는 선택적으로 `X-Perfumery-Language-Cache`, `X-Perfumery-LLM-Calls` 헤더를 기록할 수 있습니다.
+
+로컬 동일 요청의 첫 조향 응답은 **72.97초→38.43초(47.34% 단축)**, 실제 전체 원료 LP 실행은 **42회→14회**였습니다. 배합비·향 점수·시간별 예측은 같았습니다. 실제 소형 LLM을 연결한 보완질문은 첫 호출 5.70초, 동일 질문 재호출 0.14초였으며 재호출의 LLM 호출 수는 0입니다. 이 수치는 로컬 고정 예제 측정이며 전체 요청 평균이나 Modal 지연 시간으로 해석하지 않습니다. [상세 측정 기록](AI_LATENCY_V63.md)
 
 ## 조향 요청
 
@@ -29,77 +97,97 @@ POST /v1/formulas
 
 ```json
 {
-  "brief": "깨끗하고 시원한 시트러스 우디 향",
-  "max_risk_tier": 1,
+  "brief": "피오니와 청사과 향, 코코넛은 제외",
+  "max_risk_tier": 2,
+  "enable_registry_trace_candidates": true,
   "target_region": "EU",
   "product_category": "eau_de_parfum",
   "max_ingredient_price_per_kg": 180,
-  "max_ingredients": 12
+  "require_full_profile_match": true,
+  "target_similarity": 95
 }
 ```
 
-성공 응답은 `status=prototype_ready`, 정량 `recipe`, `safety`, 시뮬레이션,
-PhysSim, 시간 변화, 제조 계획, 데이터 적용범위와 증거 상태를 포함합니다. 안전한
-해가 없으면 억지 배합 대신 `status=no_safe_match`, `recipe=[]`를 반환합니다.
+원료 레지스트리에는 29,259개 행이 연결돼 있으며, 참조용 항목과 조향 후보는 구분합니다. 모든 레지스트리 항목이 안전하거나 자동 배합 가능한 원료라는 뜻은 아닙니다. 실제 후보군은 원료 프로필과 요청의 안전·가격·가용성 조건에 따라 결정됩니다.
 
-29,240개 전체 레지스트리를 후보 공간으로 사용하려면 다음 필드를 보냅니다. 이
-모드에서는 내부 안전 차단을 사용하지 않고 모든 후보를 100% 개별 상한으로 평가한
-뒤 최적 처방 1개만 반환합니다.
+| 응답 필드 | 의미 |
+|---|---|
+| recipe | 현재 조건과 평가 기준을 충족한 정량 조향식 |
+| closest_candidate | 기준 미달 시 반환하는 가장 가까운 연구 후보 |
+| calculated_profile_similarity | 계산 모델의 목표 향 프로필 일치 점수 |
+| full_profile_target_met | 현재 목표 기준의 충족 여부 |
+| score_contract | 점수 정의, 모델 적용 범위와 근거 |
+| temporal_profile | 시간별 향 변화 |
+| ingredient_temporal_profile | 원료별 잔존 농도·헤드스페이스 기여 |
+| safety | 안전·규제 검사 결과와 제한 사항 |
 
-```json
-{
-  "max_risk_tier": 2,
-  "enable_registry_trace_candidates": true,
-  "experimental_disable_safety": true
-}
-```
+기본 목표는 95점입니다. 목표 미달 또는 평가 불가일 때 recipe가 빈 배열인 것은 정상 응답일 수 있으며, closest_candidate를 승인된 조향식으로 표시하면 안 됩니다. no_safe_match 상태만으로 독성 원료가 발견됐다고 단정하지 말고 점수·제약·사유를 함께 확인하세요.
 
-## 주요 경로
+원격 고정 예제의 최초 조향은 V62의 108.44초에서 V63의 **76.69초**로 약 **29.28%** 단축됐고, 동일 요청의 캐시 응답은 0.44초였습니다. 서로 다른 배포 시점의 단일 예제 비교이며 모든 요청의 지연 시간을 보장하는 값은 아닙니다. 팀 백엔드는 최대 300초 계산 시간을 고려해 AI 호출 timeout과 작업 상태 표시를 설정해야 합니다.
 
-- `fragrance_ai/`: 자연어 해석·최적화·안전·과학 시뮬레이션 코어
-- `deploy/modal_app.py`: 현재 Modal CPU 배포 정의
-- `benchmarks/industrial_ingredient_registry_v1.db`: 29,240개 registry
-- `dist/full-registry-activation-v2/`: 현재 배포 Wheel과 release manifest
-- `tests/`: 배포·안전·API 중심 회귀 테스트
-- `MODAL_DEPLOYMENT.md`: 배포와 인증 연동 절차
-- `SIGNED_INGREDIENT_PROMOTIONS.md`: 서명 승인 원료 자동 합류 계약
+## 주요 API
 
-## 로컬 설치
+| 용도 | 경로 |
+|---|---|
+| 상태·원료·기능 확인 | GET /health, GET /v1/catalog, GET /v1/ai/capabilities |
+| 요청 구조화·보완 | POST /v1/briefs/prepare, POST /v1/briefs/clarify |
+| 입력 도우미 | POST /v1/ai/assistant |
+| 명시 원액 혼합 시료 예측 | POST /v1/formulations/stock-mixture/predict |
+| 조향식 생성·평가 | POST /v1/formulas, POST /v1/formulas/evaluate, POST /v1/formulas/reassess |
+| 대안·비교·수정 | POST /v1/formulas/alternatives, POST /v1/formulas/compare, POST /v1/formulas/revise |
+| 향 표현 조회·해석·예측 | GET /v1/odor-expressions, POST /v1/odor-expressions/interpret, POST /v1/odor-expressions/predict |
+| 통합 제형 조건·시간 예측 | POST /v1/applications/unified/context, POST /v1/applications/unified/predict |
+| 로션 베이스·배합 설계 | POST /v1/applications/body-lotion/prepare, POST /v1/applications/body-lotion/design, POST /v1/applications/body-lotion/optimize |
+| 로션 방출 계산 | POST /v1/applications/body-lotion/simulate, POST /v1/applications/body-lotion/predict-release |
+| 조향·제조 절차 | POST /v1/formulation-workflows/plan |
+
+향수 조향식 생성과 완성 로션 설계는 서로 다른 입력 계약을 사용합니다. 로션은 전용 경로를 사용하고 전체 스키마는 /docs에서 확인하세요. 기존 필드와 함께 새 응답 필드도 전달하도록 팀 백엔드 DTO를 구성하는 것이 좋습니다.
+
+## 검증 결과
+
+V63은 V62의 학습된 모델을 그대로 사용합니다. 분자 구조 기반 향 서술어 예측을 기존 분리 평가 원료 714개에서 확인한 결과는 다음과 같습니다. 평가 원료의 정답 기록을 입력으로 조회하지 않았습니다.
+
+| 지표 | 결과 |
+|---|---:|
+| Micro average precision × 100 | 37.4162 |
+| Macro average precision × 100 | 25.6012 |
+| 상위 5개 서술어 precision × 100 | 40.0280 |
+| Binary log loss | 0.03787624 |
+| Brier loss | 0.00886431 |
+
+AP는 향 서술어 검색·구별력 지표이지 실제 후각 정확도 백분율이 아닙니다. Macro AP는 기록량 조건을 만족한 183개 서술어로 계산했습니다. 이 평가 집합은 이전 모델에서도 사용한 회귀 평가 집합이며 새로운 블라인드 연구는 아닙니다.
+
+로컬 연결 검증에서는 다음을 확인했습니다.
+
+- V63 최적화 관련 테스트 86개 통과. 이전 모델·API 연결 검증 87개와는 별도의 실행이며 전체 저장소 테스트 결과는 아닙니다.
+- 향수·로션·바디워시 API 연결 및 반복 요청 결과 일치
+- 고정 예제에서 기존 146축 향 값과 시간별 공기 농도 계산 유지
+- ‘피오니와 청사과 향’ 조향 후보: 계산 점수 87.4298, 12개 원료, 목표 95점에는 미달
+
+원격 배포 확인 결과는 [V63 배포 검증 기록](benchmarks/modal_v63_release.json)에 정리했습니다. 원격의 동일 예제 점수는 V62와 같은 87.1753이었고 역시 목표 미달로 반환했습니다. 최종 배합·주요 점수·시간별 예측은 같았으나 내부 탐색 기록과 일부 미세한 진단 수치는 달랐습니다. 원격 응답 전체가 완전히 동일한 것은 아닙니다.
+
+입력 도우미는 언어 모델의 제안을 기존 조건 검사기와 함께 확인합니다. 실제 Modal 첫 응답은 55.34초, 동일 질문 재호출은 0.57초였으며 반복 응답은 동일하고 추가 LLM 호출은 없었습니다. 배포·인증 계약 테스트 5개와 결과 동일성 판정 테스트 16개도 통과했습니다. 실제 HTTP 응답의 저장 후 재검사와 새 네트워크 실행은 [배포 기록](MODAL_DEPLOYMENT.md)에서 구분합니다.
+
+모든 자연어 요청이 95점을 통과한다거나, 생성 조향식이 사람에게 95% 동일하게 느껴진다고 주장하지 않습니다. 과거의 합성 프록시·혼합물 진단·분류 지표를 자연어 조향식의 실제 정확도로 환산하지 않습니다.
+
+## 실행 환경과 소스 구성
+
+API 서버는 CPU 1 core / RAM 1 GiB, GPU 없이 실행합니다. 언어 도우미는 별도의 비공개 CPU 1 core / RAM 2 GiB 워커를 필요할 때 호출합니다. 각 워커는 최소 인스턴스 0, 최대 1이며 외부 유료 LLM API를 호출하지 않습니다. 일반 조향 요청마다 언어 워커를 호출하지 않습니다.
+
+- fragrance_ai/: 향 해석·원료 탐색·수치 모델·API 계약
+- deploy/modal_release_v63.py: 현재 서비스 배포 진입점
+- deploy/web_app.py: 과거 배포 파일 의존 없이 가져올 수 있는 공통 API 팩토리
+- deploy/runtime_release_v63.py: 해시가 고정된 모델 의존 파일 묶음 준비
+- deploy/compact_language_worker.py: 비공개 CPU 언어 워커
+- tests/: 모델·요청·배포·안전 계약 테스트
+- scripts/: 학습·평가·패키징·연결 검증 도구
+- [MODAL_DEPLOYMENT.md](MODAL_DEPLOYMENT.md): 배포·인증·원격 확인 기록
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[commercial,test]"
-.\.venv\Scripts\python.exe -m pytest
+.\.venv\Scripts\python.exe -m pip install -e ".[commercial,test]" rdkit==2025.9.4
 ```
 
-Modal CLI는 프로젝트 Python과 분리하는 것을 권장합니다.
+이 저장소는 소스 코드와 공개 가능한 계약·검증 도구를 제공합니다. 해시가 고정된 연구 모델·원본 데이터·로컬 실행 설정은 승인된 내부 아티팩트로 별도 관리하며, 저장소 clone만으로 해당 모델이 자동 다운로드되지는 않습니다. 서비스 이용자는 기존 API 주소와 백엔드 인증 정보만 있으면 됩니다.
 
-```powershell
-python -m venv "$HOME\.modal-cli-venv"
-& "$HOME\.modal-cli-venv\Scripts\python.exe" -m pip install modal==1.5.5
-$env:PYTHONUTF8='1'
-& "$HOME\.modal-cli-venv\Scripts\python.exe" -m modal deploy deploy/modal_app.py
-```
-
-## 검증 상태
-
-- 전체 원본 workspace 회귀: 344 passed / 1 PostgreSQL environment skip
-- Modal-enabled 배포 테스트: 2/2
-- Modal 인증 계약 테스트: PASS
-- 원격 무인증: HTTP 401
-- 원격 인증 health/catalog/formula: HTTP 200
-- 실제 원격 Tier 1 처방: `prototype_ready`, 12 ingredients, registry trace 0
-- 실제 원격 확장 처방: `experimental_registry_candidate`, 12 ingredients 중
-  registry 10, 최대 22.6559%, 의미 프로필 근접도 99.9954, manufacturing false
-
-## 주장 경계
-
-`prototype_ready`는 연구개발 후보 상태이며 제조·시장 출시 승인이 아닙니다.
-시뮬레이션 점수는 실제 인간 후각 정확도를 의미하지 않습니다. Reference archive
-등재나 구조 경고 없음만으로 원료를 formula pool에 넣지 않으며, 신규 원료는 실제
-supplier·SDS·COA·IFRA·독성·알레르겐·농도·서명 dossier를 통과해야 자동 합류합니다.
-29,212개 미연결 분자는 모두 실험 후보로 열리며, descriptor가 없는 분자는 결정론적
-의미 프로필을 사용합니다. 89.58% Bushdid 수치는 회고적 paired-mixture 진단이고
-자연어 생성 처방에는 적용되지 않으므로 인간 정확도로 표시하지 않습니다.
-
-License: `LicenseRef-Proprietary`. 자세한 범위는 `LICENSE_POLICY.md`를 확인하세요.
+API 키, .env, 개인 Modal 설정, 연구 원본 데이터는 커밋하지 않습니다. 라이선스는 LicenseRef-Proprietary이며 세부 범위는 [LICENSE_POLICY.md](LICENSE_POLICY.md)를 확인하세요.

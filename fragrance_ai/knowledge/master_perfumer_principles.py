@@ -1,6 +1,9 @@
 """
-마스터 조향사 지식 베이스
-세계 최고 조향사들의 전문 지식과 원칙을 구현
+Legacy illustrative perfumery heuristics, retained for compatibility.
+
+The harmony percentages and named-perfume examples below lack verified source
+provenance. They are not training labels, commercial formula disclosures or
+human measurements. The source-bound runtime uses formulation_workflow instead.
 """
 from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass, field

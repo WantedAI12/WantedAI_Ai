@@ -14,7 +14,7 @@ from .api import authorizer_from_env, create_app
 from .platform.audit import audit_log_from_env
 from .platform.observability import configure_json_logging
 from .platform.store import workspace_store_from_env
-from .recommender.service import NaturalLanguagePerfumeryAI
+from .recommender.runtime import RuntimeAIFactory
 
 
 def main() -> None:
@@ -26,6 +26,13 @@ def main() -> None:
     parser.add_argument("--max-concurrent-inference", type=int, default=2)
     parser.add_argument("--max-request-bytes", type=int, default=65_536)
     parser.add_argument("--disable-ui", action="store_true")
+    parser.add_argument("--minimum-profile-target", type=float, default=95.0)
+    parser.add_argument("--runtime-catalog-manifest")
+    parser.add_argument("--runtime-catalog-manifest-sha256")
+    parser.add_argument(
+        "--require-full-profile-match", action="store_true",
+        help="Enable the full-profile gate in this API process; configure queue workers with the same option",
+    )
     args = parser.parse_args()
     if not 1 <= args.port <= 65535:
         raise SystemExit("--port must be between 1 and 65535")
@@ -45,6 +52,9 @@ def main() -> None:
     if args.workspace_db:
         os.environ["PERFUMERY_AI_WORKSPACE_DB"] = args.workspace_db
     configure_json_logging(os.environ.get("PERFUMERY_AI_LOG_LEVEL", "INFO"))
+    ai_factory = RuntimeAIFactory.from_environment(minimum_profile_target=args.minimum_profile_target,
+        require_full_profile_match=args.require_full_profile_match, manifest_path=args.runtime_catalog_manifest,
+        expected_manifest_sha256=args.runtime_catalog_manifest_sha256)
     # Production mode requires OIDC, PostgreSQL, and an audit HMAC key. Partial
     # configuration never downgrades to static tokens or local SQLite.
     authorizer = authorizer_from_env()
@@ -61,7 +71,7 @@ def main() -> None:
     else:
         rate_limiter = None
     app = create_app(
-        ai_factory=NaturalLanguagePerfumeryAI,
+        ai_factory=ai_factory,
         authorizer=authorizer,
         audit_log=audit_log,
         workspace_store=store,

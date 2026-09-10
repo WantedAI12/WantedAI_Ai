@@ -7,6 +7,7 @@ from typing import Annotated, Any, Callable
 from .observability import ServiceMetrics
 from .store import WorkspaceStore
 from .workspace import FormulaWorkspaceService, constraints_from_payload
+from ..recommender.models import MAX_FORMULA_INGREDIENTS
 
 
 LOGGER = logging.getLogger("perfumery_ai.platform.api_routes")
@@ -84,7 +85,7 @@ def install_workspace_routes(
             min_length=1, max_length=128, pattern=IDENTIFIER_PATTERN
         )
         change_note: str = Field(default="Visual formula edit", max_length=2000)
-        lines: list[ManualLine] = Field(min_length=1, max_length=30)
+        lines: list[ManualLine] = Field(min_length=1, max_length=MAX_FORMULA_INGREDIENTS)
 
     def not_found(detail: str = "resource not found") -> HTTPException:
         return HTTPException(status_code=404, detail=detail)
@@ -398,7 +399,7 @@ def install_workspace_routes(
             job = store.enqueue_job(
                 tenant_id=current.tenant_id,
                 kind=kind,
-                payload=payload,
+                payload={**payload, **({"runtime_contract": workspace.runtime_contract} if workspace.runtime_contract is not None else {})},
                 actor_id=current.actor_id,
             )
         except ValueError as error:

@@ -1,0 +1,68 @@
+{
+  "schema": "perfumery-ai-release-manifest/v4",
+  "release_id": "performance-quality-v4",
+  "generated_at": "2026-09-05T05:42:59.5325568Z",
+  "wheel": {
+    "path": "perfumery_ai_core-1.4.0-py3-none-any.whl",
+    "bytes": 3273319,
+    "sha256": "f78a5c6bb60ebbdcc92314e58d12aae8f10d168f2be55fb908971a2780d9048a"
+  },
+  "registry": {
+    "path": "../../benchmarks/industrial_ingredient_registry_v1.db",
+    "bytes": 77615104,
+    "sha256": "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765",
+    "connected": 29240,
+    "runtime_formula_candidates": 29259
+  },
+  "models": {
+    "scientific": "headspace-olfactory-twin-2.3",
+    "physsim": "concentration-headspace-physsim-core-1.2"
+  },
+  "deployment": {
+    "provider": "modal",
+    "runtime": "cpu",
+    "url": "https://junseong2im--perfumery-ai-core-web.modal.run",
+    "proxy_auth_required": true,
+    "remote_smoke_passed": true,
+    "remote_evidence_path": "../../benchmarks/modal_performance_quality_v4.json",
+    "remote_evidence_bytes": 1326,
+    "remote_evidence_sha256": "18ce81622d307bb678d82daa02e47c3b8a52e349fad16ec1931b13ce2b798a6d",
+    "standard_median_seconds": 2.8072309,
+    "expanded_median_seconds": 8.3498352
+  },
+  "supply_chain": {
+    "sbom": {
+      "path": "sbom.cdx.json",
+      "bytes": 185141,
+      "sha256": "a75a1460e6590dc90088ec2e77f06fe26d58fc6d18dd257ffd6b27724bbeb31c"
+    },
+    "release_policy": {
+      "path": "release_policy_report.json",
+      "bytes": 5730,
+      "sha256": "b02ae51c0234d65f1b83714f1b909a92cad46c8ae2050b34d204eaef7c85e677"
+    },
+    "release_policy_passed": true,
+    "wheel_install_verify": {
+      "path": "wheel_install_verify.json",
+      "bytes": 2180,
+      "sha256": "21ac5d2da044e6e109a15c982185d60b465d54b1b2e5789c735cdcc59a6d7610"
+    },
+    "wheel_install_verify_passed": true
+  },
+  "validation": {
+    "local_regression_tests_passed": 184,
+    "remote_formula_requests_passed": 9,
+    "request_cases_passed": 18,
+    "request_cases_total": 18,
+    "recipe_cases_passed": 6,
+    "recipe_cases_total": 6,
+    "legacy_cases_passed": 42,
+    "legacy_cases_total": 42
+  },
+  "changes": [
+    "Batch molecular-property reads; request-local candidate selection reuse; precomputed aliases",
+    "Scoped Korean and English exclusions, attenuation, and ingredient-count limits",
+    "Time-dependent OAV before nonlinear odor response in nominal, Monte Carlo, optimizer, and PhysSim paths"
+  ],
+  "claim_boundary": "Request compliance, internal numerical consistency and software performance validation. Does not authorize a new human sensory accuracy claim."
+}

@@ -1,0 +1,96 @@
+{
+  "release_id": "v63-20260910",
+  "status": "deployed_final_outputs_verified_with_diagnostic_differences",
+  "deployed": true,
+  "base_url": "https://junseong2im--perfumery-ai-core-web.modal.run",
+  "app_id": "ap-Uc8rTdrF9SDei5yiFV14Ke",
+  "scope": "authenticated_software_integration_not_human_accuracy",
+  "model_weights_changed_from_v62": false,
+  "wheel_sha256": "136ab1c78238bc8a62a8ad11ba0b030dc411b3c098ac8ffa01a61696b9c8eefd",
+  "bundle_sha256": "16bb65f75e96a2deada5ada6bf8750c99c1ddb610bc7c49d07814cf085521c7b",
+  "runtime_profile_sha256": "824ab52f51d0b4a2d1220e2d6dba838331a1cd0f4eee625029d922ec175e4294",
+  "catalog_manifest_sha256": "105046997799bb60d165ad4e24baa23e081e4b63b4ff2e625649de2e57e2d813",
+  "registry_sha256": "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765",
+  "bundle_files": 21,
+  "bundle_bytes": 129351693,
+  "checks": {
+    "unauthenticated_http_status": 401,
+    "authenticated_health_http_status": 200,
+    "catalog_http_status": 200,
+    "capabilities_http_status": 200,
+    "material_prediction_http_status": 200,
+    "perfume_http_status": 200,
+    "body_lotion_http_status": 200,
+    "body_wash_http_status": 200,
+    "formula_http_status": 200,
+    "formula_repeat_http_status": 200,
+    "assistant_http_status": 200,
+    "assistant_repeat_http_status": 200,
+    "catalog_rows": 29259,
+    "fine_output_concepts": 450,
+    "selected_models_connected": true,
+    "formula_cache": "hit",
+    "formula_repeat_body_exact": true,
+    "assistant_actual_model_proposal_observed": true,
+    "assistant_source": "deterministic_grounding_after_model_mismatch",
+    "assistant_product_and_exclusion_preserved": true,
+    "assistant_generates_formula_or_scientific_score": false,
+    "assistant_first_llm_calls": 1,
+    "assistant_repeat_llm_calls": 0,
+    "assistant_repeat_cache": "hit",
+    "assistant_repeat_body_exact": true
+  },
+  "formula_example": {
+    "brief": "피오니와 청사과 향",
+    "score": 87.17530628023734,
+    "target": 95,
+    "target_met": false,
+    "status": "no_safe_match",
+    "recipe_lines": 0,
+    "closest_candidate_lines": 12
+  },
+  "seconds": {
+    "formula_first": 76.6854,
+    "formula_repeat": 0.4384,
+    "perfume_fixed_fixture": 1.0423,
+    "body_lotion_fixed_fixture": 0.9612,
+    "body_wash_fixed_fixture": 0.841,
+    "assistant_first": 55.3406,
+    "assistant_repeat": 0.5706,
+    "health_including_startup_wait": 17.5056
+  },
+  "v62_comparison": {
+    "formula_first_seconds": 108.4391,
+    "required_decision_formula_and_temporal_fields_exact": true,
+    "full_response_exact_except_release_hashes": false,
+    "difference_counts": {
+      "release_binding": 4,
+      "search_trace": 5,
+      "perception_roundoff": 87,
+      "fine_float32_roundoff": 11
+    },
+    "maximum_diagnostic_absolute_difference": {
+      "perception": 1.4210854715202004e-14,
+      "fine": 4.4663216236529024e-8
+    },
+    "measurement_scope": "one_fixed_example_at_different_deployment_times_not_all_requests_or_p95"
+  },
+  "evidence_method": {
+    "core_checks": "actual authenticated HTTP requests",
+    "original_strict_full_response_verifier_passed": false,
+    "original_failed_report_preserved": true,
+    "saved_response_assessment": "software_contracts_and_final_recipe_equivalence_verified",
+    "assessment_kind": "offline_assessment_of_retained_actual_authenticated_http_responses",
+    "assessment_new_network_requests": 0,
+    "source_report": ".benchmarks/modal_v63_release/remote-01/report.json",
+    "source_assessment": ".benchmarks/modal_v63_release/remote-01-quality-assessment.json",
+    "release_and_auth_tests_passed": 5,
+    "equivalence_assessment_tests_passed": 16,
+    "whole_repository_ci_pass_not_claimed": true
+  },
+  "credentials": {
+    "existing_backend_credentials_modified": false,
+    "temporary_verification_credentials_revoked": true,
+    "secrets_persisted_in_evidence": false
+  }
+}

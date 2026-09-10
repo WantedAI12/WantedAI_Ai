@@ -1,0 +1,50 @@
+{
+  "date": "2026-09-10",
+  "scope": "local_pinned_api_single_request_latency_not_modal_or_human_accuracy",
+  "deployed": false,
+  "pushed": false,
+  "recipe": {
+    "brief": "피오니와 청사과 향",
+    "first_before_seconds": 72.97076539999398,
+    "first_after_seconds": 38.42611570000008,
+    "latency_reduction_percent": 47.340396541868735,
+    "speedup": 1.8989888535622617,
+    "lp_calls_before": 42,
+    "lp_calls_after": 14,
+    "repeat_seconds": 0.07316060000448488,
+    "score_before_and_after": 87.42977282790069,
+    "target": 95.0,
+    "target_met": false,
+    "all_response_fields_except_four_release_hashes_equal": true,
+    "language_model_calls": 0
+  },
+  "assistant": {
+    "actual_quantized_model": true,
+    "first_seconds": 5.6988589000102365,
+    "repeat_seconds": 0.140230299992254,
+    "first_llm_calls": 1,
+    "repeat_llm_calls": 0,
+    "repeat_generated_tokens": 0,
+    "repeat_body_exactly_equal": true,
+    "cache_ttl_seconds": 120,
+    "cache_entries_maximum": 64,
+    "cache_bytes_maximum": 1048576,
+    "first_unique_prompt_shortened": false,
+    "lossy_prompt_candidates_rejected": 2,
+    "output_token_limit_unchanged": 160
+  },
+  "tests": {
+    "optimization_and_language": 25,
+    "lp_regression": 12,
+    "api_runtime_regression": 49,
+    "total_passed": 86,
+    "whole_repository_suite_run": false,
+    "full_400_recipe_evaluation_run": false
+  },
+  "binding": {
+    "wheel_sha256": "136ab1c78238bc8a62a8ad11ba0b030dc411b3c098ac8ffa01a61696b9c8eefd",
+    "catalog_manifest_sha256": "105046997799bb60d165ad4e24baa23e081e4b63b4ff2e625649de2e57e2d813",
+    "local_profile_sha256": "aff49eb757f31e19844cea94be99a91577d8a60055fb4b4740c66c6ae71ef686",
+    "unchanged_material_snapshot_sha256": "8c962601b6567d56bd1043733b2b2eaccf9deb5d35e4aba70101271fe65bf139"
+  }
+}

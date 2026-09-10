@@ -14,6 +14,27 @@ from .models import SCENT_DIMENSIONS
 DESCRIPTOR_DATA_PATH = (
     Path(__file__).resolve().parent.parent / "data" / "odor_descriptor_projections.json"
 )
+LANGUAGE_REPRESENTATION_VERSION = "scent-span-concepts-3-expression-v61"
+
+
+def exclusive_odor_spans(alias_spans, descriptor_aliases):
+    """A compound owns its characters before its component words.
+
+    Keep distinct occurrences. Equal spans prefer detailed descriptors over
+    coarse keywords. Negation remains the responsibility of the parser.
+    """
+    candidates = sorted(
+        ((start, end, alias) for alias, matches in alias_spans.items() for start, end in matches),
+        key=lambda item: (-(item[1] - item[0]), item[2] not in descriptor_aliases, item[0], item[2]),
+    )
+    occupied = []
+    selected = {alias: [] for alias in alias_spans}
+    for start, end, alias in candidates:
+        if any(start < right and left < end for left, right in occupied):
+            continue
+        occupied.append((start, end))
+        selected[alias].append((start, end))
+    return selected
 
 
 @dataclass(frozen=True)

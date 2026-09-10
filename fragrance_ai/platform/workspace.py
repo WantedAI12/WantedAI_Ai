@@ -12,8 +12,9 @@ from typing import Any, Callable, Iterator
 
 from ..recommender.brief_parser import apply_relative_revision_profile
 from ..recommender.catalog import IngredientCatalog
-from ..recommender.models import RecipeConstraints, normalize_profile, profile_vector
+from ..recommender.models import MAX_FORMULA_INGREDIENTS, RecipeConstraints, normalize_profile, profile_vector
 from ..recommender.optimizer import cosine_similarity_percent
+from ..recommender.odor_integrity import legacy_registry_line_ids, registry_odor_rejection
 from ..recommender.safety import PRODUCT_CATEGORY_MAP, VALIDATION_LEVELS
 from .store import WorkspaceStore, _bounded_text
 
@@ -78,7 +79,7 @@ def _validate_constraints(result: RecipeConstraints) -> None:
         "target_similarity": (0, 100, False, False),
         "product_concentration_percent": (0, 100, False, False),
         "finished_volume_ml": (0, 100_000, False, False),
-        "max_ingredients": (3, 30, True, True),
+        "max_ingredients": (3, MAX_FORMULA_INGREDIENTS, True, True),
         "finished_batch_mass_g": (0, 10_000, False, False),
         "max_supplier_lead_time_days": (0, 3_650, True, True),
         "max_supplier_moq_kg": (0, 1_000_000, False, True),
@@ -91,7 +92,7 @@ def _validate_constraints(result: RecipeConstraints) -> None:
         "physsim_min_applicability_percent": (0, 100, False, True),
         "commercial_min_scientific_coverage_percent": (0, 100, False, True),
         "commercial_min_temporal_similarity": (0, 100, False, True),
-        "physics_search_population": (2, 6, True, True),
+        "physics_search_population": (1, 7, True, True),
         "minimum_dimension_material_strength": (0, 1, False, False),
         "surrogate_objective_weight": (0, 0.5, False, True),
     }
@@ -169,6 +170,10 @@ def constraints_from_payload(
     return result
 
 
+class QueuedRuntimeMismatch(ValueError):
+    """A queued job cannot silently run with a different score/material policy."""
+
+
 class FormulaWorkspaceService:
     """Orchestrates the AI core without granting storage cross-tenant access."""
 
@@ -183,7 +188,8 @@ class FormulaWorkspaceService:
         self.store = store
         self.ai_factory = ai_factory
         self.ai_instance = ai_instance
-        self.catalog = catalog or IngredientCatalog.load_builtin()
+        self.runtime_contract = copy.deepcopy(getattr(ai_instance, "runtime_contract", None) or getattr(ai_factory, "runtime_contract", None))
+        self.catalog = catalog or getattr(ai_instance, "catalog", None) or getattr(ai_factory, "catalog", None) or IngredientCatalog.load_builtin()
         self._ingredients = {
             item.ingredient_id: item for item in self.catalog.ingredients
         }
@@ -205,7 +211,7 @@ class FormulaWorkspaceService:
     def catalog_payload(self) -> dict[str, Any]:
         ingredients = []
         for item in self.catalog.ingredients:
-            if not item.formulation_ready or item.blocked:
+            if not item.formulation_ready or item.blocked or registry_odor_rejection(item):
                 continue
             ingredients.append(
                 {
@@ -221,11 +227,15 @@ class FormulaWorkspaceService:
                     "odor_impact": item.odor_impact,
                     "density_g_ml": item.density_g_ml,
                     "carrier": item.carrier,
+                    "data_source": item.data_source,
+                    "currency": item.currency,
+                    "odor_integrity_version": item.odor_integrity_version,
                 }
             )
         return {
             "catalog_version": self.catalog.stats()["catalog_version"],
             "ingredients": ingredients,
+            "runtime_contract": self.runtime_contract,
         }
 
     def generate_formula(
@@ -285,6 +295,8 @@ class FormulaWorkspaceService:
         )
         if base is None:
             raise KeyError("formula version not found")
+        if legacy_registry_line_ids(base.payload):
+            raise ValueError("legacy odor inputs require regeneration from the original brief before revision")
         clean_instruction = _bounded_text(instruction, "instruction", 2000)
         base_brief = str(base.payload.get("brief", {}).get("original_text", "")).strip()
         if not base_brief:
@@ -414,8 +426,8 @@ class FormulaWorkspaceService:
         base_payload: dict[str, Any],
         lines: list[dict[str, Any]],
     ) -> dict[str, Any]:
-        if not isinstance(lines, list) or not 1 <= len(lines) <= 30:
-            raise ValueError("manual formula must contain between 1 and 30 lines")
+        if not isinstance(lines, list) or not 1 <= len(lines) <= min(MAX_FORMULA_INGREDIENTS, len(self._ingredients)):
+            raise ValueError("manual formula must contain between 1 and the connected catalog size of unique lines")
         parsed: list[tuple[Any, float]] = []
         seen: set[str] = set()
         for line in lines:
@@ -429,6 +441,7 @@ class FormulaWorkspaceService:
                 ingredient is None
                 or not ingredient.formulation_ready
                 or ingredient.blocked
+                or registry_odor_rejection(ingredient)
             ):
                 raise ValueError(
                     f"ingredient is not formulation-ready: {ingredient_id}"
@@ -523,6 +536,7 @@ class FormulaWorkspaceService:
                     "active_strength_percent": ingredient.active_strength_percent,
                     "carrier": ingredient.carrier,
                     "data_source": ingredient.data_source,
+                    "odor_integrity_version": ingredient.odor_integrity_version,
                 }
             )
         achieved = normalize_profile(profile_accumulator)
@@ -555,6 +569,18 @@ class FormulaWorkspaceService:
                 "similarity_score": round(similarity, 4),
                 "raw_similarity_score": round(similarity, 4),
                 "similarity_kind": "manual_draft_semantic_profile_only",
+                "calculated_profile_similarity": None,
+                "full_profile_target_met": False,
+                "legacy_preference_score": None,
+                "full_profile_assessment": {
+                    "status": "not_recomputed_after_manual_edit", "score": None, "target_met": False,
+                    "actual_human_similarity_measured": False,
+                },
+                "score_contract": {
+                    "version": "2.0", "primary_profile_score_field": "calculated_profile_similarity",
+                    "assessment_valid": False, "status": "invalidated_by_formula_change",
+                    "actual_human_90_proven_by_this_score": False,
+                },
                 "estimated_concentrate_cost_per_kg": round(cost, 4),
                 "historical_support_score": 0.0,
                 "historical_reference_matches": [],
@@ -585,10 +611,13 @@ class FormulaWorkspaceService:
                 "scientific_twin_status": "not_run_after_manual_edit",
                 "scientific_model_version": "",
                 "scientific_data_coverage_percent": 0.0,
+                "calculated_structure_coverage_percent": 0.0,
                 "molecular_descriptor_coverage_percent": 0.0,
                 "temporal_similarity_score": 0.0,
                 "minimum_temporal_similarity": 0.0,
                 "temporal_profile": [],
+                "ingredient_sets_evaluated": 0,
+                "ingredient_swaps_evaluated": 0,
                 "ingredient_temporal_profile": [],
                 "temporal_timepoints_minutes": [],
                 "temporal_concentration_basis": "",
@@ -663,6 +692,8 @@ class FormulaWorkspaceService:
                 "physics_guided_search": False,
                 "physics_search_objective": 0.0,
                 "manual_edit_requires_recalculation": True,
+                "perception_guidance": {"status": "invalidated_by_manual_edit", "selected": None,
+                    "recipe_changed": False, "model_application": {"evaluated": False, "full_model_application": False}},
             }
         )
         safety = payload.get("safety")
@@ -714,6 +745,7 @@ class FormulaWorkspaceService:
         )
         if left is None or right is None:
             raise KeyError("formula version not found")
+        legacy_inputs = bool(legacy_registry_line_ids(left.payload) or legacy_registry_line_ids(right.payload))
         left_lines = self._line_map(left.payload)
         right_lines = self._line_map(right.payload)
         changes = []
@@ -737,7 +769,7 @@ class FormulaWorkspaceService:
         for metric in _METRICS:
             before = left.payload.get(metric)
             after = right.payload.get(metric)
-            if isinstance(before, (int, float)) and isinstance(after, (int, float)):
+            if not legacy_inputs and isinstance(before, (int, float)) and isinstance(after, (int, float)):
                 metric_changes[metric] = {
                     "before": float(before),
                     "after": float(after),
@@ -768,7 +800,8 @@ class FormulaWorkspaceService:
             "right": right.to_dict(include_payload=False),
             "ingredient_changes": changes,
             "metric_changes": metric_changes,
-            "profile_delta": profile_delta,
+            "profile_delta": {} if legacy_inputs else profile_delta,
+            "odor_metric_comparison_status": "invalidated_legacy_odor_data" if legacy_inputs else "same_odor_contract",
         }
 
     @staticmethod
@@ -787,6 +820,10 @@ class FormulaWorkspaceService:
         before_persist: Callable[[], None] | None = None,
     ) -> dict[str, Any]:
         payload = job.payload
+        expected = self.runtime_contract
+        queued = payload.get("runtime_contract")
+        if (expected is not None or queued is not None) and queued != expected:
+            raise QueuedRuntimeMismatch("queued runtime policy/catalog differs from this worker; regenerate the request under the current policy")
         if job.kind == "recipe.generate":
             return self.generate_formula(
                 tenant_id=job.tenant_id,

@@ -1,99 +1,107 @@
-# Modal CPU 배포
+# Modal V63 서비스 배포
 
-Perfumery AI Core의 현재 백엔드 전용 CPU API는 Modal에 배포되어 있다. Modal
-Proxy Token이 없는 요청은 container에 도달하기 전에 거부된다.
+2026-09-10. V62 수치 모델과 향수·로션·바디워시 경로를 유지하고, V63 응답속도·반복 언어 요청 최적화를 기존 Modal 앱에 반영했다. 모델 재학습이나 점수 기준 변경 없이 실행 경로를 최적화한 릴리스다.
 
-- Web/API: `https://junseong2im--perfumery-ai-core-web.modal.run`
-- Modal app: `perfumery-ai-core`
-- Dashboard: `https://modal.com/apps/junseong2im/main/deployed/perfumery-ai-core`
-- 인증: Modal Proxy Token (`wk-...` + `ws-...`)
+## 주소와 인증
+
+- 앱: perfumery-ai-core
+- API: https://junseong2im--perfumery-ai-core-web.modal.run
+- 문서: https://junseong2im--perfumery-ai-core-web.modal.run/docs
+- 대시보드: https://modal.com/apps/junseong2im/main/deployed/perfumery-ai-core
+- 기존 백엔드 Proxy Token은 교체·삭제하지 않았다.
+
+```http
+Authorization: Bearer <MODAL_TOKEN_ID>.<MODAL_TOKEN_SECRET>
+```
+
+키는 백엔드 환경변수 또는 Secret Manager에 둔다. 프론트엔드에 전달하거나 저장소에 넣지 않는다. 외부 LLM API 키는 필요하지 않다. 인증이 없는 요청은 Modal edge에서 거부한다.
 
 ## 실행 사양
 
-- CPU: 1 physical core
-- memory: 1,024 MiB
-- GPU: 없음
-- minimum containers: 0
-- maximum containers: 1
-- idle scale-down: 300초
-- formula concurrency: container당 1
-- formula rate cap: container당 30회/분
-- 요청 timeout: 120초
+| 구분 | API / 수치 조향 | 비공개 언어 도우미 |
+|---|---|---|
+| CPU | 1 core | 1 core |
+| RAM | 1,024 MiB | 2,048 MiB |
+| GPU | 없음 | 없음 |
+| 최소 / 최대 컨테이너 | 0 / 1 | 0 / 1 |
+| 유휴 종료 | 300초 | 60초 |
+| 함수 제한 시간 | 300초 | 180초 |
+| 모델 출력 제한 | 수치 API 계약 | 최대 160 tokens |
 
-Wheel `0cf3beb6d6ae3d8e7b36eda151a029336709c617d8e632f91df1b5f599832c28`와
-29,240개 registry `d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765`는
-배포 전에 다시 해시 검증되고 immutable image에 복사된다. Python 3.11,
-NumPy 2.2.6, FastAPI 0.116.1, cryptography 46.0.3을 고정했다.
+일반 조향식 생성은 언어 워커를 호출하지 않는다. 언어 워커는 입력 도우미 경로에서만 호출되며 정량 배합 또는 품질 점수를 생성하지 않는다.
 
-## 엔드포인트
+Python 3.11, NumPy 2.2.6, SciPy 1.15.2, RDKit 2025.9.4, Clarabel 0.11.1, FastAPI 0.116.1, cryptography 46.0.3을 사용한다. CPU 수치 라이브러리의 스레드는 1로 고정했다.
 
-- `GET /`: 정적 조향 UI
-- `GET /health`: CPU·Wheel·registry identity
-- `GET /v1/catalog`: 29,240개 registry와 활성 tier 통계
-- `POST /v1/formulas`: 자연어 brief와 제약을 정량 조향식으로 변환
-- `GET /docs`: OpenAPI 문서
+## 고정 릴리스
 
-`POST /v1/formulas`는 알 수 없는 필드를 거부하고 brief 2,000자, risk tier 1~2,
-가격·가용성·농도·원료 수, 시장과 제품군을 제한한다. 전체 레지스트리 실험은
-`enable_registry_trace_candidates=true`와 `experimental_disable_safety=true`를
-함께 보낸 prototype 요청에서 열린다. 후보군은 29,259개 전체이며 개별 상한은
-100%다. 최종 레시피 라인은 최대 20개이고 내부 목적 후보 중 최적 1개만 반환한다.
-공개 frontend origin과 로컬 개발 origin만 CORS 허용한다.
+- 릴리스 ID: v63-20260910
+- Wheel SHA256: 136ab1c78238bc8a62a8ad11ba0b030dc411b3c098ac8ffa01a61696b9c8eefd
+- 서버 아티팩트 묶음 SHA256: 16bb65f75e96a2deada5ada6bf8750c99c1ddb610bc7c49d07814cf085521c7b
+- 서버 프로필 SHA256: 824ab52f51d0b4a2d1220e2d6dba838331a1cd0f4eee625029d922ec175e4294
+- 카탈로그 manifest SHA256: 105046997799bb60d165ad4e24baa23e081e4b63b4ff2e625649de2e57e2d813
+- 산업 레지스트리 SHA256: d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765
+- 언어 모델 SHA256: 9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031
 
-응답에는 다음 시간 변화 필드가 추가된다. 기존 endpoint와 요청 body는 바뀌지
-않았고 모두 additive JSON 필드이므로 응답을 그대로 전달하는 백엔드는 수정할
-필요가 없다. 다만 엄격한 response DTO를 사용하는 백엔드는 이 필드를 DTO에
-추가해야 화면에서 사용할 수 있다.
+서버용 묶음은 21개 파일, 129,351,693 bytes다. 원료·모델·가중치·서술어 순서·학습 split·카탈로그와 코드의 해시를 검사한다. Linux 이미지 안에서 설치된 패키지와 모든 수치 모델의 사전 로딩 검사도 통과했다. 이 검사에서 최대 RSS는 약 528MiB였으며, 모든 요청의 메모리 상한 보증은 아니다.
 
-- `temporal_timepoints_minutes`: `[0, 15, 60, 240, 480]`
-- `temporal_profile`: 시간대, opening/heart/drydown 구간, 오프닝 대비 강도,
-  19개 향축 분포와 목표 향 유사도 구간
-- `ingredient_temporal_profile`: 원료별 추정 반감기, 시간대별 도포 표면 잔존
-  농축액/완제품 농도, 증발량, headspace 기여와 후각 기여
-- `temporal_concentration_basis`: 농도 곡선의 계산 기준
-- `temporal_model_claim_boundary`: 실측과 시뮬레이션의 경계
+배포 진입점은 **deploy/modal_release_v63.py**다. 공통 API 팩토리는 **deploy/web_app.py**이며, import만으로 과거 배포 아티팩트를 읽거나 검증하지 않는다. deploy/modal_app.py는 파일·해시 검사를 유지한 V32 과거 배포 진입점으로 보존했으며 최신 서비스 재배포에 사용하지 않는다. V62 배포 파일도 이전 릴리스 재현을 위해 보존했다.
 
-농도 곡선은 도포 후 표면에서의 1차 증발 프록시다. 밀폐 향수병의 조성 변화,
-GC-MS 실측 또는 사람 관능 결과로 해석하면 안 된다.
+## 재배포
 
-백엔드 서버는 다음 중 한 방식으로 인증한다. Secret은 브라우저 JavaScript에 넣지
-않고 백엔드 환경변수나 secret manager에 저장한다.
-
-```http
-Authorization: Bearer wk-<token-id>.ws-<token-secret>
-```
-
-또는:
-
-```http
-Modal-Key: wk-<token-id>
-Modal-Secret: ws-<token-secret>
-```
-
-재배포:
+승인된 내부 아티팩트가 있는 작업 환경에서만 실행한다. 원본 데이터와 연구 모델은 GitHub에 공개하지 않으며 저장소 clone만으로 자동 확보되지 않는다.
 
 ```powershell
-$env:PYTHONUTF8='1'
-$modalPython = "$HOME\.modal-cli-venv\Scripts\python.exe"
-& $modalPython -m modal token info
-& $modalPython -m modal deploy deploy/modal_app.py
+# 새 환경에서 고정된 내부 파일들이 준비된 경우에 한 번 생성한다.
+python deploy/runtime_release_v63.py --output tmp/modal-runtime-v63/release-01
+
+# 이미 준비된 묶음은 덮어쓰지 않는다.
+python -m modal deploy deploy/modal_release_v63.py
 ```
 
-## 실제 원격 검증
+모델 또는 프로필이 달라지면 기존 해시를 무시하지 말고 새 릴리스로 다시 묶어야 한다. Linux 서비스에는 Windows 언어 실행 파일을 복사하지 않는다. 언어 모델은 고정된 llama.cpp 소스에서 빌드한 CPU 전용 비공개 워커를 사용한다.
 
-2026-09-02 KST에 temporal-evolution-v3 배포를 원격 URL에서 확인했다.
+## 실제 원격 확인
 
-- `/health`: HTTP 200, CPU, GPU false, 새 Wheel/registry SHA 일치
-- `/v1/catalog`: HTTP 200, registry 29,240 연결, 전체 조향 후보 29,259
-- Tier 1 `/v1/formulas`: HTTP 200, `prototype_ready`, 9개 원료
-- 시간 변화: 0·15·60·240·480분 5개 점, 점마다 19개 향축
-- 원료 변화: 레시피 9개 원료 모두 5개 잔존 농도·headspace·후각 기여점
-- 잔존 농도 단조 감소, 각 시간점의 headspace·후각 기여 합 100%
-- `/`: HTTP 200, 시간별 향/원료별 잔존 농도 표 확인
-- 인증 없음: HTTP 401
-- Proxy Token 인증: health/catalog/formula HTTP 200
-- 원격 검증용 임시 Proxy Token은 검증 직후 삭제
+원격 확인 도구는 scripts/verify_modal_v63.py다. 검사용 임시 Proxy Token을 메모리에서만 사용하고 검사 후 폐기한다. 기존 팀 백엔드 키는 변경하지 않는다.
 
-이 검증은 배포·인증·API 동작 증거다. Bushdid 89.5788% 모델은 paired quantitative
-mixture용 회고 진단이고 자연어 요청에는 정량 기준 조성이 없어 적용되지 않는다.
-99.9954는 의미 프로필 프록시이며 실제 사람 후각 정확도나 제조 승인이 아니다.
+- 무인증 health: HTTP 401
+- 인증 health: HTTP 200, 배포 Wheel SHA256 일치
+- catalog: HTTP 200, 연결 행 29,259
+- capabilities: HTTP 200, 최신 모델·450개 세부 향 출력·통합 제형 경로 연결 확인
+- 원료 향 예측: HTTP 200
+- 향수 / 로션 / 바디워시 통합 예측: 모두 HTTP 200
+- 실제 '피오니와 청사과 향' 조향 요청: HTTP 200, 후보 12개 원료
+- 반복 조향 요청: 동일 결과, 캐시 hit
+- 입력 도우미: HTTP 200, 실제 언어 모델 실행과 제품·제외 조건 유지 확인
+- 반복 입력 도우미: 동일 본문, 캐시 hit, 추가 LLM 호출 0회
+
+원격 예제의 계산 점수는 V62와 같은 **87.1753**, 목표 95점 미달이다. 따라서 recipe는 비우고 closest_candidate를 반환했다. 로컬 예제의 점수 87.4298과 원격 점수는 구분한다.
+
+| 원격 HTTP 왕복 시간 | V62 | V63 |
+|---|---:|---:|
+| 고정 예제 최초 조향 | 108.4391초 | 76.6854초 |
+| 동일 조향 요청 재호출 | 0.4214초 | 0.4384초 |
+| 입력 도우미 첫 요청 | 63.5904초 | 55.3406초 |
+| 입력 도우미 동일 요청 재호출 | 미측정 | 0.5706초 |
+
+첫 조향은 약 29.28% 단축됐다. 서로 다른 배포 시점에 측정한 단일 예제이며 전체 요청 평균·p95를 의미하지 않는다. V63 고정 입력의 향수·로션·바디워시 통합 예측은 각각 1.0423초·0.9612초·0.8410초였다. 최초 health 17.5056초에는 시작 대기가 포함되어 있으며 반복 측정한 cold-start 통계는 아니다.
+
+백엔드의 AI 호출 read timeout은 서버의 최대 300초 계산 시간을 고려해야 한다. 장시간 조향 요청은 팀 백엔드의 작업 상태 관리와 연결하는 것이 적합하다. 기존 API 주소·인증·요청/응답 JSON은 유지했다. 선택적으로 `X-Perfumery-Language-Cache`, `X-Perfumery-LLM-Calls` 응답 헤더를 기록할 수 있다.
+
+## 원격 결과의 동일성 범위
+
+최초 원격 검사에서 HTTP·모델 연결·캐시 검사는 성공했으나, V62와 해시 외 모든 응답 필드가 완전히 같아야 한다는 추가 비교는 실패했다. 이 실패 보고서와 실제 응답을 덮어쓰지 않고 보존했다.
+
+V62와 V63의 최종 후보 배합·주요 점수·목표 판정·안전 검사·요청 조건·시간별 향/농도·최종 시뮬레이션 횟수는 정확히 같았다. 다만 탐색 카운터와 시도 목록 5개 경로가 달랐고, 일부 진단 수치에는 최대 1.43e-14, 세부 향 출력에는 최대 4.47e-8의 차이가 있었다. 따라서 원격 응답 전체가 완전히 같다고 표시하지 않는다.
+
+`scripts/assess_modal_v63_evidence.py`는 보존한 실제 인증 HTTP 응답을 다시 읽어 최종 결과의 정확한 동일성과 진단 차이를 분리했다. 이 검사는 새 네트워크 실행이 아니다. 재검사에서 최종 결과와 반복 응답의 동일성, 입력 도우미의 실제 모델 실행·제품·제외 조건·사용자 확인 요구, 반복 LLM 호출 0회를 확인했다. 기존의 엄격한 전체 응답 비교는 `--require-legacy-exact` 옵션으로 계속 실행할 수 있다.
+
+- V63 묶음·인증 계약 테스트: 5개 통과.
+- 최종 점수·원료·배합·시간·안전·모델 식별값 등의 잘못된 변경을 거부하는 결과 판정 테스트: 16개 통과.
+- 관련 최적화 테스트 86개는 [로컬 검증 기록](AI_LATENCY_V63.md)에 별도로 기록했다. 중복을 제거하지 않은 테스트 수를 합산하지 않는다.
+
+요약 기록: [benchmarks/modal_v63_release.json](benchmarks/modal_v63_release.json). 원격 원본은 `.benchmarks/modal_v63_release/remote-01/`, 저장 응답 재검사 결과는 `.benchmarks/modal_v63_release/remote-01-quality-assessment.json`에 보존했다. 검사용 임시 키는 폐기했고 기존 백엔드 키는 변경하지 않았다. 전체 저장소 CI 통과를 주장하는 기록은 아니다.
+
+## 검증 해석
+
+배포 등록, 인증 통과, 계산 응답, 실제 향 품질은 각각 다른 증거다. 이번 배포 확인은 API의 실제 동작과 선택된 모델 식별값을 확인한 것이며, 실제 인간 후각 95%나 모든 요청의 95점 통과를 의미하지 않는다. 연구 상태와 안전·품질 게이트를 유지했다.

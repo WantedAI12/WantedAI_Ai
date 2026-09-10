@@ -157,17 +157,26 @@ class ConstrainedFormulaOptimizer:
     def _select_candidates(
         self, candidates: list[Ingredient], brief: ScentBrief
     ) -> list[Ingredient]:
+        candidates = [item for item in candidates if brief.pyramid_ratios.get(item.pyramid, 0.) > 0]
         target = profile_vector(brief.target_profile)
+        from .odor_expression import expression_utility
+        fine_values, _ = expression_utility(candidates, brief)
+        fine_by_id = {item.ingredient_id:float(value) for item,value in zip(candidates,fine_values)}
+        def rank(item):
+            return self._ingredient_score(item,target,brief.constraints.max_ingredient_price_per_kg)+.15*fine_by_id[item.ingredient_id]
         selected: list[Ingredient] = []
-        per_group = max(3, brief.constraints.max_ingredients // 3)
+        # A loose maximum is permission, not a request to put the whole catalog
+        # in the initial formula. Whole-pool LP/replacement stages can recruit
+        # any eligible material later; start sparse to avoid quadratic twins.
+        per_group = max(3, min(12, brief.constraints.max_ingredients) // 3)
 
         for pyramid, target_total in brief.pyramid_ratios.items():
+            if target_total <= 0:
+                continue
             group = [item for item in candidates if item.pyramid == pyramid]
             ranked = sorted(
                 group,
-                key=lambda item: self._ingredient_score(
-                    item, target, brief.constraints.max_ingredient_price_per_kg
-                ),
+                key=rank,
                 reverse=True,
             )
             chosen = ranked[:per_group]
@@ -198,9 +207,7 @@ class ConstrainedFormulaOptimizer:
                 representatives,
                 key=lambda item: (
                     item.profile.get(dimension, 0.0) * 0.70
-                    + self._ingredient_score(
-                        item, target, brief.constraints.max_ingredient_price_per_kg
-                    )
+                    + rank(item)
                     * 0.30
                 ),
             )
@@ -211,9 +218,7 @@ class ConstrainedFormulaOptimizer:
             # Keep required pyramid capacity while removing the lowest scoring extras.
             removable = sorted(
                 selected,
-                key=lambda item: self._ingredient_score(
-                    item, target, brief.constraints.max_ingredient_price_per_kg
-                ),
+                key=rank,
             )
             for candidate in removable:
                 if len(selected) <= brief.constraints.max_ingredients:
@@ -244,6 +249,44 @@ class ConstrainedFormulaOptimizer:
                 "요청한 향 구조와 안전 농도 상한을 max_ingredients 안에서 동시에 충족할 수 없습니다."
             )
         return selected
+
+    def replacement_selections(
+        self, candidates: list[Ingredient], selected: list[Ingredient],
+        brief: ScentBrief, limit: int = 3,
+    ) -> list[list[Ingredient]]:
+        """Propose bounded single-material swaps from the entire screened pool."""
+        if limit <= 0 or not selected:
+            return []
+        matrix = np.vstack([item.vector() for item in candidates])
+        target = profile_vector(brief.target_profile)
+        selected_mean = np.mean([item.vector() for item in selected], axis=0)
+        residual = np.maximum(0.0, target - selected_mean)
+        guide = target + 0.75 * residual
+        guides = [guide, *(profile_vector(profile) for profile in brief.phase_target_profiles.values())]
+        normalized = matrix / np.maximum(1e-12, np.linalg.norm(matrix, axis=1, keepdims=True))
+        matches = np.max(np.column_stack([
+            normalized @ (vector / max(1e-12, float(np.linalg.norm(vector))))
+            for vector in guides
+        ]), axis=1)
+        scores = {item.ingredient_id: float(score) for item, score in zip(candidates, matches)}
+        selected_ids = {item.ingredient_id for item in selected}
+        proposals = []
+        for pyramid, required in brief.pyramid_ratios.items():
+            alternatives = [item for item in candidates if item.pyramid == pyramid and item.ingredient_id not in selected_ids]
+            alternatives.sort(key=lambda item: (-scores[item.ingredient_id], item.ingredient_id))
+            donors = [item for item in selected if item.pyramid == pyramid]
+            donors.sort(key=lambda item: (scores[item.ingredient_id], item.ingredient_id))
+            for candidate in alternatives[:3]:
+                for donor in donors:
+                    changed = [candidate if item.ingredient_id == donor.ingredient_id else item for item in selected]
+                    if sum(item.as_supplied_cap_percent() for item in changed if item.pyramid == pyramid) + 1e-7 < required:
+                        continue
+                    if any(not any(item.profile.get(dimension, 0.0) >= 0.35 for item in changed) for dimension in brief.desired_dimensions):
+                        continue
+                    proposals.append((scores[candidate.ingredient_id] - scores[donor.ingredient_id], candidate.ingredient_id, changed))
+                    break
+        proposals.sort(key=lambda item: (-item[0], item[1]))
+        return [changed for _, _, changed in proposals[:limit]]
 
     @staticmethod
     def _achieved_profile(
@@ -277,14 +320,29 @@ class ConstrainedFormulaOptimizer:
         | None = None,
     ) -> tuple[list[RecipeLine], float, dict[str, float], float, float]:
         ingredients = self._select_candidates(candidates, brief)
-        target = profile_vector(brief.target_profile)
-        ingredient_vectors = np.vstack([item.vector() for item in ingredients])
-        structural_factors = np.asarray(
-            [
-                item.odor_impact * item.active_strength_percent / 100.0
-                for item in ingredients
-            ]
+        return self._optimize_selected(
+            ingredients, brief, perceptual_factors, formula_objective
         )
+
+    def _optimize_selected(
+        self,
+        ingredients: list[Ingredient],
+        brief: ScentBrief,
+        perceptual_factors: dict[str, float] | None = None,
+        formula_objective: Callable[[np.ndarray, list[Ingredient]], float]
+        | None = None,
+        profile_scorer: Callable | None = None,
+    ) -> tuple[list[RecipeLine], float, dict[str, float], float, float]:
+        """Optimize a selection already screened for this exact request.
+
+        Selection depends on the brief and candidates, not the perceptual
+        objective. Each call still runs the complete weight optimization.
+        """
+        ingredients = list(ingredients)
+        target = profile_vector(brief.target_profile)
+        from .odor_expression import expression_utility
+        fine_values, _ = expression_utility(ingredients, brief)
+        ingredient_vectors = np.vstack([item.vector() for item in ingredients])
         perceptual_multiplier = np.asarray(
             [
                 (
@@ -299,7 +357,6 @@ class ConstrainedFormulaOptimizer:
             dtype=float,
         )
         matrix = ingredient_vectors * perceptual_multiplier[:, None]
-        structural_matrix = ingredient_vectors * structural_factors[:, None]
         caps = np.asarray(
             [item.as_supplied_cap_percent() for item in ingredients], dtype=float
         )
@@ -377,13 +434,16 @@ class ConstrainedFormulaOptimizer:
 
         def objective(current: np.ndarray) -> float:
             current_profile = achieved_from(current)
-            semantic_score = semantic_brief_similarity(
+            semantic_score = (profile_scorer or semantic_brief_similarity)(
                 target,
                 current_profile,
                 brief.desired_dimensions,
                 brief.avoided_dimensions,
             )
             score = semantic_score
+            # Search preference only. Reported similarity and all final gates
+            # still use the original complete profile, not this annotation term.
+            fine_preference = 2.*float(np.dot(current/100.,fine_values))
             if formula_objective is not None:
                 context_score = float(formula_objective(current, ingredients))
                 if not math.isfinite(context_score):
@@ -397,6 +457,7 @@ class ConstrainedFormulaOptimizer:
                     1.0 - context_weight
                 ) * semantic_score + context_weight * context_score
             current_cost = float(np.dot(current / 100.0, prices))
+            score += fine_preference
             if current_cost > brief.constraints.max_formula_cost_per_kg:
                 score -= (
                     current_cost - brief.constraints.max_formula_cost_per_kg
@@ -416,6 +477,11 @@ class ConstrainedFormulaOptimizer:
                         if weights[donor] < step:
                             continue
                         for receiver in indices:
+                            # An accepted transfer updates weights inside this
+                            # loop. Recheck the donor before every receiver so
+                            # the objective never sees a negative concentration.
+                            if weights[donor] < step:
+                                break
                             if (
                                 donor == receiver
                                 or weights[receiver] + step > caps[receiver] + 1e-9
@@ -432,6 +498,30 @@ class ConstrainedFormulaOptimizer:
                 if not improved:
                     break
 
+        # Block trials complement one-material transfers. Preserve note budgets
+        # and internal accord ratios; accept only actual objective improvements
+        # with no decrease in the original scent-profile score.
+        from .accord_trials import accord_trials
+        def scent_score(current):
+            return (profile_scorer or semantic_brief_similarity)(target, achieved_from(current),
+                brief.desired_dimensions, brief.avoided_dimensions)
+        for _ in range(2):
+            incumbent = weights.copy()
+            scent_floor = scent_score(incumbent)
+            for proposal in accord_trials(incumbent, ingredient_vectors, perceptual_multiplier,
+                    target, np.zeros(len(weights)), caps,
+                    budget_groups=[item.pyramid for item in ingredients]):
+                if float(prices @ proposal / 100.) > brief.constraints.max_formula_cost_per_kg + 1e-8:
+                    continue
+                if scent_score(proposal) + 1e-8 < scent_floor:
+                    continue
+                score = objective(proposal)
+                if score > best_score + 1e-8:
+                    weights, best_score = proposal, score
+                    scent_floor = scent_score(proposal)
+            if np.array_equal(weights, incumbent):
+                break
+
         # Final exact projection protects against accumulated floating-point drift.
         for pyramid, total in brief.pyramid_ratios.items():
             indices = pyramid_indices[pyramid]
@@ -439,11 +529,22 @@ class ConstrainedFormulaOptimizer:
                 weights[indices], caps[indices], total
             )
 
+        return self.variant_from_weights(ingredients, brief, weights)
+
+    def variant_from_weights(
+        self, ingredients: list[Ingredient], brief: ScentBrief, weights: np.ndarray,
+    ) -> tuple[list[RecipeLine], float, dict[str, float], float, float]:
+        """Render solver weights through the existing recipe output contract."""
+        weights = np.asarray(weights, dtype=float)
+        if weights.shape != (len(ingredients),) or not np.isfinite(weights).all() or np.any(weights < 0):
+            raise ValueError("invalid recipe weights")
+        prices = np.asarray([item.price_per_kg for item in ingredients], dtype=float)
+        target = profile_vector(brief.target_profile)
         # Optimize with headspace-aware gains, but report the established
         # structural semantic profile separately. The nonlinear scientific
         # twin supplies the physical score; mixing the two would make the
         # public semantic metric change meaning across model versions.
-        achieved = achieved_from(weights, structural_matrix)
+        achieved = self._achieved_profile(weights, ingredients)
         similarity = semantic_brief_similarity(
             target,
             achieved,
@@ -507,6 +608,8 @@ class ConstrainedFormulaOptimizer:
                     approved_formulation_scopes=ingredient.approved_formulation_scopes,
                     approval_expires_at=ingredient.approval_expires_at,
                     promotion_artifact_id=ingredient.promotion_artifact_id,
+                    odor_integrity_version=ingredient.odor_integrity_version,
+                    odor_projection_version=ingredient.odor_projection_version,
                 )
             )
 

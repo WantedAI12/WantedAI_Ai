@@ -59,6 +59,9 @@ class IndustrialConditionalCandidateRecord:
     cas_number: str | None
     descriptors: tuple[str, ...]
     aliases: tuple[str, ...]
+    odor_assertions: tuple[str, ...] = ()
+    structural_alerts: tuple[str, ...] = ()
+    odor_evidence_refs: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -412,11 +415,11 @@ class IndustrialIngredientRegistry:
         *,
         limit: int = 30_000,
     ) -> list[IndustrialConditionalCandidateRecord]:
-        """Return the strict public-data subset eligible for full-range R&D use.
+        """Return unlinked reference rows for subsequent odor-integrity screening.
 
         This experimental query includes every unlinked registry molecule.
-        It is not a safety approval; the caller must retain an experimental
-        result status and non-manufacturing boundary.
+        Coverage is not permission to formulate: activation must reject missing,
+        odorless, conflicting, taste-only and structurally flagged records.
         """
 
         if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 30_000:
@@ -425,7 +428,7 @@ class IndustrialIngredientRegistry:
             """
             SELECT i.registry_id, i.preferred_name, i.canonical_smiles,
                    i.molecular_weight, i.source_count, i.descriptor_count,
-                   p.evidence_score,
+                   p.evidence_score, s.structural_alerts_json,
                    (SELECT x.identifier_value
                     FROM ingredient_identifiers x
                     WHERE x.registry_id = i.registry_id
@@ -433,6 +436,7 @@ class IndustrialIngredientRegistry:
                     ORDER BY x.identifier_value LIMIT 1) AS cas_number
             FROM promotion_candidates p
             JOIN ingredients i ON i.registry_id = p.registry_id
+            LEFT JOIN safety_screening s ON s.registry_id = i.registry_id
             WHERE NOT EXISTS (
                   SELECT 1 FROM formulation_materials f
                   WHERE f.linked_registry_id = i.registry_id
@@ -447,6 +451,11 @@ class IndustrialIngredientRegistry:
 
         registry_ids = [str(row["registry_id"]) for row in rows]
         descriptor_map: dict[str, set[str]] = {key: set() for key in registry_ids}
+        assertion_map: dict[str, set[str]] = {key: set() for key in registry_ids}
+        reference_map: dict[str, list[str]] = {key: [] for key in registry_ids}
+        source_hashes = {str(row["source_id"]): str(row["sha256"]) for row in self._connection.execute(
+            "SELECT source_id, sha256 FROM source_files WHERE file_kind = 'behavior'"
+        )}
         alias_map: dict[str, set[str]] = {key: set() for key in registry_ids}
         # Keep each IN clause below SQLite's commonly compiled 999-variable
         # ceiling.  The public method permits a larger future registry pool.
@@ -455,7 +464,7 @@ class IndustrialIngredientRegistry:
             placeholders = ",".join("?" for _ in chunk)
             for row in self._connection.execute(
                 f"""
-                SELECT registry_id, normalized_descriptor
+                SELECT registry_id, source_id, descriptor, normalized_descriptor
                 FROM odor_descriptors
                 WHERE registry_id IN ({placeholders})
                 ORDER BY registry_id, normalized_descriptor
@@ -465,6 +474,18 @@ class IndustrialIngredientRegistry:
                 value = str(row["normalized_descriptor"]).strip()
                 if value:
                     descriptor_map[str(row["registry_id"])].add(value)
+                    assertion_map[str(row["registry_id"])].add(str(row["source_id"]) + ":" + value)
+                    source = str(row["source_id"])
+                    reference_map[str(row["registry_id"])].append(json.dumps({
+                        "source_tag": source, "source_id": source,
+                        "source_file_sha256": source_hashes.get(source, ""),
+                        "source_record_id": f"registry:{row['registry_id']}:{source}:{value}",
+                        "source_field": {"leffingwell": str(row["descriptor"]), "goodscents": "Descriptors", "flavornet": "Descriptors",
+                                         "aromadb": "Filtered Descriptors or Raw Descriptors", "ifra_2019": "Descriptor 1/2/3"}.get(source, "Odor or Flavor Percepts (legacy ambiguity)"),
+                        "semantic_role": "odor" if source != "flavordb" else "ambiguous_odor_or_flavor",
+                        "descriptor": str(row["descriptor"]), "conditions_status": "not_retained_in_legacy_registry",
+                        "normalization_version": "explicit-odor-assertions-1",
+                    }, sort_keys=True))
             for row in self._connection.execute(
                 f"""
                 SELECT registry_id, name
@@ -496,6 +517,9 @@ class IndustrialIngredientRegistry:
                 ),
                 descriptors=tuple(sorted(descriptor_map[str(row["registry_id"])])),
                 aliases=tuple(sorted(alias_map[str(row["registry_id"])])),
+                odor_assertions=tuple(sorted(assertion_map[str(row["registry_id"])])),
+                structural_alerts=tuple(json.loads(row["structural_alerts_json"])) if row["structural_alerts_json"] is not None else ("missing_structural_screen",),
+                odor_evidence_refs=tuple(reference_map[str(row["registry_id"])]),
             )
             for row in rows
         ]

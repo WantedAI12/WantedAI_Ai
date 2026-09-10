@@ -1,0 +1,36 @@
+{
+  "schema": "perfumery-ai-modal-performance-quality/v1",
+  "verified_at": "2026-09-05T05:42:59.5325568Z",
+  "url": "https://junseong2im--perfumery-ai-core-web.modal.run",
+  "passed": true,
+  "wheel_sha256": "f78a5c6bb60ebbdcc92314e58d12aae8f10d168f2be55fb908971a2780d9048a",
+  "registry_sha256": "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765",
+  "model_version": "headspace-olfactory-twin-2.3",
+  "physsim_version": "concentration-headspace-physsim-core-1.2",
+  "unauthenticated_status": 401,
+  "initial_authenticated_health_seconds": 33.7030672,
+  "reference_molecules_connected": 29240,
+  "runtime_formula_candidates": 29259,
+  "standard_round_trip_seconds": [
+    3.083865,
+    2.8072309,
+    2.7677345
+  ],
+  "standard_median_seconds": 2.8072309,
+  "expanded_round_trip_seconds": [
+    8.4916606,
+    8.2660278,
+    8.3498352
+  ],
+  "expanded_median_seconds": 8.3498352,
+  "standard_recipe_lines": 9,
+  "expanded_recipe_lines": 12,
+  "excluded_material_absent": true,
+  "english_max_six_actual_lines": 6,
+  "korean_max_six_actual_lines": 6,
+  "temporal_points": 5,
+  "scent_dimensions": 19,
+  "formula_requests_passed": 9,
+  "scope": "real Modal API round trip after health warmup; timings include network latency",
+  "temporary_verification_token_deleted": true
+}

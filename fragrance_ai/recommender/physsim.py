@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, replace
-from typing import Collection
+from typing import Collection, Mapping
 
 import numpy as np
 
@@ -53,7 +53,7 @@ from .science import (
 )
 
 
-PHYSSIM_MODEL_VERSION = "concentration-headspace-physsim-core-1.1"
+PHYSSIM_MODEL_VERSION = "concentration-headspace-physsim-core-1.2"
 
 
 @dataclass(frozen=True)
@@ -372,7 +372,7 @@ class ConcentrationAwarePhysSim:
         self,
         lines: list[RecipeLine],
         ingredients: dict[str, Ingredient],
-        store: ScientificPropertyStore,
+        store: ScientificPropertyStore | Mapping[str, MolecularProperties],
         minutes: int,
     ) -> _ParticleField:
         ordered = sorted(lines, key=lambda line: line.ingredient_id)
@@ -441,7 +441,7 @@ class ConcentrationAwarePhysSim:
             persistence = 0.5 ** (minutes / half_life)
             # log1p retains concentration sensitivity while preventing a
             # single ultra-low threshold material from dominating the field.
-            perceived_weight = math.log1p(odor_activity) * persistence
+            perceived_weight = math.log1p(odor_activity * persistence)
             perceived_weight *= max(0.05, ingredient.odor_impact)
             raw_weights.append(max(1e-12, perceived_weight))
             volatility = math.tanh(math.log10(max(1e-8, vapor_pressure) + 1.0) / 3.0)
@@ -595,7 +595,7 @@ class ConcentrationAwarePhysSim:
         left_lines: list[RecipeLine],
         right_lines: list[RecipeLine],
         ingredients: dict[str, Ingredient],
-        store: ScientificPropertyStore,
+        store: ScientificPropertyStore | Mapping[str, MolecularProperties],
     ) -> PhysSimResult:
         if not left_lines or not right_lines:
             return PhysSimResult(
@@ -710,7 +710,7 @@ class ConcentrationAwarePhysSim:
         lines: list[RecipeLine],
         ingredients: dict[str, Ingredient],
         brief: ScentBrief,
-        store: ScientificPropertyStore,
+        store: ScientificPropertyStore | Mapping[str, MolecularProperties],
         *,
         reference_target_lines: list[RecipeLine] | None = None,
     ) -> PhysSimResult:

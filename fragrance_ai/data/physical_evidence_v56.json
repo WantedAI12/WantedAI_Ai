@@ -1,0 +1,2673 @@
+{
+  "schema": "physical-evidence-index/v1",
+  "by_structure": {
+    "CC(O)CN": {
+      "odor_threshold_ppm": 1.0,
+      "pubchem_cid": "4",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:4",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 75.11
+    },
+    "ClCCCl": {
+      "odor_threshold_ppm": 5.997910762555095,
+      "pubchem_cid": "11",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 98.96
+    },
+    "CC(=O)O": {
+      "odor_threshold_ppm": 0.005585666474508842,
+      "pubchem_cid": "176",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:176",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 60.05
+    },
+    "CC=O": {
+      "odor_threshold_ppm": 0.0014999956513820386,
+      "pubchem_cid": "177",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:177",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 44.05
+    },
+    "CC(C)=O": {
+      "odor_threshold_ppm": 4.078495617712699,
+      "pubchem_cid": "180",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:180",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 58.08
+    },
+    "N": {
+      "odor_threshold_ppm": 1.4999956513820392,
+      "pubchem_cid": "222",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:222",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 17.031
+    },
+    "c1ccccc1": {
+      "odor_threshold_ppm": 2.6999765984012107,
+      "pubchem_cid": "241",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:241",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 78.11
+    },
+    "CCCC=O": {
+      "odor_threshold_ppm": 0.009765399165780704,
+      "pubchem_cid": "261",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:261",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 72.11
+    },
+    "CCCCO": {
+      "odor_threshold_ppm": 0.11592977687560213,
+      "pubchem_cid": "263",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:263",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 74.12
+    },
+    "CCCC(=O)O": {
+      "odor_threshold_ppm": 0.0005626651280675066,
+      "pubchem_cid": "264",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:264",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 88.11
+    },
+    "O=CO": {
+      "odor_threshold_ppm": 7.691304402866097,
+      "pubchem_cid": "284",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:284",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 46.025
+    },
+    "Cl": {
+      "odor_threshold_ppm": 0.04900044227932357,
+      "pubchem_cid": "313",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:313",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 36.46
+    },
+    "Cc1ccccc1O": {
+      "odor_threshold_ppm": 0.0002800012692434532,
+      "pubchem_cid": "335",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:335",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 108.14
+    },
+    "Cc1cccc(O)c1": {
+      "odor_threshold_ppm": 0.0001,
+      "pubchem_cid": "342",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:342",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 108.14
+    },
+    "CCCCCCCC": {
+      "odor_threshold_ppm": 1.7000042221563656,
+      "pubchem_cid": "356",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:356",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 114.23
+    },
+    "CCCCCCCC(=O)O": {
+      "odor_threshold_ppm": 9.716279515771078e-05,
+      "pubchem_cid": "379",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:379",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 144.21
+    },
+    "S": {
+      "odor_threshold_ppm": 0.0004099963590417645,
+      "pubchem_cid": "402",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:402",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 34.08
+    },
+    "CCCCCCCC=O": {
+      "odor_threshold_ppm": 0.00019098532585662387,
+      "pubchem_cid": "454",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:454",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 128.21
+    },
+    "CCC=O": {
+      "odor_threshold_ppm": 0.0030026174208612677,
+      "pubchem_cid": "527",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:527",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 58.08
+    },
+    "CNC": {
+      "odor_threshold_ppm": 0.03299970062852291,
+      "pubchem_cid": "674",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:674",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 45.08
+    },
+    "CCO": {
+      "odor_threshold_ppm": 2.3014418174085085,
+      "pubchem_cid": "702",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:702",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 46.07
+    },
+    "C=O": {
+      "odor_threshold_ppm": 0.4999999950079739,
+      "pubchem_cid": "712",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:712",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 30.026
+    },
+    "c1ccc2[nH]ccc2c1": {
+      "odor_threshold_ppm": 0.000299999133271615,
+      "pubchem_cid": "798",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:798",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 117.15
+    },
+    "CS": {
+      "odor_threshold_ppm": 7.000031591308976e-05,
+      "pubchem_cid": "878",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:878",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 48.11
+    },
+    "CO": {
+      "odor_threshold_ppm": 80.26015608726271,
+      "pubchem_cid": "887",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:887",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 32.042
+    },
+    "CCCCCCCCO": {
+      "odor_threshold_ppm": 0.0034330489828723353,
+      "pubchem_cid": "957",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:957",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 130.23
+    },
+    "Oc1ccccc1": {
+      "odor_threshold_ppm": 0.005600025440780015,
+      "pubchem_cid": "996",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:996",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 94.11
+    },
+    "CCCO": {
+      "odor_threshold_ppm": 1.1522985091694515,
+      "pubchem_cid": "1031",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:1031",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 60.1
+    },
+    "CCC(=O)O": {
+      "odor_threshold_ppm": 0.00569993627094142,
+      "pubchem_cid": "1032",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:1032",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 74.08
+    },
+    "c1ccncc1": {
+      "odor_threshold_ppm": 0.28488527353375864,
+      "pubchem_cid": "1049",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:1049",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 79.1
+    },
+    "CSC": {
+      "odor_threshold_ppm": 0.00299999133271615,
+      "pubchem_cid": "1068",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:1068",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 62.14
+    },
+    "O=S=O": {
+      "odor_threshold_ppm": 0.8700014971923165,
+      "pubchem_cid": "1119",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:1119",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 64.07
+    },
+    "C1CCSC1": {
+      "odor_threshold_ppm": 0.0006199975880723254,
+      "pubchem_cid": "1127",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:1127",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 88.17
+    },
+    "Cc1ccccc1": {
+      "odor_threshold_ppm": 0.911228931225361,
+      "pubchem_cid": "1140",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:1140",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 92.14
+    },
+    "CC1CCC(C(C)C)C(O)C1": {
+      "odor_threshold_ppm": 0.02187761623949553,
+      "pubchem_cid": "1254",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:1254",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 156.26
+    },
+    "CC12CCC(CC1)C(C)(C)O2": {
+      "odor_threshold_ppm": 0.3198895109691398,
+      "pubchem_cid": "2758",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:2758",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 154.25
+    },
+    "Cc1ccc(O)cc1": {
+      "odor_threshold_ppm": 5.399953250715832e-05,
+      "pubchem_cid": "2879",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:2879",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 108.14
+    },
+    "NCCN": {
+      "odor_threshold_ppm": 1.0,
+      "pubchem_cid": "3301",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:3301",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 60.1
+    },
+    "CC(C)O": {
+      "odor_threshold_ppm": 40.040546833054634,
+      "pubchem_cid": "3776",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:3776",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 60.1
+    },
+    "CCC1(c2ccccc2)C(=O)NC(=O)NC1=O": {
+      "odor_threshold_ppm": 0.00013551894123510364,
+      "pubchem_cid": "4763",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:4763",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 232.23
+    },
+    "ClC(Cl)(Cl)Cl": {
+      "odor_threshold_ppm": 4.600022966650681,
+      "pubchem_cid": "5943",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:5943",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 153.8
+    },
+    "OCCc1ccccc1": {
+      "odor_threshold_ppm": 0.006456542290346556,
+      "pubchem_cid": "6054",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6054",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 122.16
+    },
+    "CCCCCC=O": {
+      "odor_threshold_ppm": 0.0019470928709760067,
+      "pubchem_cid": "6184",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6184",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.16
+    },
+    "ClC(Cl)Cl": {
+      "odor_threshold_ppm": 3.7999685303685493,
+      "pubchem_cid": "6212",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6212",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 119.37
+    },
+    "CCCCCO": {
+      "odor_threshold_ppm": 0.3001465344919274,
+      "pubchem_cid": "6276",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6276",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 88.15
+    },
+    "C=C": {
+      "odor_threshold_ppm": 260.0159563165272,
+      "pubchem_cid": "6325",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6325",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 28.05
+    },
+    "CN": {
+      "odor_threshold_ppm": 0.03500015760710144,
+      "pubchem_cid": "6329",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6329",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 31.057
+    },
+    "CCN": {
+      "odor_threshold_ppm": 0.04600022966650682,
+      "pubchem_cid": "6341",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6341",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 45.08
+    },
+    "CC#N": {
+      "odor_threshold_ppm": 12.99989965375454,
+      "pubchem_cid": "6342",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6342",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 41.05
+    },
+    "CCS": {
+      "odor_threshold_ppm": 8.700014971923162e-06,
+      "pubchem_cid": "6343",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6343",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 62.14
+    },
+    "S=C=S": {
+      "odor_threshold_ppm": 0.21000034102666135,
+      "pubchem_cid": "6348",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6348",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 76.15
+    },
+    "C1CO1": {
+      "odor_threshold_ppm": 260.0159563165272,
+      "pubchem_cid": "6354",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6354",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 44.05
+    },
+    "CC(C)N": {
+      "odor_threshold_ppm": 0.07243859195400737,
+      "pubchem_cid": "6363",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6363",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 59.11
+    },
+    "CC(C)S": {
+      "odor_threshold_ppm": 5.999982725336439e-06,
+      "pubchem_cid": "6364",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6364",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 76.16
+    },
+    "CC1CO1": {
+      "odor_threshold_ppm": 9.908319448927676,
+      "pubchem_cid": "6378",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6378",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 58.08
+    },
+    "CC(C)(C)N": {
+      "odor_threshold_ppm": 0.1700004222156366,
+      "pubchem_cid": "6385",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6385",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 73.14
+    },
+    "CC(C)(C)O": {
+      "odor_threshold_ppm": 602.5595860743575,
+      "pubchem_cid": "6386",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6386",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 74.12
+    },
+    "CC(C)(C)S": {
+      "odor_threshold_ppm": 2.900013369054067e-05,
+      "pubchem_cid": "6387",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6387",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 90.19
+    },
+    "FC(Cl)(Cl)Cl": {
+      "odor_threshold_ppm": 5.000345349769784,
+      "pubchem_cid": "6389",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6389",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 137.36
+    },
+    "CCC(C)(C)C": {
+      "odor_threshold_ppm": 20.000000199681043,
+      "pubchem_cid": "6403",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6403",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 86.18
+    },
+    "CCC(C)(C)O": {
+      "odor_threshold_ppm": 0.08799945855058901,
+      "pubchem_cid": "6405",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6405",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 88.15
+    },
+    "CC(=O)C(C)(C)C": {
+      "odor_threshold_ppm": 0.043000152915127016,
+      "pubchem_cid": "6416",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6416",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.16
+    },
+    "C1=CC2C3C=CC(C3)C2C1": {
+      "odor_threshold_ppm": 0.01101539309541415,
+      "pubchem_cid": "6492",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6492",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 132.2
+    },
+    "CC1=CC(=O)CC(C)(C)C1": {
+      "odor_threshold_ppm": 0.19998618696327444,
+      "pubchem_cid": "6544",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6544",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 138.21
+    },
+    "C=CC(C)(O)CCC=C(C)C": {
+      "odor_threshold_ppm": 0.9506047936562815,
+      "pubchem_cid": "6549",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6549",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 154.25
+    },
+    "CCC(C)C": {
+      "odor_threshold_ppm": 1.2999899653754543,
+      "pubchem_cid": "6556",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6556",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 72.15
+    },
+    "C=CC(=C)C": {
+      "odor_threshold_ppm": 0.04799986324039092,
+      "pubchem_cid": "6557",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6557",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 68.12
+    },
+    "CC(C)CN": {
+      "odor_threshold_ppm": 0.0014999956513820386,
+      "pubchem_cid": "6558",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6558",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 73.14
+    },
+    "CC(C)CO": {
+      "odor_threshold_ppm": 0.08653563801154925,
+      "pubchem_cid": "6560",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6560",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 74.12
+    },
+    "CC(C)C=O": {
+      "odor_threshold_ppm": 0.00035000157607101447,
+      "pubchem_cid": "6561",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6561",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 72.11
+    },
+    "C=C(C)C=O": {
+      "odor_threshold_ppm": 0.008500021025917173,
+      "pubchem_cid": "6562",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6562",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 70.09
+    },
+    "CC(Cl)CCl": {
+      "odor_threshold_ppm": 0.25003453616964316,
+      "pubchem_cid": "6564",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6564",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 112.98
+    },
+    "CC(N)CN": {
+      "odor_threshold_ppm": 0.014028137045619582,
+      "pubchem_cid": "6567",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6567",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 74.13
+    },
+    "CCC(C)O": {
+      "odor_threshold_ppm": 1.360838747848887,
+      "pubchem_cid": "6568",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6568",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 74.12
+    },
+    "CCC(C)=O": {
+      "odor_threshold_ppm": 0.9380478664401649,
+      "pubchem_cid": "6569",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6569",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 72.11
+    },
+    "ClC=C(Cl)Cl": {
+      "odor_threshold_ppm": 3.899958628744329,
+      "pubchem_cid": "6575",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6575",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 131.38
+    },
+    "COC(C)=O": {
+      "odor_threshold_ppm": 1.7000042221563656,
+      "pubchem_cid": "6584",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6584",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 74.08
+    },
+    "CC(C)C(C)C": {
+      "odor_threshold_ppm": 0.4200006862466315,
+      "pubchem_cid": "6589",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6589",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 86.18
+    },
+    "CC(C)C(=O)O": {
+      "odor_threshold_ppm": 0.0014999956513820386,
+      "pubchem_cid": "6590",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6590",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 88.11
+    },
+    "CC1=CCC2CC1C2(C)C": {
+      "odor_threshold_ppm": 0.5836264957849249,
+      "pubchem_cid": "6654",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6654",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 136.23
+    },
+    "C=C(C)C(=O)OC": {
+      "odor_threshold_ppm": 0.21000034102666135,
+      "pubchem_cid": "6658",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6658",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.12
+    },
+    "Cc1c[nH]c2ccccc12": {
+      "odor_threshold_ppm": 5.6000254407800146e-06,
+      "pubchem_cid": "6736",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:6736",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 131.17
+    },
+    "Cc1ccccc1C": {
+      "odor_threshold_ppm": 0.17433717327459114,
+      "pubchem_cid": "7237",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7237",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 106.16
+    },
+    "Cc1ccc(C)c(C)c1": {
+      "odor_threshold_ppm": 0.1199996557048116,
+      "pubchem_cid": "7247",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7247",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 120.19
+    },
+    "c1ccc(C2CO2)cc1": {
+      "odor_threshold_ppm": 0.06309573444801933,
+      "pubchem_cid": "7276",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7276",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 120.15
+    },
+    "CCC(C)CC": {
+      "odor_threshold_ppm": 8.899999863825753,
+      "pubchem_cid": "7282",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7282",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 86.18
+    },
+    "C=CC(=O)OC": {
+      "odor_threshold_ppm": 0.0035000157607101446,
+      "pubchem_cid": "7294",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7294",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 86.09
+    },
+    "CC1CCCC1": {
+      "odor_threshold_ppm": 1.7000042221563656,
+      "pubchem_cid": "7296",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7296",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 84.16
+    },
+    "CC(C)COC(=O)C(C)C": {
+      "odor_threshold_ppm": 0.0749997818203002,
+      "pubchem_cid": "7351",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7351",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 144.21
+    },
+    "CCCCOC(=O)C(C)C": {
+      "odor_threshold_ppm": 0.02199986419835166,
+      "pubchem_cid": "7353",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7353",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 144.21
+    },
+    "CCC(CC)CO": {
+      "odor_threshold_ppm": 0.06998419960022735,
+      "pubchem_cid": "7358",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7358",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 102.17
+    },
+    "CC(C)c1ccccc1": {
+      "odor_threshold_ppm": 0.04169589816389591,
+      "pubchem_cid": "7406",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7406",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 120.19
+    },
+    "C=C(C)c1ccccc1": {
+      "odor_threshold_ppm": 0.051999599653351596,
+      "pubchem_cid": "7407",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7407",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 118.18
+    },
+    "CC(=O)c1ccccc1": {
+      "odor_threshold_ppm": 0.2999162518987651,
+      "pubchem_cid": "7410",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7410",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 120.15
+    },
+    "CC1=CCC(C(C)C)=CC1": {
+      "odor_threshold_ppm": 9.817479430199844,
+      "pubchem_cid": "7461",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7461",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 136.23
+    },
+    "CC1=CC=C(C(C)C)CC1": {
+      "odor_threshold_ppm": 1.4190575216890922,
+      "pubchem_cid": "7462",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7462",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 136.23
+    },
+    "Cc1ccc(C(C)C)cc1": {
+      "odor_threshold_ppm": 1.3212956341865751,
+      "pubchem_cid": "7463",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7463",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 134.22
+    },
+    "CCc1ccccc1": {
+      "odor_threshold_ppm": 0.2651449337928052,
+      "pubchem_cid": "7500",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7500",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 106.16
+    },
+    "C=Cc1ccccc1": {
+      "odor_threshold_ppm": 0.04183454019490108,
+      "pubchem_cid": "7501",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7501",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 104.15
+    },
+    "CCN1CCOCC1": {
+      "odor_threshold_ppm": 0.0801678063387679,
+      "pubchem_cid": "7525",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7525",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 115.17
+    },
+    "CCCCC(CC)COC(C)=O": {
+      "odor_threshold_ppm": 0.1,
+      "pubchem_cid": "7635",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7635",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 172.26
+    },
+    "CCCc1ccccc1": {
+      "odor_threshold_ppm": 0.1058985466749453,
+      "pubchem_cid": "7668",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7668",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 120.19
+    },
+    "CCCCc1ccccc1": {
+      "odor_threshold_ppm": 0.044648478785517046,
+      "pubchem_cid": "7705",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7705",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 134.22
+    },
+    "CCCCC(CC)CO": {
+      "odor_threshold_ppm": 0.07498942093324558,
+      "pubchem_cid": "7720",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7720",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 130.23
+    },
+    "CCc1ccc(C)nc1": {
+      "odor_threshold_ppm": 0.005997910762555094,
+      "pubchem_cid": "7728",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7728",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 121.18
+    },
+    "CCc1ccc(CC)cc1": {
+      "odor_threshold_ppm": 0.000389995862874433,
+      "pubchem_cid": "7734",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7734",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 134.22
+    },
+    "CCCC(C)CO": {
+      "odor_threshold_ppm": 0.023988329190194897,
+      "pubchem_cid": "7745",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7745",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 102.17
+    },
+    "CCOC(=O)CC": {
+      "odor_threshold_ppm": 0.007000031591308968,
+      "pubchem_cid": "7749",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7749",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 102.13
+    },
+    "CCC(C)OC(C)=O": {
+      "odor_threshold_ppm": 0.09442891508325081,
+      "pubchem_cid": "7758",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7758",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 116.16
+    },
+    "CCCOC(=O)CCC": {
+      "odor_threshold_ppm": 0.010999931989351935,
+      "pubchem_cid": "7770",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7770",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 130.18
+    },
+    "CCCOC(=O)CC": {
+      "odor_threshold_ppm": 0.05800026796015909,
+      "pubchem_cid": "7803",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7803",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 116.16
+    },
+    "Cc1ccc(C)cc1": {
+      "odor_threshold_ppm": 0.05800026796015909,
+      "pubchem_cid": "7809",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7809",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 106.16
+    },
+    "C=CC(=O)OCC(C)C": {
+      "odor_threshold_ppm": 0.0008999947996372012,
+      "pubchem_cid": "7819",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7819",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 128.17
+    },
+    "CCC1CO1": {
+      "odor_threshold_ppm": 0.06998419960022735,
+      "pubchem_cid": "7834",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7834",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 72.11
+    },
+    "C=CCC": {
+      "odor_threshold_ppm": 0.3599979270433567,
+      "pubchem_cid": "7844",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7844",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 56.11
+    },
+    "C=CC=C": {
+      "odor_threshold_ppm": 0.3216362574235805,
+      "pubchem_cid": "7845",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7845",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 54.09
+    },
+    "C=CC=O": {
+      "odor_threshold_ppm": 0.003599979270433565,
+      "pubchem_cid": "7847",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7847",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 56.06
+    },
+    "CCCS": {
+      "odor_threshold_ppm": 1.2999899653754553e-05,
+      "pubchem_cid": "7848",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7848",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 76.16
+    },
+    "CCCN": {
+      "odor_threshold_ppm": 0.06100002317401106,
+      "pubchem_cid": "7852",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7852",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 59.11
+    },
+    "C=CC#N": {
+      "odor_threshold_ppm": 8.799945855058901,
+      "pubchem_cid": "7855",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7855",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 53.06
+    },
+    "CCCC(C)C": {
+      "odor_threshold_ppm": 7.000031591308969,
+      "pubchem_cid": "7892",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7892",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 86.18
+    },
+    "CCCC(C)=O": {
+      "odor_threshold_ppm": 0.28777517940173214,
+      "pubchem_cid": "7895",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7895",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 86.13
+    },
+    "C=COC(C)=O": {
+      "odor_threshold_ppm": 0.11994993031493788,
+      "pubchem_cid": "7904",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7904",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 86.09
+    },
+    "CC(C)CC(C)C": {
+      "odor_threshold_ppm": 0.9400046457446575,
+      "pubchem_cid": "7907",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7907",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.2
+    },
+    "CC(=O)CC(C)C": {
+      "odor_threshold_ppm": 0.13038421001625794,
+      "pubchem_cid": "7909",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7909",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.16
+    },
+    "CC(C)NC(C)C": {
+      "odor_threshold_ppm": 0.13001695780332903,
+      "pubchem_cid": "7912",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7912",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 101.19
+    },
+    "CC(C)OC(C)C": {
+      "odor_threshold_ppm": 0.016982436524617443,
+      "pubchem_cid": "7914",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7914",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 102.17
+    },
+    "CC(=O)OC(C)C": {
+      "odor_threshold_ppm": 0.27993680399071674,
+      "pubchem_cid": "7915",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7915",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 102.13
+    },
+    "Cc1cccc(C)c1": {
+      "odor_threshold_ppm": 0.04099963590417647,
+      "pubchem_cid": "7929",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7929",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 106.16
+    },
+    "Cc1cc(C)cc(C)c1": {
+      "odor_threshold_ppm": 0.1700004222156366,
+      "pubchem_cid": "7947",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7947",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 120.19
+    },
+    "CC(C)CC(O)CC(C)C": {
+      "odor_threshold_ppm": 1.4354894333536559,
+      "pubchem_cid": "7957",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7957",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 144.25
+    },
+    "CC1CCCCC1": {
+      "odor_threshold_ppm": 0.1499995651382039,
+      "pubchem_cid": "7962",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7962",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 98.19
+    },
+    "Clc1ccccc1": {
+      "odor_threshold_ppm": 12.589254117941675,
+      "pubchem_cid": "7964",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7964",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 112.55
+    },
+    "O=C1CCCCC1": {
+      "odor_threshold_ppm": 0.11994993031493788,
+      "pubchem_cid": "7967",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7967",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 98.14
+    },
+    "Cc1ccccn1": {
+      "odor_threshold_ppm": 0.013995873225726178,
+      "pubchem_cid": "7975",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7975",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 93.13
+    },
+    "CCCCOC(=O)CC(C)C": {
+      "odor_threshold_ppm": 0.011999965570481158,
+      "pubchem_cid": "7981",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7981",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 158.24
+    },
+    "CCCCOC(=O)CCC": {
+      "odor_threshold_ppm": 0.004799986324039089,
+      "pubchem_cid": "7983",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7983",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 144.21
+    },
+    "CCCCC(=O)O": {
+      "odor_threshold_ppm": 3.699985311728596e-05,
+      "pubchem_cid": "7991",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7991",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 102.13
+    },
+    "CCCOC(C)=O": {
+      "odor_threshold_ppm": 0.6653803942075281,
+      "pubchem_cid": "7997",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:7997",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 102.13
+    },
+    "CCCCC": {
+      "odor_threshold_ppm": 1.4000063322395302,
+      "pubchem_cid": "8003",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8003",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 72.15
+    },
+    "C=CCCC": {
+      "odor_threshold_ppm": 0.1,
+      "pubchem_cid": "8004",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8004",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 70.13
+    },
+    "CCCCN": {
+      "odor_threshold_ppm": 0.11660710143628646,
+      "pubchem_cid": "8007",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8007",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 73.14
+    },
+    "CCCCS": {
+      "odor_threshold_ppm": 2.800012692434535e-06,
+      "pubchem_cid": "8012",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8012",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 90.19
+    },
+    "CCNCC": {
+      "odor_threshold_ppm": 0.03098275266047938,
+      "pubchem_cid": "8021",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8021",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 73.14
+    },
+    "CCOC=O": {
+      "odor_threshold_ppm": 2.6999765984012107,
+      "pubchem_cid": "8025",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8025",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 74.08
+    },
+    "c1ccoc1": {
+      "odor_threshold_ppm": 9.900109542601703,
+      "pubchem_cid": "8029",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8029",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 68.07
+    },
+    "CC(=O)CCC(C)C": {
+      "odor_threshold_ppm": 0.005018916842532983,
+      "pubchem_cid": "8034",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8034",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 114.19
+    },
+    "CC(=O)OCC(C)C": {
+      "odor_threshold_ppm": 0.05291088186828642,
+      "pubchem_cid": "8038",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8038",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 116.16
+    },
+    "CCCCCC(C)=O": {
+      "odor_threshold_ppm": 0.03927986622087725,
+      "pubchem_cid": "8051",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8051",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 114.19
+    },
+    "COCCOC(C)=O": {
+      "odor_threshold_ppm": 0.3396252725904084,
+      "pubchem_cid": "8054",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8054",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 118.13
+    },
+    "CCCCCC": {
+      "odor_threshold_ppm": 1.4999956513820392,
+      "pubchem_cid": "8058",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8058",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 86.18
+    },
+    "CCCCC=O": {
+      "odor_threshold_ppm": 0.04527828825559806,
+      "pubchem_cid": "8063",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8063",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 86.13
+    },
+    "CCCCCS": {
+      "odor_threshold_ppm": 7.799917335363432e-07,
+      "pubchem_cid": "8067",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8067",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 104.22
+    },
+    "CCCOC=O": {
+      "odor_threshold_ppm": 0.9599972743924812,
+      "pubchem_cid": "8073",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8073",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 88.11
+    },
+    "CCOCCO": {
+      "odor_threshold_ppm": 0.5800026796015908,
+      "pubchem_cid": "8076",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8076",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 90.12
+    },
+    "CCSSCC": {
+      "odor_threshold_ppm": 0.002000000019968104,
+      "pubchem_cid": "8077",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8077",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 122.3
+    },
+    "C1CCCCC1": {
+      "odor_threshold_ppm": 2.499999950079739,
+      "pubchem_cid": "8078",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8078",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 84.16
+    },
+    "C1COCCN1": {
+      "odor_threshold_ppm": 0.01,
+      "pubchem_cid": "8083",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8083",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 87.12
+    },
+    "CCOCCOC(C)=O": {
+      "odor_threshold_ppm": 0.04900044227932357,
+      "pubchem_cid": "8095",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8095",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 132.16
+    },
+    "CCCCCCO": {
+      "odor_threshold_ppm": 0.02567659908112995,
+      "pubchem_cid": "8103",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8103",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 102.17
+    },
+    "CCCCCCS": {
+      "odor_threshold_ppm": 1.4999956513820403e-05,
+      "pubchem_cid": "8106",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8106",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 118.24
+    },
+    "CC(=O)OCCOC(C)=O": {
+      "odor_threshold_ppm": 0.09289663867799362,
+      "pubchem_cid": "8121",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8121",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 146.14
+    },
+    "C=CCCCCCC": {
+      "odor_threshold_ppm": 204.17379446695296,
+      "pubchem_cid": "8125",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8125",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 112.21
+    },
+    "CCCCCCCO": {
+      "odor_threshold_ppm": 0.021908871089216554,
+      "pubchem_cid": "8129",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8129",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 116.2
+    },
+    "CCCCCCC=O": {
+      "odor_threshold_ppm": 0.0023234589289698898,
+      "pubchem_cid": "8130",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8130",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 114.19
+    },
+    "CCCCOCCO": {
+      "odor_threshold_ppm": 0.0655745018396076,
+      "pubchem_cid": "8133",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8133",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 118.17
+    },
+    "CCCCCCCCC": {
+      "odor_threshold_ppm": 2.199986419835166,
+      "pubchem_cid": "8141",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8141",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 128.25
+    },
+    "CCCCNCCCC": {
+      "odor_threshold_ppm": 0.07998342550070285,
+      "pubchem_cid": "8148",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8148",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 129.24
+    },
+    "CCCCCCCOC(C)=O": {
+      "odor_threshold_ppm": 0.9772372209558107,
+      "pubchem_cid": "8159",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8159",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 158.24
+    },
+    "CCCCOCCOC(C)=O": {
+      "odor_threshold_ppm": 0.11015393095414151,
+      "pubchem_cid": "8160",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8160",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 160.21
+    },
+    "CCCCCCCCOC(C)=O": {
+      "odor_threshold_ppm": 0.08912509381337455,
+      "pubchem_cid": "8164",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8164",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 172.26
+    },
+    "CCCCCCCCCCOC(C)=O": {
+      "odor_threshold_ppm": 0.31622776601683794,
+      "pubchem_cid": "8167",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8167",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 200.32
+    },
+    "CCCCCCCCCCO": {
+      "odor_threshold_ppm": 0.0007699987142771362,
+      "pubchem_cid": "8174",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8174",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 158.28
+    },
+    "CCCCCCCCCC=O": {
+      "odor_threshold_ppm": 0.00040000000798724175,
+      "pubchem_cid": "8175",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8175",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 156.26
+    },
+    "CCCCCCCCCCCC": {
+      "odor_threshold_ppm": 0.10999931989351935,
+      "pubchem_cid": "8182",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8182",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 170.33
+    },
+    "CCCCCCCCCCCCOC(C)=O": {
+      "odor_threshold_ppm": 0.043651583224016584,
+      "pubchem_cid": "8205",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8205",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 228.37
+    },
+    "C=CC": {
+      "odor_threshold_ppm": 17.09897195496841,
+      "pubchem_cid": "8252",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8252",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 42.08
+    },
+    "C=C(C)C": {
+      "odor_threshold_ppm": 10.0,
+      "pubchem_cid": "8255",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8255",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 56.11
+    },
+    "CCN(CC)CC": {
+      "odor_threshold_ppm": 0.005399953250715838,
+      "pubchem_cid": "8471",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8471",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 101.19
+    },
+    "CCc1ccccc1CC": {
+      "odor_threshold_ppm": 0.00940004645744657,
+      "pubchem_cid": "8657",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8657",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 134.22
+    },
+    "CCC(C)CO": {
+      "odor_threshold_ppm": 0.03999447497610976,
+      "pubchem_cid": "8723",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8723",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 88.15
+    },
+    "C=CC(=O)OCC": {
+      "odor_threshold_ppm": 0.00025999799567092433,
+      "pubchem_cid": "8821",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8821",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.12
+    },
+    "C=CC(=O)OCCCC": {
+      "odor_threshold_ppm": 0.0005499965939764018,
+      "pubchem_cid": "8846",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8846",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 128.17
+    },
+    "CCOC(C)=O": {
+      "odor_threshold_ppm": 3.909579060788775,
+      "pubchem_cid": "8857",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8857",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 88.11
+    },
+    "CC(=O)C=C(C)C": {
+      "odor_threshold_ppm": 0.016982436524617443,
+      "pubchem_cid": "8858",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8858",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 98.14
+    },
+    "CCc1cccc(CC)c1": {
+      "odor_threshold_ppm": 0.07000031591308968,
+      "pubchem_cid": "8864",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8864",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 134.22
+    },
+    "CCCCCC(=O)O": {
+      "odor_threshold_ppm": 0.0011669439587156719,
+      "pubchem_cid": "8892",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8892",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 116.16
+    },
+    "CCCCCCC": {
+      "odor_threshold_ppm": 0.6699925907606576,
+      "pubchem_cid": "8900",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8900",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.2
+    },
+    "CCCNCCC": {
+      "odor_threshold_ppm": 0.01999861869632744,
+      "pubchem_cid": "8902",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8902",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 101.19
+    },
+    "CCCCCCOC(C)=O": {
+      "odor_threshold_ppm": 0.014851033121245793,
+      "pubchem_cid": "8908",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8908",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 144.21
+    },
+    "CCCCOCCCC": {
+      "odor_threshold_ppm": 0.06998419960022735,
+      "pubchem_cid": "8909",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8909",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 130.23
+    },
+    "CCCCCCCCCO": {
+      "odor_threshold_ppm": 0.0008999947996372012,
+      "pubchem_cid": "8914",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:8914",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 144.25
+    },
+    "CCSCC": {
+      "odor_threshold_ppm": 3.2999700628522904e-05,
+      "pubchem_cid": "9609",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:9609",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 90.19
+    },
+    "Cc1ccc(C)c(C)c1C": {
+      "odor_threshold_ppm": 0.010999931989351935,
+      "pubchem_cid": "10263",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:10263",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 134.22
+    },
+    "CC(C)CC(=O)O": {
+      "odor_threshold_ppm": 7.799917335363431e-05,
+      "pubchem_cid": "10430",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:10430",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 102.13
+    },
+    "CC(C)CS": {
+      "odor_threshold_ppm": 6.800017024408914e-06,
+      "pubchem_cid": "10558",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:10558",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 90.19
+    },
+    "CCC(C)S": {
+      "odor_threshold_ppm": 2.9999913327161498e-05,
+      "pubchem_cid": "10560",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:10560",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 90.19
+    },
+    "CCCCCc1ccccc1": {
+      "odor_threshold_ppm": 0.9977000638225533,
+      "pubchem_cid": "10864",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:10864",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 148.24
+    },
+    "CCCC(=O)OCC(C)C": {
+      "odor_threshold_ppm": 0.001600000063897936,
+      "pubchem_cid": "10885",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:10885",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 144.21
+    },
+    "CCC(=O)OCC(C)C": {
+      "odor_threshold_ppm": 0.020000000199681043,
+      "pubchem_cid": "10895",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:10895",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 130.18
+    },
+    "CC(C)CC(C)(C)C": {
+      "odor_threshold_ppm": 0.6699925907606576,
+      "pubchem_cid": "10907",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:10907",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 114.23
+    },
+    "CC(=O)OC(C)(C)C": {
+      "odor_threshold_ppm": 0.07100026995776695,
+      "pubchem_cid": "10908",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:10908",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 116.16
+    },
+    "CC(C)CCS": {
+      "odor_threshold_ppm": 7.699987142771369e-07,
+      "pubchem_cid": "10925",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:10925",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 104.22
+    },
+    "CC(C)COC=O": {
+      "odor_threshold_ppm": 0.49000442279323575,
+      "pubchem_cid": "10957",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:10957",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 102.13
+    },
+    "COC(=O)C(C)C": {
+      "odor_threshold_ppm": 0.001899984246214733,
+      "pubchem_cid": "11039",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11039",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 102.13
+    },
+    "CCC(=O)OC": {
+      "odor_threshold_ppm": 0.09800088553709313,
+      "pubchem_cid": "11124",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11124",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 88.11
+    },
+    "CC(=O)C(C)C": {
+      "odor_threshold_ppm": 0.4999999950079739,
+      "pubchem_cid": "11251",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11251",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 86.13
+    },
+    "CCC(C)C(C)C": {
+      "odor_threshold_ppm": 4.4999739532580305,
+      "pubchem_cid": "11260",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11260",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.2
+    },
+    "CCC(C)C(C)=O": {
+      "odor_threshold_ppm": 0.02399993138057888,
+      "pubchem_cid": "11262",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11262",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.16
+    },
+    "CCCC(C)CC": {
+      "odor_threshold_ppm": 0.8400013808798806,
+      "pubchem_cid": "11507",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11507",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.2
+    },
+    "CCCC(C)CCC": {
+      "odor_threshold_ppm": 1.7000042221563656,
+      "pubchem_cid": "11512",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11512",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 114.23
+    },
+    "CCCC(O)CCC": {
+      "odor_threshold_ppm": 8.128305161640993,
+      "pubchem_cid": "11513",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11513",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 116.2
+    },
+    "CCCCC(C)CC": {
+      "odor_threshold_ppm": 1.4999956513820392,
+      "pubchem_cid": "11519",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11519",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 114.23
+    },
+    "CCCCOC(=O)CC": {
+      "odor_threshold_ppm": 0.03599979270433567,
+      "pubchem_cid": "11529",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11529",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 130.18
+    },
+    "CCCC(C)(C)C": {
+      "odor_threshold_ppm": 37.999685303685496,
+      "pubchem_cid": "11542",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11542",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.2
+    },
+    "CC(C)CC=O": {
+      "odor_threshold_ppm": 0.0001,
+      "pubchem_cid": "11552",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11552",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 86.13
+    },
+    "CCCCC(C)C": {
+      "odor_threshold_ppm": 0.4200006862466315,
+      "pubchem_cid": "11582",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11582",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.2
+    },
+    "CCCCC(C)=O": {
+      "odor_threshold_ppm": 0.02399993138057888,
+      "pubchem_cid": "11583",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11583",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.16
+    },
+    "CCCCCC(C)C": {
+      "odor_threshold_ppm": 0.10999931989351935,
+      "pubchem_cid": "11594",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11594",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 114.23
+    },
+    "C=CCCCC": {
+      "odor_threshold_ppm": 0.140000633223953,
+      "pubchem_cid": "11597",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11597",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 84.16
+    },
+    "C=CCCCCC": {
+      "odor_threshold_ppm": 0.3699985311728595,
+      "pubchem_cid": "11610",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11610",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 98.19
+    },
+    "CCCCOC=O": {
+      "odor_threshold_ppm": 0.08700014971923162,
+      "pubchem_cid": "11614",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11614",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 102.13
+    },
+    "C=CCSCC=C": {
+      "odor_threshold_ppm": 0.0002199986419835167,
+      "pubchem_cid": "11617",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11617",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 114.21
+    },
+    "CCc1ccccc1C": {
+      "odor_threshold_ppm": 0.07399970697338884,
+      "pubchem_cid": "11903",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:11903",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 120.19
+    },
+    "CC(C)OC(=O)C(C)C": {
+      "odor_threshold_ppm": 0.03500015760710144,
+      "pubchem_cid": "12044",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:12044",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 130.18
+    },
+    "CCC(CC)CC": {
+      "odor_threshold_ppm": 0.3699985311728595,
+      "pubchem_cid": "12048",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:12048",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.2
+    },
+    "CCc1cccc(C)c1": {
+      "odor_threshold_ppm": 0.017999896172455933,
+      "pubchem_cid": "12100",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:12100",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 120.19
+    },
+    "CCc1ccc(C)cc1": {
+      "odor_threshold_ppm": 0.008300036457551318,
+      "pubchem_cid": "12160",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:12160",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 120.19
+    },
+    "CCCC(=O)OC": {
+      "odor_threshold_ppm": 0.007100026995776695,
+      "pubchem_cid": "12180",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:12180",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 102.13
+    },
+    "CCCCC(=O)OC": {
+      "odor_threshold_ppm": 0.0021999864198351668,
+      "pubchem_cid": "12206",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:12206",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 116.16
+    },
+    "CSSC": {
+      "odor_threshold_ppm": 0.0021999864198351668,
+      "pubchem_cid": "12232",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:12232",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 94.2
+    },
+    "CC(C)OC=O": {
+      "odor_threshold_ppm": 0.2900013369054069,
+      "pubchem_cid": "12257",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:12257",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 88.11
+    },
+    "CCCCCOC(C)=O": {
+      "odor_threshold_ppm": 1.1748975549395295,
+      "pubchem_cid": "12348",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:12348",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 130.18
+    },
+    "C#CCCCCCC": {
+      "odor_threshold_ppm": 134.89628825916532,
+      "pubchem_cid": "12370",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:12370",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 110.2
+    },
+    "CCC(=O)OC(C)C": {
+      "odor_threshold_ppm": 0.004099963590417645,
+      "pubchem_cid": "12508",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:12508",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 116.16
+    },
+    "CCCOC(=O)C(C)C": {
+      "odor_threshold_ppm": 0.002000000019968104,
+      "pubchem_cid": "12571",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:12571",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 130.18
+    },
+    "C1COCO1": {
+      "odor_threshold_ppm": 16.90440931643264,
+      "pubchem_cid": "12586",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:12586",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 74.08
+    },
+    "CCCCCCCC(C)=O": {
+      "odor_threshold_ppm": 0.07161434102129023,
+      "pubchem_cid": "13187",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:13187",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 142.24
+    },
+    "CCCCCCc1ccccc1": {
+      "odor_threshold_ppm": 0.053088444423098846,
+      "pubchem_cid": "14109",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:14109",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 162.27
+    },
+    "CCCCCCCc1ccccc1": {
+      "odor_threshold_ppm": 0.5623413251903491,
+      "pubchem_cid": "14115",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:14115",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 176.3
+    },
+    "CCCCCCCCCCC": {
+      "odor_threshold_ppm": 0.8700014971923165,
+      "pubchem_cid": "14257",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:14257",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 156.31
+    },
+    "C=C1CCC2CC1C2(C)C": {
+      "odor_threshold_ppm": 0.6226657817978118,
+      "pubchem_cid": "14896",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:14896",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 136.23
+    },
+    "CCCCCCCCCC": {
+      "odor_threshold_ppm": 0.6199975880723252,
+      "pubchem_cid": "15600",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:15600",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 142.28
+    },
+    "CCCCCCCCc1ccccc1": {
+      "odor_threshold_ppm": 0.18197008586099836,
+      "pubchem_cid": "16607",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:16607",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 190.32
+    },
+    "CC(C)CCC(C)(C)C": {
+      "odor_threshold_ppm": 0.8999947996372013,
+      "pubchem_cid": "19041",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:19041",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 128.25
+    },
+    "C=C(C)C1CC=C(C)CC1": {
+      "odor_threshold_ppm": 0.03799968530368549,
+      "pubchem_cid": "22311",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:22311",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 136.23
+    },
+    "CCCC(C)O": {
+      "odor_threshold_ppm": 0.2900013369054069,
+      "pubchem_cid": "22386",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:22386",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 88.15
+    },
+    "CCC(C)N": {
+      "odor_threshold_ppm": 0.1700004222156366,
+      "pubchem_cid": "24874",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:24874",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 73.14
+    },
+    "CC1=CCC2C(C1)C2(C)C": {
+      "odor_threshold_ppm": 1.670552005161652,
+      "pubchem_cid": "26049",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:26049",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 136.23
+    },
+    "CC=C1CC2C=CC1C2": {
+      "odor_threshold_ppm": 0.01999861869632744,
+      "pubchem_cid": "27756",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:27756",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 120.19
+    },
+    "CC(=O)CC(C)(C)O": {
+      "odor_threshold_ppm": 1.0280162981264735,
+      "pubchem_cid": "31256",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:31256",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 116.16
+    },
+    "CC(C)CCO": {
+      "odor_threshold_ppm": 0.014279894536821911,
+      "pubchem_cid": "31260",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:31260",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 88.15
+    },
+    "CC(=O)CC(C)=O": {
+      "odor_threshold_ppm": 0.01,
+      "pubchem_cid": "31261",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:31261",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 100.12
+    },
+    "CCCCOC(C)=O": {
+      "odor_threshold_ppm": 0.031479657603618934,
+      "pubchem_cid": "31272",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:31272",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 116.16
+    },
+    "C1COCCO1": {
+      "odor_threshold_ppm": 0.7998342550070284,
+      "pubchem_cid": "31275",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:31275",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 88.11
+    },
+    "CCCCCCCCC=O": {
+      "odor_threshold_ppm": 0.0004253436954814921,
+      "pubchem_cid": "31289",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:31289",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 142.24
+    },
+    "ClC(Cl)=C(Cl)Cl": {
+      "odor_threshold_ppm": 0.7699987142771365,
+      "pubchem_cid": "31373",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:31373",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 165.8
+    },
+    "CC(C)CCCCCCCO": {
+      "odor_threshold_ppm": 0.0199526231496888,
+      "pubchem_cid": "32898",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:32898",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 158.28
+    },
+    "CCCC(=O)OC(C)C": {
+      "odor_threshold_ppm": 0.006199975880723254,
+      "pubchem_cid": "61184",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:61184",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 130.18
+    },
+    "CCCCC(=O)OCCC": {
+      "odor_threshold_ppm": 0.0032999700628522904,
+      "pubchem_cid": "67328",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:67328",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 144.21
+    },
+    "CC(C)(O)CN": {
+      "odor_threshold_ppm": 0.014996848355023733,
+      "pubchem_cid": "95102",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:95102",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 89.14
+    },
+    "C=C(C)[C@@H]1CC=C(C)CC1": {
+      "odor_threshold_ppm": 4.560369159512962,
+      "pubchem_cid": "439250",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:439250",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 136.23
+    },
+    "C=C(C)[C@H]1CC=C(C)CC1": {
+      "odor_threshold_ppm": 9.862794856312105,
+      "pubchem_cid": "440917",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:440917",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 136.23
+    },
+    "C/C=C/C=O": {
+      "odor_threshold_ppm": 0.023000114603619067,
+      "pubchem_cid": "447466",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:447466",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 70.09
+    },
+    "CC(C)COCCO": {
+      "odor_threshold_ppm": 1.0715193052376064,
+      "pubchem_cid": "521158",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:521158",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 118.17
+    },
+    "CC(C)=CCC/C(C)=C/CO": {
+      "odor_threshold_ppm": 0.08511380382023763,
+      "pubchem_cid": "637566",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:637566",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 154.25
+    },
+    "CCC(O)(CC)CN": {
+      "odor_threshold_ppm": 0.01101539309541415,
+      "pubchem_cid": "12379457",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:12379457",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 117.19
+    },
+    "CCOCCCC(=O)[O-]": {
+      "odor_threshold_ppm": 0.055975760149511014,
+      "pubchem_cid": "21951529",
+      "source_ref": "doi:10.1093/chemse/bjr094;pyrfume:abraham_2012;CID:21951529",
+      "evidence_class": "published_gas_detection_threshold_not_formula_similarity",
+      "unit": "ppmv",
+      "identity_basis": "exact_isomeric_graph",
+      "molecular_weight": 131.15
+    }
+  },
+  "by_cas": {
+    "18479-58-8": {
+      "molecular_weight": 156.26,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/18479-58-8/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "dihydromyrcenol",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "115-95-7": {
+      "molecular_weight": 196.29,
+      "vapor_pressure_pa_25c": 14.798782848000002,
+      "boiling_point_c": 220.0,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/115-95-7/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/8294/JSON?heading=Vapor%20Pressure; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/8294/JSON?heading=Boiling%20Point; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/8294/JSON?heading=Odor%20Threshold",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "linalyl_acetate",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "142-92-7": {
+      "molecular_weight": 144.21,
+      "vapor_pressure_pa_25c": 175.98552576000003,
+      "boiling_point_c": 171.5,
+      "odor_threshold_ppm": 0.014851033121245793,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/142-92-7/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/8908/JSON?heading=Vapor%20Pressure; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/8908/JSON?heading=Boiling%20Point; https://pmc.ncbi.nlm.nih.gov/articles/PMC3278675/; processed archive https://raw.githubusercontent.com/pyrfume/pyrfume-data/main/abraham_2012/behavior.csv; DOI:10.1093/chemse/bjr094",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "hexyl_acetate",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "112-31-2": {
+      "molecular_weight": 156.26,
+      "vapor_pressure_pa_25c": 13.732203904,
+      "boiling_point_c": 210.0,
+      "odor_threshold_ppm": 0.00040000000798724175,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/112-31-2/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/8175/JSON?heading=Vapor%20Pressure; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/8175/JSON?heading=Boiling%20Point; https://pmc.ncbi.nlm.nih.gov/articles/PMC3278675/; processed archive https://raw.githubusercontent.com/pyrfume/pyrfume-data/main/abraham_2012/behavior.csv; DOI:10.1093/chemse/bjr094",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "aldehyde_c10",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "3681-71-8": {
+      "molecular_weight": 142.2,
+      "boiling_point_c": 76.0,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/3681-71-8/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/5363388/JSON?heading=Boiling%20Point",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "cis3_hexenyl_acetate",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "67634-15-5": {
+      "molecular_weight": 190.28,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/67634-15-5/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "floralozone",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "24851-98-7": {
+      "molecular_weight": 226.31,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/24851-98-7/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "hedione",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "60-12-8": {
+      "molecular_weight": 122.16,
+      "vapor_pressure_pa_25c": 11.5723815424,
+      "boiling_point_c": 219.0,
+      "odor_threshold_ppm": 0.006456542290346556,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/60-12-8/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/6054/JSON?heading=Vapor%20Pressure; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/6054/JSON?heading=Boiling%20Point; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/6054/JSON?heading=Odor%20Threshold; https://pmc.ncbi.nlm.nih.gov/articles/PMC3278675/; processed archive https://raw.githubusercontent.com/pyrfume/pyrfume-data/main/abraham_2012/behavior.csv; DOI:10.1093/chemse/bjr094",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "phenethyl_alcohol",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "140-11-4": {
+      "molecular_weight": 150.17,
+      "vapor_pressure_pa_25c": 106.799029568,
+      "boiling_point_c": 213.0,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/140-11-4/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/8785/JSON?heading=Vapor%20Pressure; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/8785/JSON?heading=Boiling%20Point",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "benzyl_acetate",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "98-55-5": {
+      "molecular_weight": 154.25,
+      "vapor_pressure_pa_25c": 5.6395361664,
+      "boiling_point_c": 221.0,
+      "odor_threshold_ppm": 0.3499999999999999,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/98-55-5/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/17100/JSON?heading=Vapor%20Pressure; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/17100/JSON?heading=Boiling%20Point; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/17100/JSON?heading=Odor%20Threshold",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "alpha_terpineol",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "105-87-3": {
+      "molecular_weight": 196.29,
+      "vapor_pressure_pa_25c": 67.99440768000001,
+      "boiling_point_c": 242.22222222222223,
+      "odor_threshold_ppm": 0.46,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/105-87-3/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/1549026/JSON?heading=Vapor%20Pressure; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/1549026/JSON?heading=Boiling%20Point; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/1549026/JSON?heading=Odor%20Threshold",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "geranyl_acetate",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "1205-17-0": {
+      "molecular_weight": 192.21,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/1205-17-0/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "helional",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "78-69-3": {
+      "molecular_weight": 158.28,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/78-69-3/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/6548/JSON?heading=Vapor%20Pressure",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "tetrahydrolinalool",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "104-21-2": {
+      "molecular_weight": 180.2,
+      "boiling_point_c": 137.0,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/104-21-2/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/7695/JSON?heading=Boiling%20Point",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "anisyl_acetate",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "87-44-5": {
+      "molecular_weight": 204.35,
+      "boiling_point_c": 194.5,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/87-44-5/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/5281515/JSON?heading=Boiling%20Point",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "beta_caryophyllene",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "127-51-5": {
+      "molecular_weight": 206.32,
+      "boiling_point_c": 76.0,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/127-51-5/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/5372174/JSON?heading=Boiling%20Point",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "methyl_ionone_gamma",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "104-61-0": {
+      "molecular_weight": 156.22,
+      "boiling_point_c": 135.0,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/104-61-0/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/7710/JSON?heading=Boiling%20Point",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "gamma_nonalactone",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "706-14-9": {
+      "molecular_weight": 170.25,
+      "boiling_point_c": 116.0,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/706-14-9/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/12813/JSON?heading=Vapor%20Pressure; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/12813/JSON?heading=Boiling%20Point",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "gamma_decalactone",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "54464-57-2": {
+      "molecular_weight": 234.38,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/54464-57-2/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "iso_e_super",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "33704-61-9": {
+      "molecular_weight": 206.32,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/33704-61-9/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "cashmeran",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "6790-58-5": {
+      "molecular_weight": 236.39,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/6790-58-5/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "ambroxan",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "106-02-5": {
+      "molecular_weight": 240.38,
+      "boiling_point_c": 137.0,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/106-02-5/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/235414/JSON?heading=Boiling%20Point",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "exaltolide",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "111879-80-2": {
+      "molecular_weight": 238.37,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/111879-80-2/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "habanolide",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "121-33-5": {
+      "molecular_weight": 152.15,
+      "vapor_pressure_pa_25c": 0.015732039424,
+      "boiling_point_c": 285.0,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/121-33-5/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/1183/JSON?heading=Vapor%20Pressure; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/1183/JSON?heading=Boiling%20Point",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "vanillin",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "4940-11-8": {
+      "molecular_weight": 140.14,
+      "boiling_point_c": 290.0,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/4940-11-8/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/21059/JSON?heading=Boiling%20Point",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "ethyl_maltol",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "118-71-8": {
+      "molecular_weight": 126.11,
+      "vapor_pressure_pa_25c": 0.043463091968,
+      "boiling_point_c": 92.88888888888889,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/118-71-8/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/8369/JSON?heading=Vapor%20Pressure; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/8369/JSON?heading=Boiling%20Point",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "maltol",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "80-54-6": {
+      "molecular_weight": 204.31,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/80-54-6/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "lilial",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "31906-04-4": {
+      "molecular_weight": 210.31,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/31906-04-4/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "lyral",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    },
+    "81-15-2": {
+      "molecular_weight": 297.26,
+      "vapor_pressure_pa_25c": 2.9997532800000002e-05,
+      "source_ref": "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/81-15-2/property/MolecularWeight,XLogP,TPSA,HBondDonorCount,HBondAcceptorCount,RotatableBondCount,Complexity/JSON; https://pubchem.ncbi.nlm.nih.gov/rest/pug_view/data/compound/62329/JSON?heading=Vapor%20Pressure",
+      "verified_on": "2026-07-14",
+      "source_ingredient_id": "musk_xylene",
+      "identity_basis": "exact_CAS_and_molecular_weight"
+    }
+  },
+  "source_files": {
+    "behavior.csv": {
+      "sha256": "db36689c889c88f7df7df2643cfb79721d12b456ddc38368b97674dc742f7ab5",
+      "bytes": 28272
+    },
+    "molecules.csv": {
+      "sha256": "d575918f6bdd03c1ba32bc2bbdcac24a5e0eebece54a172360c9cc32d653e000",
+      "bytes": 15506
+    },
+    "scientific_properties.db": {
+      "sha256": "d987498035f6006b4a4ae5e48759798d266329dcb87e4992dc1b91f65058f631",
+      "bytes": 32768
+    }
+  },
+  "identity_policy": "exact_isomeric_graph_or_unambiguous_CAS_with_mass_check;no_name_fuzzy_matching",
+  "ambiguous_graphs_excluded": 0,
+  "ambiguous_cas_excluded": 0,
+  "unit": "gas_ppmv_at_source_conditions",
+  "human_recipe_validation": false
+}

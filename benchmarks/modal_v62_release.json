@@ -1,0 +1,62 @@
+{
+  "release_id": "v62-20260910",
+  "status": "deployed_and_remote_contracts_verified",
+  "base_url": "https://junseong2im--perfumery-ai-core-web.modal.run",
+  "app_id": "ap-Uc8rTdrF9SDei5yiFV14Ke",
+  "scope": "authenticated_noncommercial_research_software_not_human_accuracy",
+  "wheel_sha256": "16a44da4a1b371b0e37c001103e4616efa930fe6c0d30b3f590c9342b21981ea",
+  "bundle_sha256": "6896fdb87083df68325acb82e8912c774799f25d2077c03b0ad3d0cc8c886b5c",
+  "fine_model_sha256": "418afec8b8363adb45ea78517b11c3a45de71404cb58b85ffad5c80605c6ce58",
+  "registry_sha256": "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765",
+  "checks": {
+    "unauthenticated_http_status": 401,
+    "authenticated_health_http_status": 200,
+    "catalog_http_status": 200,
+    "capabilities_http_status": 200,
+    "material_prediction_http_status": 200,
+    "perfume_http_status": 200,
+    "body_lotion_http_status": 200,
+    "body_wash_http_status": 200,
+    "formula_http_status": 200,
+    "assistant_http_status": 200,
+    "catalog_rows": 29259,
+    "fine_output_concepts": 450,
+    "selected_models_connected": true,
+    "formula_cache": "hit",
+    "assistant_actual_model_proposal_observed": true,
+    "assistant_source": "deterministic_grounding_after_model_mismatch",
+    "assistant_product_and_exclusion_preserved": true,
+    "assistant_generates_formula_or_scientific_score": false
+  },
+  "formula_example": {
+    "brief": "피오니와 청사과 향",
+    "score": 87.17530628023734,
+    "target": 95,
+    "target_met": false,
+    "status": "no_safe_match",
+    "recipe_lines": 0,
+    "closest_candidate_lines": 12
+  },
+  "seconds": {
+    "formula_first": 108.4391,
+    "formula_repeat": 0.4214,
+    "perfume_fixed_fixture": 0.9712,
+    "body_lotion_fixed_fixture": 0.89,
+    "body_wash_fixed_fixture": 0.7533,
+    "assistant_after_timeout_fix": 63.5904,
+    "health_after_redeployment": 0.4397
+  },
+  "evidence_method": {
+    "core_checks": "actual authenticated HTTP requests",
+    "assistant_check": "actual authenticated HTTP response rechecked with model-execution and semantic contract assertions",
+    "original_failed_verifier_reports_preserved": true,
+    "assistant_timeout_failure_was_not_accepted": true,
+    "verifier_counterexample_tests_passed": 7,
+    "whole_repository_ci_pass_not_claimed": true
+  },
+  "credentials": {
+    "existing_backend_credentials_modified": false,
+    "temporary_verification_credentials_revoked": true,
+    "secrets_persisted_in_evidence": false
+  }
+}

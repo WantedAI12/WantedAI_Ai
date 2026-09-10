@@ -1,0 +1,53 @@
+{
+  "schema_version": "formulation-process-knowledge/1",
+  "reviewed_on": "2026-09-09",
+  "authorship": "Project-authored concise factual summaries; source articles, books and commercial perfume formulas are not reproduced.",
+  "evidence_kind": "sourced_procedural_knowledge_not_sensory_observations",
+  "sources": [
+    {"id": "pw_function", "title": "PerfumersWorld: Formulating by Function", "url": "https://www.perfumersworld.com/formulating-by-function.php", "kind": "practitioner_method", "summary": "주제 원료, 변조 원료, 연결 원료, 배경·보류 역할로 설계하고 작은 어코드의 변화와 최종 용도에서의 결과를 기록한다. 하나의 보편 배합비를 정하는 방법은 아니다."},
+    {"id": "iff_compendium", "title": "IFF: About the Perfumer's Compendium", "url": "https://www.iff.com/scent/fragrance-ingredients/compendium-about/", "kind": "manufacturer_guidance", "summary": "노트별 영향도는 일반적 성능 안내다. 권장 사용 수준은 법적 상한이 아니며, logP는 실측 또는 계산값일 수 있다. 제품별 성능 정보를 완제품 보증으로 해석하지 않는다."},
+    {"id": "lc_simulgel", "title": "Lotioncrafter: Basic Lotion with Simulgel EG", "url": "https://lotioncrafter.com/blogs/skin-care/basic-lotion-with-simulgel-eg", "kind": "supplier_reference_procedure", "summary": "각 상을 따로 균일하게 만든 뒤 B를 A에 고전단으로 혼합한다. 약 400 g 예시의 혼합 시간은 4분이며 가열 단계는 명시되지 않는다. sodium hyaluronate, sodium lactate, sodium PCA 사용에 주의한다. 방부제의 퍼센트와 g 표기가 불일치한다."},
+    {"id": "lc_sprayable", "title": "Lotioncrafter: Light Sprayable Lotion", "url": "https://lotioncrafter.com/blogs/skin-care/light-sprayable-lotion", "kind": "supplier_reference_procedure", "summary": "별도 A/B 상을 70–75 °C로 가열한 뒤 B를 A에 넣고 냉각하면서 혼합한다. 공기 유입을 줄인다. 예시는 500 g이다. 향료는 C상으로 표기되지만 투입 온도와 시점은 절차에 빠져 있다."},
+    {"id": "lc_pe9010", "title": "Lotioncrafter: PE 9010", "url": "https://lotioncrafter.com/collections/all-ingredients-a-z/products/lotioncrafter-pe-9010", "kind": "supplier_component_guidance", "summary": "공급사 안내는 pH 3–12, 사용량 0.5–1%, 최대 1.1%이며 보통 냉각 단계에서 투입한다. 단시간 85 °C 내열 안내의 정확한 시간은 없다. 에톡실화 계면활성제는 효능에 영향을 줄 수 있다. 이 정보만으로 완제품 보존력이나 피부 안전성을 판정하지 않는다."},
+    {"id": "fda_cosmetic_gmp", "title": "FDA: Cosmetic GMP Guidelines and Inspection Checklist", "url": "https://www.fda.gov/cosmetics/cosmetics-guidance-documents/good-manufacturing-practice-gmp-guidelinesinspection-checklist-cosmetics", "kind": "public_agency_guidance", "summary": "원료·장비 식별과 청결, 로트·계량·공정·충전 기록, 용수 및 물리·화학·미생물 관리, 보존 효능과 보관 시료를 관리한다. 체크리스트 생성 자체가 인증은 아니다."}
+  ],
+  "steps": {
+    "perfume": [
+      {"id": "brief", "action": "원하는 향·제외 향·제품·농도를 고정하고 평가 목표를 기록한다.", "source_ids": ["pw_function"]},
+      {"id": "materials", "action": "원료의 향, 강도, 희석 상태와 용도별 성능을 구분한다. 노트 비율을 고정하지 않는다.", "source_ids": ["iff_compendium"]},
+      {"id": "accord", "action": "주제 어코드를 만든 뒤 변조·연결·배경 역할을 분리하여 비교한다.", "source_ids": ["pw_function"]},
+      {"id": "trial", "action": "기준 배합을 보존하고 한 번에 제한된 어코드 또는 원료량을 바꾼다. 전후 조성과 결과를 짝지어 저장한다.", "source_ids": ["pw_function"]},
+      {"id": "application", "action": "같은 농도·매질·시간 조건으로 비교하고 실제 용도에 맞는 결과를 구분한다.", "source_ids": ["pw_function", "iff_compendium"]}
+    ],
+    "cold": [
+      {"id": "phase_a", "action": "확인된 A상 성분을 계량하여 균일하게 섞는다.", "source_ids": ["lc_simulgel"]},
+      {"id": "phase_b", "action": "확인된 B상 성분을 별도로 계량하여 균일하게 섞는다.", "source_ids": ["lc_simulgel"]},
+      {"id": "emulsify", "action": "B상을 A상으로 넣으며 고전단 혼합한다. 참고 배치의 시간을 다른 크기나 장비로 검증 없이 환산하지 않는다.", "source_ids": ["lc_simulgel"]}
+    ],
+    "hot": [
+      {"id": "heat", "action": "해당 공급사 제형에 한해 A/B상을 분리 가열한다.", "source_ids": ["lc_sprayable"]},
+      {"id": "emulsify", "action": "B상을 A상에 넣고 냉각 중 혼합하며 공기 유입을 줄인다.", "source_ids": ["lc_sprayable"]},
+      {"id": "fragrance_hold", "action": "C상 향료의 투입 온도·시점은 원문에서 확인되지 않아 별도 조건이 필요하다.", "source_ids": ["lc_sprayable"]}
+    ],
+    "lotion_review": [
+      {"id": "base_identity", "action": "유화제·오일·첨가제와 유화 형식을 먼저 식별한다. 다른 베이스에 제조 조건을 전용하지 않는다.", "source_ids": ["lc_simulgel", "lc_sprayable"]},
+      {"id": "record", "action": "로트, 실제 계량, 온도·시간·혼합 장비와 충전 이력을 기록한다.", "source_ids": ["fda_cosmetic_gmp"]},
+      {"id": "quality", "action": "외관·pH·점도·분리·미생물·보존력·포장 적합성의 실측 결과는 계산값과 분리해 관리한다.", "source_ids": ["fda_cosmetic_gmp"]}
+    ]
+  },
+  "reference_parameters": {
+    "cold": {"source_ids": ["lc_simulgel"], "batch_mass_g": 400, "mixing_minutes": 4, "mixer_kind": "high_shear", "heating_temperature_c": null, "heating_step_specified": false},
+    "hot": {"source_ids": ["lc_sprayable"], "batch_mass_g": 500, "phase_temperature_range_c": [70, 75], "fragrance_addition_temperature_c": null},
+    "pe9010": {"source_ids": ["lc_pe9010"], "component_ph_range": [3, 12], "typical_finished_product_percent": [0.5, 1], "supplier_maximum_percent": 1.1, "brief_exposure_temperature_c": 85, "maximum_exposure_minutes": null}
+  },
+  "learning_contract": {
+    "allowed_targets": ["source_selection", "procedure_selection", "condition_conflict_detection", "batch_mass_balance", "experiment_record_completion"],
+    "not_targets": ["human_similarity", "odor_intensity", "lotion_transfer_coefficients", "skin_safety", "commercial_formula_ratios"],
+    "instruction_examples_kind": "project_authored_synthetic_instruction_examples_not_measurements",
+    "upstream_training_license": "not_established_for_full_source_text",
+    "full_source_text_included": false,
+    "legacy_master_perfumer_scores_used": false,
+    "quantitative_model_weights_retrained": false,
+    "language_model_weights_retrained": false
+  }
+}

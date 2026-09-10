@@ -2,6 +2,26 @@
   "manifest_version": "1.0.0",
   "reviewed_on": "2026-08-19",
   "assets": {
+    "odor_expression_v61.json": {
+      "sha256": "f52a510f60cfb0e1402788af061fd718e4862f733ab7166d1bf40c10f1aecb7a",
+      "provenance": "Expert SKOS taxonomy from akshay-sajann/computer_ontology commit 892c0956d4919048f40b79c32f850b02b90bc0a1 (MIT license text and source hashes embedded), plus project-authored Korean aliases and canonical normalization of existing public descriptor names. Molecular annotation rows and trained weights are NOT included in this asset.",
+      "allowed_use": "Hierarchical odor-language interpretation and routing; 146 quantitative measurement axes remain unchanged.",
+      "prohibited_claim": "665 independently measured smells, calibrated intensities, universally understood language, or recipe human similarity",
+      "redistribution_authorized": true
+    },
+    "formulation_process_knowledge_v1.json": {
+      "sha256": "e4fb1c8048a9cc5c41f826618198a34c4e88c81715046f6635d5ace23e35d9dc",
+      "provenance": "Project-authored short summaries and procedural facts from six primary practitioner, supplier, manufacturer and FDA sources; reviewed 2026-09-09. Full source text is not included.",
+      "allowed_use": "Source-grounded procedural guidance, condition checks and project-authored instruction curriculum; not quantitative sensory training labels.",
+      "prohibited_claim": "Complete perfumer knowledge, upstream text training rights, learned sensory accuracy, verified finished-product stability, preservation or manufacturing approval"
+    },
+    "physical_evidence_v56.json": {
+      "sha256": "da0ef5c4e02a8a2e9e5ee37566e0218804af83b205b5010ab05f895e4336803d",
+      "provenance": "Local identity index of 268 exact-isomeric-graph Abraham 2012 gas thresholds and 29 unambiguous CAS records from the existing scientific_properties snapshot; source file hashes and units are retained.",
+      "allowed_use": "Local research only; fill missing single-material properties after exact identity and molecular-weight checks. Source redistribution clearance has not been established.",
+      "prohibited_claim": "Batch-specific measurements, lotion coefficients, formula sensory accuracy, safety or commercial redistribution permission",
+      "redistribution_authorized": false
+    },
     "reference_fragrances.db": {
       "sha256": "90d2e43112182861f23a3f97b4a2719974a465e8cde1354a246c75fdbd82b5f1",
       "bytes": 7360512,

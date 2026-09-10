@@ -7,6 +7,7 @@ import pytest
 from fragrance_ai import NaturalLanguagePerfumeryAI, RecipeConstraints
 from fragrance_ai.recommender.catalog import IngredientCatalog
 from fragrance_ai.recommender.industrial_catalog import IndustrialIngredientRegistry
+from fragrance_ai.recommender.odor_integrity import ODOR_INTEGRITY_VERSION, registry_odor_rejection
 from fragrance_ai.recommender.registry_activation import (
     REGISTRY_CONDITIONAL_CAP_PERCENT,
     REGISTRY_CONDITIONAL_DATA_SOURCE,
@@ -17,6 +18,9 @@ from fragrance_ai.recommender.registry_activation import (
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "benchmarks" / "industrial_ingredient_registry_v1.db"
 REGISTRY_SHA256 = "d837ccde2146a67d616a821dd926ff67dcc6bbb550b26da6599f72989a3c6765"
+# Registry-only fallback lacks exact IFRA/AromaDB column lineage and the
+# separated FlavorDB odor column. The raw-source builder restores that lineage.
+REGISTRY_ONLY_ACTIVE = 2447
 
 
 @lru_cache(maxsize=1)
@@ -34,11 +38,12 @@ def test_full_registry_is_connected_with_full_range_experimental_boundary():
     assert report.reference_molecules_connected == 29_240
     assert report.structurally_blocked == 8_455
     assert report.evidence_pending == 20_785
-    assert report.strict_conditional_rows == 29_212
-    assert report.conditional_trace_candidates_active == 29_212
-    assert report.experimental_formula_candidates == 29_259
+    assert report.strict_conditional_rows == REGISTRY_ONLY_ACTIVE
+    assert report.conditional_trace_candidates_active == REGISTRY_ONLY_ACTIVE
+    assert report.experimental_formula_candidates == REGISTRY_ONLY_ACTIVE + 34
+    assert report.connected_catalog_rows == 29_259
     assert report.blocked_known_policy == 0
-    assert report.blocked_unsupported_descriptor == 0
+    assert report.blocked_unsupported_descriptor == 29_212 - REGISTRY_ONLY_ACTIVE
     assert report.activation_mode == "prototype_conditional_full_range"
     assert report.max_concentrate_percent == 100.0
 
@@ -49,7 +54,14 @@ def test_full_registry_is_connected_with_full_range_experimental_boundary():
     ]
     assert len(conditionals) == 29_212
     assert len(catalog.ingredients) == 29_259
-    assert len(catalog.formulation_candidates()) == 29_246
+    assert len(catalog.formulation_candidates()) == REGISTRY_ONLY_ACTIVE + 34
+    active = [item for item in conditionals if item.formulation_ready]
+    assert len(active) == REGISTRY_ONLY_ACTIVE
+    assert all(registry_odor_rejection(item) is None for item in active)
+    assert all(item.odor_integrity_version == ODOR_INTEGRITY_VERSION for item in active)
+    assert all(item.blocked for item in conditionals if not item.formulation_ready)
+    assert report.integrity_counts["reported_odorless"] == 318
+    assert report.integrity_counts["registry_odor_lineage_missing"] == 1261
     assert all(item.risk_tier == 2 for item in conditionals)
     assert all(
         item.max_concentrate_percent == REGISTRY_CONDITIONAL_CAP_PERCENT
@@ -57,10 +69,10 @@ def test_full_registry_is_connected_with_full_range_experimental_boundary():
     )
     assert any(item.name.casefold() == "methyl eugenol" for item in conditionals)
     assert catalog.stats()["industrial_registry_connected_total"] == 29_240
-    assert catalog.stats()["industrial_registry_conditional_trace_active"] == 29_212
+    assert catalog.stats()["industrial_registry_conditional_trace_active"] == REGISTRY_ONLY_ACTIVE
     assert (
         catalog.stats()["industrial_registry_experimental_formula_candidates"]
-        == 29_259
+        == REGISTRY_ONLY_ACTIVE + 34
     )
 
 
@@ -104,7 +116,7 @@ def test_registry_conditionals_require_explicit_risk_tier_two():
             as_of=date.today(),
         )
         assert len(default_candidates) == 34
-        assert default_rejected["registry_conditional_not_requested"] == 29_212
+        assert default_rejected["registry_conditional_not_requested"] == REGISTRY_ONLY_ACTIVE
 
         tier_two = RecipeConstraints(
             max_risk_tier=2,
@@ -121,11 +133,11 @@ def test_registry_conditionals_require_explicit_risk_tier_two():
             supplier_registry=ai.supplier_registry,
             as_of=date.today(),
         )
-        assert len(accepted_two) == 29_246
+        assert len(accepted_two) == REGISTRY_ONLY_ACTIVE + 34
         assert sum(
             item.data_source == REGISTRY_CONDITIONAL_DATA_SOURCE
             for item in accepted_two
-        ) == 29_212
+        ) == REGISTRY_ONLY_ACTIVE
 
         unrestricted = RecipeConstraints(
             max_risk_tier=2,
@@ -142,7 +154,8 @@ def test_registry_conditionals_require_explicit_risk_tier_two():
             supplier_registry=ai.supplier_registry,
             as_of=date.today(),
         )
-        assert len(unrestricted_candidates) == 29_259
+        assert len(unrestricted_candidates) == REGISTRY_ONLY_ACTIVE + 47
+        assert all(registry_odor_rejection(item) is None for item in unrestricted_candidates)
         assert all(
             item.max_concentrate_percent == 100.0
             for item in unrestricted_candidates
@@ -170,7 +183,7 @@ def test_registry_conditionals_require_explicit_risk_tier_two():
             item.data_source == REGISTRY_CONDITIONAL_DATA_SOURCE
             for item in qualified_candidates
         )
-        assert qualified_rejected["registry_conditional_prototype_only"] == 29_212
+        assert qualified_rejected["registry_conditional_prototype_only"] == REGISTRY_ONLY_ACTIVE
 
 
 def test_registry_formula_is_returned_only_as_experimental_candidate():
