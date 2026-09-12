@@ -48,15 +48,37 @@ jobs:
         run: |
           python -m ruff check --select E4,E7,E9,F fragrance_ai/api.py fragrance_ai/api_cli.py \
             fragrance_ai/platform fragrance_ai/recommender deploy \
+            fragrance_ai/research/atlas_profiles.py fragrance_ai/research/atlas_inference.py \
+            fragrance_ai/research/structured_kernel.py \
+            scripts/train_main_backbone_v66.py scripts/verify_main_backbone_v66.py \
+            scripts/verify_spec_contract_v67.py scripts/verify_physical_exposure_v65.py \
+            scripts/verify_search_recovery_v64.py scripts/benchmark_search_recovery_v64.py \
+            tests/test_main_backbone_v66.py tests/test_physical_exposure_v65.py \
+            tests/test_search_recovery_v64.py tests/test_spec_contract_v67.py \
             scripts/build_industrial_ingredient_registry_v1.py \
             scripts/audit_data.py tests/test_core_smoke.py \
             tests/test_recommender.py tests/test_olfactory_upgrade.py \
             tests/test_industrial_catalog.py tests/test_promotion_activation.py \
             tests/test_registry_activation.py \
+            tests/test_odor_integrity.py tests/test_runtime_policy.py \
+            scripts/build_odor_integrity_catalog.py scripts/audit_odor_integrity.py \
+            tests/test_inference_efficiency.py \
+            tests/test_recipe_quality.py \
+            tests/test_phase_runtime.py \
+            fragrance_ai/research/perception_validation.py \
+            scripts/benchmark_human_mixture_profiles.py tests/test_human_mixture_profiles.py \
+            fragrance_ai/research/conditional_profiles.py \
+            scripts/train_conditional_profiles_v2.py tests/test_conditional_profiles_v2.py \
+            scripts/evaluate_recipe_perception_guidance.py tests/test_perception_guidance.py \
+            scripts/evaluate_full_profile_scoring.py tests/test_full_profile_match.py \
+            scripts/evaluate_request_space.py tests/test_full_pool_search.py \
+            tests/test_adaptive_pyramid.py \
+            tests/test_dose_refinement.py \
+            scripts/summarize_request_refinement.py tests/test_request_refinement_summary.py \
             tests/test_modal_deployment.py tests/test_modal_auth_contract.py \
             tests/test_evidence_trust.py tests/test_release_security.py \
             tests/test_validation_pipeline.py \
-            tests/test_manufacturing_readiness.py tests/test_platform_api.py \
+            tests/test_manufacturing_readiness.py tests/test_platform_api.py tests/test_rd_contract.py \
             tests/test_platform_workspace.py tests/test_api_security.py \
             tests/test_api_oidc_tenant.py tests/test_postgres_contract.py
           python -m compileall -q fragrance_ai deploy scripts tests
@@ -65,12 +87,29 @@ jobs:
         run: >-
           python -m pytest -W error -vv --durations=15
           tests/test_core_smoke.py
+          tests/test_rd_contract.py
           tests/test_recommender.py
           tests/test_olfactory_upgrade.py
           tests/test_industrial_catalog.py
           tests/test_promotion_activation.py
           tests/test_registry_activation.py
+          tests/test_odor_integrity.py
+          tests/test_physical_evidence_v56.py
+          tests/test_runtime_policy.py
+          tests/test_inference_efficiency.py
+          tests/test_recipe_quality.py
+          tests/test_phase_runtime.py
+          tests/test_human_mixture_profiles.py
+          tests/test_conditional_profiles_v2.py
+          tests/test_perception_guidance.py
+          tests/test_full_profile_match.py
+          tests/test_full_pool_search.py
+          tests/test_adaptive_pyramid.py
+          tests/test_dose_refinement.py
+          tests/test_request_refinement_summary.py
           tests/test_modal_deployment.py
+          tests/test_audit_reporting_api.py
+          tests/test_formula_stream.py
           tests/test_modal_auth_contract.py
           tests/test_evidence_trust.py
           tests/test_release_security.py
@@ -86,6 +125,10 @@ jobs:
           tests/test_lotion_solver_v27.py
           tests/test_lotion_balance_v43.py
           tests/test_lotion_reference_objective_v59.py
+          tests/test_search_recovery_v64.py
+          tests/test_physical_exposure_v65.py
+          tests/test_main_backbone_v66.py
+          tests/test_spec_contract_v67.py
       - name: Build clean wheel
         run: python -m build --wheel --outdir artifacts/dist
       - name: Reject unsafe serialized runtime assets

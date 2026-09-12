@@ -161,6 +161,10 @@ def _optimize_lotion_transport(request, catalog, parser=None, *, transport_scena
         raise ValueError("scenario profile weighting must match")
     all_thresholds = all(row.odor_threshold_mg_m3 is not None for s in scenarios for row in s.materials) and simulation.profile_weighting != "air_mass"
     weighting = "odor_activity" if all_thresholds else "air_mass"
+    from .lotion_reference_objective import configured_reference, exposure_groups
+    reference_bank = configured_reference(request, _shape_predictor)
+    groups = exposure_groups(brief, prepared['evaluation_targets'], request.transition_schedule) if reference_bank is not None else []
+    windows = [(g['window_start_minutes'], g['minutes']) for g in groups]
     basis_requests, physical_blocks, threshold_blocks, uptake_blocks = [], [], [], []
     for scenario in scenarios:
         scenario_materials = {m.ingredient_id: m for m in scenario.materials}
@@ -171,15 +175,17 @@ def _optimize_lotion_transport(request, catalog, parser=None, *, transport_scena
         threshold_blocks.append(np.tile([m.odor_threshold_mg_m3 or np.nan for m in materials],
                                         (len(prepared["evaluation_targets"]), 1)))
     def compute_basis():
-        physical_values, uptake_values = [], []
+        physical_values, uptake_values, exposure_values = [], [], []
         basis_catalog = IngredientCatalog(pool)
         for candidate in basis_requests:
-            result = simulate_lotion(candidate, basis_catalog)
+            result = simulate_lotion(candidate, basis_catalog, exposure_windows=windows)
             uptake_values.append((np.array([r['skin_sink_mg_cm2'] for r in result['temporal_profile'][-1]['materials']])/baseline).tolist())
             physical_values.append((np.array([[r['air_concentration_mg_m3'] for r in point['materials']]
                 for point in result['temporal_profile'][1:]])/baseline[None,:]).tolist())
-        return {'physical':physical_values, 'uptake':uptake_values}
-    basis_data, cache_status = reuse_basis(basis_requests, pool, compute_basis) if reuse_transport_basis else (compute_basis(), 'disabled')
+            exposure_values.append((np.array([[r['mean_air_concentration_mg_m3'] for r in point['materials']]
+                for point in result['exposure_windows']]).reshape(len(windows), n)/baseline[None,:]).tolist())
+        return {'physical':physical_values, 'uptake':uptake_values, 'exposure':exposure_values}
+    basis_data, cache_status = reuse_basis(basis_requests, pool, compute_basis, exposure_windows=windows) if reuse_transport_basis else (compute_basis(), 'disabled')
     physical_blocks, uptake_blocks = basis_data['physical'], basis_data['uptake']
     reused_simulations = len(scenarios) if cache_status in ('hit','shared') else 0
     physical = np.vstack(physical_blocks)
@@ -189,14 +195,13 @@ def _optimize_lotion_transport(request, catalog, parser=None, *, transport_scena
         raise ValueError("no finite nonzero modeled headspace at one or more requested times")
     response_scale = np.max(responses, axis=1)
     responses = responses / response_scale[:, None]
-    from .lotion_reference_objective import configured_reference
-    reference_bank = configured_reference(request, _shape_predictor)
     if reference_bank is not None:
         from .lotion_reference_search import optimize_observed_reference
         return optimize_observed_reference(request=request, prepared=prepared, brief=brief, pool=pool,
             basis_requests=basis_requests, responses=responses, physical=physical, uptake_blocks=uptake_blocks,
             predictor=_shape_predictor, bank=reference_bank, baseline=baseline, cache_status=cache_status,
-            reused_simulations=reused_simulations, incumbent_recipe=_incumbent_recipe)
+            reused_simulations=reused_simulations, incumbent_recipe=_incumbent_recipe,
+            exposure_blocks=basis_data['exposure'])
     profiles = np.array([item.vector() for item in pool])
     target_rows = [{**row, "scenario_index": i} for i in range(len(scenarios)) for row in prepared["evaluation_targets"]]
     targets = np.array([profile_vector(row["target_profile"]) for row in target_rows])

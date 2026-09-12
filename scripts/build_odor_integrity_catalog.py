@@ -18,14 +18,15 @@ import sys
 import zipfile
 from dataclasses import replace
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from fragrance_ai.recommender.catalog import IngredientCatalog  # noqa: E402
 from fragrance_ai.recommender.odor_integrity import ODOR_INTEGRITY_VERSION, normalize_term  # noqa: E402
 from fragrance_ai.recommender.odor_integrity import LEGACY_ODOR_PROJECTION, EXPANDED_ODOR_PROJECTION, CONCEPT_ODOR_PROJECTION
 from fragrance_ai.recommender.registry_activation import activate_registry_conditionals, write_runtime_catalog, load_runtime_catalog  # noqa: E402
 from fragrance_ai.recommender.promotion_activation import _valid_cas_number  # noqa: E402
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def digest(path):

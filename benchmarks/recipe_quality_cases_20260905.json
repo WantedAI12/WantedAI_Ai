@@ -1,0 +1,33 @@
+{
+  "as_of": "2026-09-05",
+  "scope": "developer-written request-compliance and numerical-consistency cases",
+  "parser_cases": [
+    {"id":"free_of_material","brief":"clean woody fragrance free of vanillin","excluded":["Vanillin"]},
+    {"id":"korean_exclusion_list","brief":"장미와 바닐라는 빼고 레몬 우디 향","desired":["citrus","woody"],"avoided":["rose","gourmand"]},
+    {"id":"korean_flower_list","brief":"장미와 자스민 없이 시트러스 우디 향","desired":["citrus","woody"],"avoided":["rose","white_floral"]},
+    {"id":"english_contrast","brief":"no rose but citrus and woody","desired":["citrus","woody"],"avoided":["rose"]},
+    {"id":"english_comma_list","brief":"no rose, jasmine or vanilla; clean woody citrus","desired":["clean","woody","citrus"],"avoided":["rose","white_floral","gourmand"]},
+    {"id":"english_exclude_list","brief":"include rose, exclude vanilla and musk","desired":["rose"],"avoided":["gourmand","musky"]},
+    {"id":"korean_only_exclusion","brief":"시트러스와 우디는 유지하고 머스크만 빼줘","desired":["citrus","woody"],"avoided":["musky"]},
+    {"id":"english_limit","brief":"clean woody fragrance, at most 6 ingredients","max_ingredients":6},
+    {"id":"korean_limit","brief":"깨끗한 시트러스 우디 향, 원료는 최대 6개만","max_ingredients":6},
+    {"id":"english_limit_no_increase","brief":"clean woody, maximum 20 ingredients","constraints":{"max_ingredients":12},"max_ingredients":12},
+    {"id":"english_limit_expanded_default","brief":"clean woody, maximum 20 ingredients","max_ingredients":20},
+    {"id":"weak_musk","brief":"시트러스 우디에 머스크는 약하게","desired":["citrus","woody","musky"],"not_avoided":["musky"],"weaker_than":["musky","citrus"]},
+    {"id":"reduce_rose","brief":"장미는 줄이고 시트러스 우디 중심","desired":["rose","citrus","woody"],"not_avoided":["rose"],"weaker_than":["rose","citrus"]},
+    {"id":"less_musk","brief":"clean citrus with less musk","desired":["clean","citrus","musky"],"not_avoided":["musky"],"weaker_than":["musky","citrus"]},
+    {"id":"not_too_sweet","brief":"not too sweet clean woody musk","desired":["gourmand","clean","woody","musky"],"not_avoided":["gourmand"],"weaker_than":["gourmand","woody"]},
+    {"id":"simple_without","brief":"clean woody without vanillin","excluded":["Vanillin"]},
+    {"id":"hyphen_free","brief":"vanilla-free clean woody scent","desired":["clean","woody"],"avoided":["gourmand"]},
+    {"id":"not_only","brief":"not only rose but also jasmine","desired":["rose","white_floral"],"not_avoided":["rose","white_floral"]},
+    {"id":"positive_reference","brief":"깨끗하고 시원한 시트러스 우디","desired":["clean","fresh","citrus","woody"]}
+  ],
+  "recipe_cases": [
+    {"id":"free_of_material","brief":"clean woody fragrance free of vanillin","forbidden":["Vanillin"]},
+    {"id":"english_limit","brief":"clean woody fragrance, at most 6 ingredients","max_lines":6},
+    {"id":"korean_limit","brief":"깨끗한 시트러스 우디 향, 원료는 최대 6개만","max_lines":6},
+    {"id":"positive_reference","brief":"clean fresh citrus woody musk"},
+    {"id":"floral_reference","brief":"soft powdery rose and jasmine"},
+    {"id":"aquatic_reference","brief":"fresh green aquatic rain in a forest"}
+  ]
+}

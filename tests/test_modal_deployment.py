@@ -169,6 +169,30 @@ def test_modal_request_schema_rejects_expansion_and_invalid_risk(api_runtime):
     assert invalid.status_code == 422
 
 
+def test_actual_formula_stream_matches_json_and_audit_routes_do_not_run_ai(api_runtime, monkeypatch):
+    from fragrance_ai import NaturalLanguagePerfumeryAI
+    from tests.test_audit_reporting_api import history, parse_sse
+    body = {"brief": "clean fresh citrus woody musk", "require_full_profile_match": True}
+    with TestClient(api_runtime()) as client:
+        streamed = client.post("/v1/formulas/stream", json=body)
+        assert streamed.status_code == 200
+        events = parse_sse(streamed.text)
+        stages = [row["data"]["stage"] for row in events if row["event"] == "progress"]
+        assert stages == ["RECEIVED", "INGREDIENT_SCREENING", "SAFETY_CHECK", "RATIO_OPTIMIZATION", "TEMPORAL_PROFILE", "DONE"]
+        result = next(row["data"] for row in events if row["event"] == "result")
+        ordinary = client.post("/v1/formulas", json=body)
+        assert ordinary.status_code == 200 and ordinary.json() == result
+        assert ordinary.headers["X-Perfumery-Cache"] == "hit"
+        assert result["score_contract"]["runtime_minimum_profile_target"] == 95
+        if not result["full_profile_target_met"]:
+            assert result["recipe"] == []
+        monkeypatch.setattr(NaturalLanguagePerfumeryAI, "create_recipe", lambda *a, **kw: pytest.fail("audit invoked recipe inference"))
+        before = client.app.state.formula_cache.stats()["computations"]
+        for path in ("/v1/reports/audit", "/v1/audit-logs/stream", "/v1/reports/audit/stream"):
+            assert client.post(path, json=history()).status_code == 200
+        assert client.app.state.formula_cache.stats()["computations"] == before
+
+
 def test_modal_strict_profile_gate_does_not_fabricate_scores_and_separates_cached_modes(api_runtime):
     with TestClient(api_runtime(allow_legacy_research=True)) as client:
         body = {"brief": "clean scent", "require_full_profile_match": False, "target_similarity": 95}

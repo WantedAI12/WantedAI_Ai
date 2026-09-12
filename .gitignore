@@ -50,6 +50,8 @@ tests/*
 !tests/test_runtime_policy.py
 !tests/test_promotion_activation.py
 !tests/test_modal_deployment.py
+!tests/test_audit_reporting_api.py
+!tests/test_formula_stream.py
 !tests/test_ai_extensions.py
 !tests/test_ai_workflows.py
 !tests/test_fixed_assessment.py
@@ -90,3 +92,14 @@ tests/*
 !tests/test_latency_v63.py
 !tests/test_runtime_release_v63.py
 !tests/test_modal_v63_evidence.py
+!tests/test_search_recovery_v64.py
+!tests/test_physical_exposure_v65.py
+!tests/test_main_backbone_v66.py
+!tests/test_rd_contract.py
+!tests/test_spec_contract_v67.py
+
+# Local model/catalog bindings are not distribution-cleared release bundles.
+dist/search-recovery-v64/
+dist/physical-exposure-v65/
+dist/main-backbone-v66/
+dist/spec-contract-v67/

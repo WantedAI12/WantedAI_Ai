@@ -262,6 +262,22 @@ def test_no_phase_markers_preserve_empty_phase_contract():
     assert brief.phase_target_profiles == {}
 
 
+@pytest.mark.parametrize("text", [
+    "opening no sweetness, drydown woody musk",
+    "rose fragrance, opening no rose",
+])
+def test_perfume_negative_only_phase_does_not_inherit_a_positive_target(text):
+    brief = NaturalLanguageBriefParser(IngredientCatalog.load_builtin()).parse(text)
+    opening = dict(brief.phase_target_profiles["opening"])
+    targets = TemporalMixtureSimulator.targets_by_time(brief)
+    for target, desired, avoided in targets[:2]:
+        assert not target.any()
+        assert desired == []
+        assert avoided == sorted(set(brief.avoided_dimensions) | set(brief.phase_avoided_dimensions["opening"]))
+    assert targets[-1][0].sum() > 0
+    assert brief.phase_target_profiles["opening"] == opening
+
+
 def test_local_phase_exclusion_does_not_erase_other_phase_target():
     parser = NaturalLanguageBriefParser(IngredientCatalog.load_builtin())
     brief = parser.parse("opening citrus, drydown woody without citrus")

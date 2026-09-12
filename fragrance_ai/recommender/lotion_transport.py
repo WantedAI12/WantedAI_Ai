@@ -2,11 +2,13 @@
 import numpy as np
 
 
-def bidirectional_step(film, air, evaporation, uptake, return_rate, ventilation, dt):
+def bidirectional_step(film, air, evaporation, uptake, return_rate, ventilation, dt, *, return_integrals=False):
     """Integrate film <-> air, film -> skin and air -> exhaust for fixed rates.
 
 Rates are min^-1. The spectral form avoids unstable hyperbolic exponentials
 and cancellation when the two eigenvalues have very different magnitudes.
+Optional integrals have units mass*time and remain defined at zero ventilation;
+they must not be reconstructed by subtracting nearly equal cumulative sinks.
 """
     a, d = evaporation + uptake, return_rate + ventilation
     delta = a - d
@@ -43,4 +45,5 @@ and cancellation when the two eigenvalues have very different magnitudes.
         divided_phi[close] = integral
     integrated_film = phi_fast * film + divided_phi * vector_film
     integrated_air = phi_fast * air + divided_phi * vector_air
-    return new_film, new_air, uptake * integrated_film, ventilation * integrated_air
+    result = (new_film, new_air, uptake * integrated_film, ventilation * integrated_air)
+    return (*result, integrated_film, integrated_air) if return_integrals else result

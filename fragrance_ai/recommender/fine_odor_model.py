@@ -118,7 +118,9 @@ class FineOdorModel:
     def predict(self, graphs):
         # No query-label lookup. Optional neighbors use the TRAIN split only.
         self.assert_current()
-        return self.predict_features(structure_features(graphs))
+        result = self.predict_features(structure_features(graphs))
+        self.assert_current()
+        return result
 
     @property
     def prediction_correction_sha256(self):
@@ -136,10 +138,15 @@ class FineOdorModel:
             graphs.append(graph if graph and '.' not in graph else None)
         with _LOCK:
             missing = sorted({g for g in graphs if g and g not in self._cache})
+            pending = {}
             for start in range(0,len(missing),256):
                 batch = missing[start:start+256]
-                for graph, values in zip(batch,self.predict(batch)):
-                    self._cache[graph] = values
+                # One validated operation, not one full artifact rehash per
+                # 256 rows. Publish nothing if the ending snapshot has drifted.
+                for graph, values in zip(batch,self.predict_features(structure_features(batch))):
+                    pending[graph] = values
+            self.assert_current()
+            self._cache.update(pending)
             result, evidence = [], []
             for item, graph in zip(items,graphs):
                 if not graph:
@@ -155,7 +162,7 @@ class FineOdorModel:
                 evidence.append({'ingredient_id':item.ingredient_id,
                     'status':'source_support_plus_predicted_unlisted' if linked else 'structure_prediction_only',
                     'source_positive_labels':len(linked)})
-        return np.asarray(result), evidence
+        return np.asarray(result).reshape(len(items), len(self.endpoints)), evidence
 
     def contract(self):
         self.assert_current()

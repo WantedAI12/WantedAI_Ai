@@ -98,7 +98,11 @@ def interval_features(rates, fractions, start, end):
         raise ValueError('positive transition interval required')
     w, lipid = fractions.T
     evaporating = w*np.exp(-rates[:, 5]*start)
-    capacity = 1.-w+evaporating
+    # Keep the supplied nonreactive fraction an explicit part of capacity.
+    # At w+lipid==1, computing 1-w can round BELOW lipid and produce an
+    # impossible lipid/capacity > 1 after drying. No fraction is clipped.
+    fixed = lipid + (1.-(w+lipid))
+    capacity = fixed+evaporating
     current = rates.copy()
     current[:, :2] /= capacity[:, None]
     return np.c_[current*dt, evaporating/capacity, lipid/capacity]
@@ -112,11 +116,37 @@ def advance(state, kernel):
     return result
 
 
-def trajectory(rates, fractions, times, *, operator=baseline_kernel, steps=32, initial=None, duration=None):
+def _domain_mesh(rates, fractions, edges):
+    """Refine time, not the checkpoint's dimensionless applicability domain.
+
+    Capacity is monotone decreasing. Rates scaled by capacity at the RIGHT
+    endpoint therefore bound every subinterval's initial dimensionless rates.
+    This refinement is independent of plotting times and leaves in-domain
+    canonical cells unchanged. It is a domain guard, not an error estimator.
+    """
+    refined = [float(edges[0])]
+    for left, right in zip(edges[:-1], edges[1:]):
+        fixed = fractions[:, 1]+(1.-fractions.sum(axis=1))
+        capacity = fixed+fractions[:, 0]*np.exp(-rates[:, 5]*right)
+        bound = rates.copy()
+        bound[:, :2] /= capacity[:, None]
+        ratio = float(np.max(bound / UPPER[:6] * (right-left), initial=0.))
+        if not np.isfinite(ratio) or ratio > 2048:
+            raise ValueError('unified transition domain refinement work budget exceeded')
+        count = max(1, int(np.ceil(ratio)))
+        if len(refined)-1+count > 2048:
+            raise ValueError('unified transition domain refinement work budget exceeded')
+        refined.extend(np.linspace(left, right, count+1)[1:].tolist())
+    return np.asarray(refined)
+
+
+def trajectory(rates, fractions, times, *, operator=baseline_kernel, steps=32, initial=None, duration=None,
+               work_budget=None):
     """Conservative rollout on a canonical mesh independent of display times.
 
     Partial observations are evaluated from the mesh state without changing it.
     Thus adding a requested time does not change already requested predictions.
+    An optional request-local remaining budget is shared across product stages.
     """
     rates, fractions, times = np.asarray(rates, float), np.asarray(fractions, float), np.asarray(times, float)
     end = float(duration if duration is not None else times[-1])
@@ -133,7 +163,17 @@ def trajectory(rates, fractions, times, *, operator=baseline_kernel, steps=32, i
         state[:, 0] = 1.
     if state.shape != (len(rates), 6) or not np.isfinite(state).all() or np.any(state < 0):
         raise ValueError('finite nonnegative six-state initial mass required')
-    edges = np.linspace(0., 1., steps+1)**2*end
+    edges = _domain_mesh(rates, fractions, np.linspace(0., 1., steps+1)**2*end)
+    work = len(rates)*(len(edges)-1+len(times))
+    if work > 2_000_000:
+        raise ValueError('unified transition domain refinement work budget exceeded')
+    if work_budget is not None:
+        remaining = work_budget.get('remaining_material_transitions')
+        if type(remaining) is not int or not 0 <= remaining <= 2_000_000:
+            raise ValueError('invalid unified request work budget')
+        if work > remaining:
+            raise ValueError('unified request multi-stage refinement work budget exceeded')
+        work_budget['remaining_material_transitions'] -= work
     result, index = [], 0
     if times[0] == 0:
         result.append(state.copy())
@@ -239,6 +279,7 @@ class UnifiedTransportModel:
             'trained_transition_blend': self.blend, 'external_api_calls': 0,
             'trajectory_constraints': ['mass_conservation', 'nonnegative', 'absorbing_cumulative_sinks'],
             'rollout_precision_policy': 'learned_proposal_with_two_half_step_analytic_defect_check',
+            'transition_domain_policy': 'output_independent_time_refinement_no_coefficient_clipping',
             'human_similarity_percent': None, 'measured_product_release_observations': 0,
             'recipe_acceptance_score_modified': False}
 

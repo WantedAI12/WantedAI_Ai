@@ -2,7 +2,15 @@
 
 자연어 향 의도를 정량 조향식과 시간별 향 예측으로 연결하는 CPU 기반 AI 백엔드입니다. 향수·바디로션·바디워시의 제형 차이를 구분하며, 원료 선택·배합 탐색·후보 비교·입력 보완·제조 절차 안내를 제공합니다.
 
-현재 릴리스는 **V63 / Perfumery AI Core 1.4.0**입니다. V62의 모델·원료·평가 기준을 유지하면서 실행 속도와 반복 요청 비용을 개선했습니다.
+현재 `dev` 소스는 **V64~V67 개선 및 AI 입출력 확장**을 포함하며 패키지 버전은 **Perfumery AI Core 1.4.0**입니다. 문서상 기존 운영 배포 기준은 V63입니다. **GitHub의 소스 갱신과 Modal 운영 배포는 별개**이며, 이번 변경으로 운영 서버가 자동 교체되지는 않습니다.
+
+로컬에는 **V64 탐색 복구 개선판**을 추가했습니다. 로션 배합 탐색에 최종 코사인·배경 구별 조건을 연결하고, 수천 개 후보에서 필요한 원료를 놓치던 탐색을 보완했습니다. 향 표현 배치의 중복 파일 읽기와 혼합 시료 API의 변경 감지도 개선했습니다. 기존 API·학습 가중치·원료 제한·평가 기준은 유지하며, 이 변경은 아직 운영 배포하지 않았습니다. 실제 비교 결과와 재현 방법은 [V64 개선 결과](AI_SEARCH_RECOVERY_V64.md)에 정리합니다.
+
+추가 로컬 개선 **V65**는 우리 제형 모델의 공기 노출 적분을 직접 구현한 것입니다. 증발·역전달·피부 흡수·가수분해·환기를 같은 물질수지로 계산하며, 그래프 표시 간격과 독립적인 시간 격자 및 구간별 해석 적분을 사용합니다. 초반 급방출과 후기 미량 노출을 배합 목적함수에 연결하고, 최종 배합에서도 같은 계산을 재검증합니다. 외부 조향 프로젝트나 새 체크포인트를 도입하지 않았습니다. [수식·구현·검증 설명](AI_PHYSICAL_EXPOSURE_V65.md)
+
+로컬 **V66 메인 분자 백본**은 직접 구현한 다중 출력 커널 회귀로 재학습했습니다. 정확한 절편 계산, 자기 유사도 정규화, 훈련 자료 내 출력 관계 규제화와 CPU 공통 커널 계산을 적용했습니다. 분자·골격 분리의 네 비교에서 MAE 점추정이 개선됐으며, 동일 가중치의 1,152행 핵심 추론은 약 54ms에서 21ms로 줄었습니다. 새 백본은 로션 조향과 세 제품 통합 향 예측에 명시적으로 연결하고, stock 시료 모델의 기존 학습 부모는 보존합니다. [수식·학습·연결·한계](AI_MAIN_BACKBONE_V66.md). 운영 배포판은 위의 V63과 별개입니다.
+
+**V67 AI 계약 보완**은 세 기술명세서의 AI 연동 요구를 반영합니다. 필수 보완 질문 답변, 저장된 후보의 비교·자연어 수정, 제품별 경로·단위 안내, 감사 JSON/SSE의 기간·버전 필터를 추가했습니다. 기존 `/v1` 계약과 V66 계산 모델을 유지합니다. [변경 내역과 연결 방법](AI_SPEC_CONTRACT_V67.md)
 
 ## 서비스 연결
 
@@ -127,6 +135,10 @@ POST /v1/formulas
 
 ## 주요 API
 
+추가된 조향 SSE·감사 로그 SSE·보고서 JSON/SSE의 요청, stage enum, 종료·재시도 규칙은 [백엔드 SSE 계약서](SSE_API_CONTRACT.md)에 정리했습니다. 이 추가 기능은 로컬 구현 상태이며 기존 배포에 자동 반영되지 않습니다.
+
+필수 입력 확인과 근거 기반 평가의 전체 흐름은 [v2 백엔드 전달서](BACKEND_HANDOFF_AI_V2_2026-09-11.md), 최신 질문·비교·수정·보고서 필터 계약은 [V67 연결 문서](AI_SPEC_CONTRACT_V67.md)를 참고하세요. 실제 연결 전에 대상 서버의 `/v1/ai/capabilities`와 `/openapi.json`을 확인해야 합니다.
+
 | 용도 | 경로 |
 |---|---|
 | 상태·원료·기능 확인 | GET /health, GET /v1/catalog, GET /v1/ai/capabilities |
@@ -134,7 +146,14 @@ POST /v1/formulas
 | 입력 도우미 | POST /v1/ai/assistant |
 | 명시 원액 혼합 시료 예측 | POST /v1/formulations/stock-mixture/predict |
 | 조향식 생성·평가 | POST /v1/formulas, POST /v1/formulas/evaluate, POST /v1/formulas/reassess |
+| 조향 진행·결과 SSE | POST /v1/formulas/stream |
+| 감사 로그 SSE | POST /v1/audit-logs/stream |
+| 감사·버전 이력 보고서 | POST /v1/reports/audit, POST /v1/reports/audit/stream |
 | 대안·비교·수정 | POST /v1/formulas/alternatives, POST /v1/formulas/compare, POST /v1/formulas/revise |
+| 필수 입력 준비·답변 | POST /v2/briefs/prepare, POST /v2/briefs/clarify |
+| 확인된 요청 평가·고정 배합 재평가 | POST /v2/formulas/evaluate, POST /v2/formulas/reassess |
+| 등록 근거·원료/공급 변화 평가 | POST /v2/formulas/assess-evidence, POST /v2/formulas/change-impact |
+| 저장된 후보 비교·수정 의도 확인 | POST /v2/formulas/compare, POST /v2/briefs/revise |
 | 향 표현 조회·해석·예측 | GET /v1/odor-expressions, POST /v1/odor-expressions/interpret, POST /v1/odor-expressions/predict |
 | 통합 제형 조건·시간 예측 | POST /v1/applications/unified/context, POST /v1/applications/unified/predict |
 | 로션 베이스·배합 설계 | POST /v1/applications/body-lotion/prepare, POST /v1/applications/body-lotion/design, POST /v1/applications/body-lotion/optimize |
@@ -143,7 +162,26 @@ POST /v1/formulas
 
 향수 조향식 생성과 완성 로션 설계는 서로 다른 입력 계약을 사용합니다. 로션은 전용 경로를 사용하고 전체 스키마는 /docs에서 확인하세요. 기존 필드와 함께 새 응답 필드도 전달하도록 팀 백엔드 DTO를 구성하는 것이 좋습니다.
 
+### V67 연결 시 지킬 계약
+
+- `integration_contract`는 제품별 경로·단위·선행 조건을 제공합니다. 기본 바디워시 향료 생성과 세척 후 완제품 예측을 구분합니다.
+- `/v2/briefs/clarify`는 현재 `prepared_result_id`와 질문별 답변을 받습니다. 일부만 답하면 나머지 필수값은 미확인으로 남습니다. `ready` 이후 사용자 확인을 받고 새 `review_id`로 평가합니다.
+- `/v2` 평가 원문과 `input_snapshot`을 백엔드에 보존하면 캐시 만료·프로세스 재시작 후에도 비교할 수 있습니다. 비교는 새 추론 0회이며, 목표·농도·모델·근거가 다르면 동일 기준의 점수 차이를 만들지 않습니다.
+- 저장 후보 수정은 부모 배합과 버전을 보존한 뒤 수정 의도를 확인하고 실제 재생성합니다. 기존 승인이나 확인을 자동 상속하지 않습니다.
+- 감사/보고서 API는 `snapshot_id`, `selected_version_ids`, `period_start`, `period_end`, 이벤트 `version_id`를 지원합니다. JSON과 SSE는 같은 범위를 사용하며 PDF 렌더링·저장·권한은 팀 백엔드가 담당합니다.
+- 실제 규제·공급 근거가 미등록이면 `/v2` 추천 평가가 차단됩니다. `review_id`나 콘텐츠 체크섬은 인증 토큰·전자서명·제조 승인이 아닙니다.
+
 ## 검증 결과
+
+### V64~V67 개발 검증
+
+- `dev` 통합 과정에서 향수의 제외 조건만 있는 시간대를 다른 시간대의 향으로 자동 채우던 오류를 수정했습니다. 긍정 향 목표가 없는 시간대는 계산 불가로 유지하며, 별도 계약인 로션 설계 동작은 보존합니다. 관련 회귀 135개와 원료·입력·물성 회귀 89개를 통과했습니다.
+- V66 수치·통합 선택 테스트 149개 통과. V67 API 선택 회귀 116개 통과, 별도 설치한 wheel의 연결 검사 4개 통과. 서로 겹칠 수 있는 실행 묶음이며 합산 정확도가 아닙니다.
+- V67에서 실제 로컬 V66 모델로 향수·로션 2건을 실행했고 기존 점수와 반복 JSON·캐시 적중을 확인했습니다. 향수 예제는 87.4298점으로 목표 미달, 우디 로션 예제는 95.2점입니다. API 보완으로 향 정확도가 올랐다고 주장하지 않습니다.
+- CI는 수치·API·SSE·배포 계약과 패키지의 금지 직렬화 파일 포함 여부를 확인합니다. 최신 실행 상태는 저장소의 Actions와 PR 체크를 기준으로 확인하세요.
+- 연구 체크포인트·로컬 카탈로그·원본 데이터는 이 소스 변경에 포함하지 않습니다. 문서의 로컬 검증 수치는 해당 내부 아티팩트를 연결한 실행 결과입니다.
+
+### 기존 V63 검증 기록
 
 V63은 V62의 학습된 모델을 그대로 사용합니다. 분자 구조 기반 향 서술어 예측을 기존 분리 평가 원료 714개에서 확인한 결과는 다음과 같습니다. 평가 원료의 정답 기록을 입력으로 조회하지 않았습니다.
 

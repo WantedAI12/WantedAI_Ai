@@ -1,6 +1,7 @@
 """Regression tests for invented odor data, stale approval and computed properties."""
 
 from dataclasses import asdict, replace
+from contextlib import closing
 from datetime import date
 import gzip
 import hashlib
@@ -193,8 +194,9 @@ def test_historical_api_view_invalidates_scores_without_rewriting_evidence():
     assert quarantine_legacy_payload(current) == current
 
 
-def test_persisted_versions_and_jobs_cannot_restore_old_odor_approval(tmp_path):
+def test_persisted_versions_and_jobs_cannot_restore_old_odor_approval(tmp_path, request):
     store = SqliteWorkspaceStore(tmp_path / "workspace.db")
+    request.addfinalizer(store.close)
     project = store.create_project(tenant_id="t", name="test", description="", actor_id="a")
     payload = _old_payload()
     formula = store.create_formula(tenant_id="t", project_id=project.project_id, name="old", kind="formula",
@@ -223,7 +225,15 @@ def test_persisted_versions_and_jobs_cannot_restore_old_odor_approval(tmp_path):
     assert version_view["payload_view_transformed"]
 
 
-def test_calculated_structure_overlay_has_no_queries_or_fake_measurements():
+@pytest.fixture
+def no_physical_evidence_index(monkeypatch):
+    # Isolate the structure-only branch. The shipped V56 index now has a
+    # genuine exact-identity measurement for this fixture's molecule.
+    from fragrance_ai.recommender import physical_evidence
+    monkeypatch.setattr(physical_evidence, "_read_index", lambda *args: {"by_structure": {}, "by_cas": {}})
+
+
+def test_calculated_structure_overlay_has_no_queries_or_fake_measurements(no_physical_evidence_index):
     material = _positive()
     with ScientificPropertyStore.load_builtin() as store:
         statements = []
@@ -243,7 +253,7 @@ def test_calculated_structure_overlay_has_no_queries_or_fake_measurements():
     assert original == {material.ingredient_id: measured}
 
 
-def test_structure_coverage_does_not_become_measured_physics_coverage():
+def test_structure_coverage_does_not_become_measured_physics_coverage(no_physical_evidence_index):
     material = _positive()
     brief = NaturalLanguageBriefParser(IngredientCatalog([material])).parse("rose scent")
     line = RecipeLine(material.ingredient_id, material.name, "heart", 100, 15, None, 100, .9, 2, "test")
@@ -254,6 +264,19 @@ def test_structure_coverage_does_not_become_measured_physics_coverage():
     assert result.scientific_data_coverage_percent == result.vapor_pressure_coverage_percent == result.odor_threshold_coverage_percent == 0
     assert not result.model_domain_passed
     assert "calculated_molecular_descriptors_not_measured_vapor_pressure_or_odor_threshold" in result.flags
+
+
+def test_structure_overlay_keeps_real_identity_joined_evidence_separate():
+    material = _positive()
+    original = {}
+    prop = ScientificPropertyStore.with_catalog_structures([material], original)[material.ingredient_id]
+    assert prop.vapor_pressure_pa_25c > 0
+    assert prop.boiling_point_c > -273.15
+    assert prop.odor_threshold_ppm > 0
+    assert "calculated-not-measured" in prop.source_ref
+    assert ";identity-joined-evidence:" in prop.source_ref
+    assert prop.verified_on == "structure_snapshot_not_physical_measurement"
+    assert original == {}
 
 
 def test_source_builder_reads_odor_column_only_and_checks_source_hashes(tmp_path):
@@ -267,7 +290,7 @@ def test_source_builder_reads_odor_column_only_and_checks_source_hashes(tmp_path
     aroma = source / "aroma.csv"
     aroma.write_text("Stimulus,Raw Descriptors,Filtered Descriptors\n3,rose;odorless,rose\n", encoding="utf-8")
     db = tmp_path / "registry.db"
-    with sqlite3.connect(db) as con:
+    with closing(sqlite3.connect(db)) as con, con:
         con.executescript("CREATE TABLE source_files(source_id,file_kind,path,sha256,redistribution_allowed); CREATE TABLE ingredient_sources(registry_id,source_id,source_cid);")
         con.executemany("INSERT INTO source_files VALUES(?,?,?,?,?)", [
             ("flavordb", "behavior", str(behavior), hashlib.sha256(behavior.read_bytes()).hexdigest(), 0),

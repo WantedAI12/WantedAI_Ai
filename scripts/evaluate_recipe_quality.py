@@ -48,8 +48,12 @@ def main():
     }
     with NaturalLanguagePerfumeryAI() as ai:
         for case in cases["parser_cases"]:
-            brief = ai.parser.parse(case["brief"])
+            limits = RecipeConstraints(**case.get("constraints", {}))
+            original_limit = limits.max_ingredients
+            brief = ai.parser.parse(case["brief"], limits)
             failures = []
+            if limits.max_ingredients != original_limit:
+                failures.append("input_constraints_mutated")
             for expected_key, values in (
                 ("desired", brief.desired_dimensions),
                 ("avoided", brief.avoided_dimensions),
