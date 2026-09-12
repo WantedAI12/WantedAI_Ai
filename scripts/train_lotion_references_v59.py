@@ -16,13 +16,22 @@ from fragrance_ai.recommender.lotion_reference_objective import VERSION, fit_ref
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--output', type=Path, required=True)
+    p.add_argument('--atlas-model',type=Path)
+    p.add_argument('--atlas-sha256')
     args = p.parse_args()
+    if bool(args.atlas_model) != bool(args.atlas_sha256):
+        p.error('atlas model and SHA256 must be provided together')
     if args.output.exists():
         p.error('a new output directory is required')
     rows, endpoints, source = load_atlas(ROOT/'.benchmarks/atlas_profiles_v50/source')
     rows = [r for r in rows if r['level'] == 'high']
-    parent = ROOT/'.benchmarks/quantitative_profiles_v54/run-01/model.json'
+    parent = args.atlas_model or ROOT/'.benchmarks/quantitative_profiles_v54/run-01/model.json'
     parent_sha = hashlib.sha256(parent.read_bytes()).hexdigest()
+    if args.atlas_model:
+        from fragrance_ai.research.atlas_profiles import AtlasProfilePredictor
+        predictor = AtlasProfilePredictor(parent,sha256=args.atlas_sha256,experimental=True)
+        if predictor.endpoints != tuple(endpoints):
+            raise ValueError('reference source and molecular output axes differ')
     artifact = {'schema': VERSION, 'endpoints': endpoints, **fit_references(rows, endpoints),
         'source': source, 'parent_atlas_sha256': parent_sha, 'source_stimuli': [r['id'] for r in rows],
         'recipe_outcomes_used': False, 'source_scope': 'local_research_not_redistribution',

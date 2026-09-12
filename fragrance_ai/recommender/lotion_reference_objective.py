@@ -42,14 +42,15 @@ DETAIL_ALIASES = {'lemon': ('lemon', '레몬'), 'orange': ('orange', '오렌지'
 
 
 def exposure_groups(brief, rows, schedule=None):
-    """Integrate final airborne curves, not a requirement for constant scent.
+    """Define fixed intent windows and legacy display-quadrature diagnostics.
 
     Unscoped briefs describe the whole exposure. Explicit phase requirements
-    get separate windows. Trapezoidal weights include the zero-air initial
-    state and are independent of the optimized recipe and its score.
+    get separate windows. Trapezoidal weights are retained for compatibility,
+    but V65 search uses analytic transport integrals over these window bounds,
+    NOT these sparse display weights. Both are independent of recipe outcomes.
     """
     times = np.asarray([0., *[r['minutes'] for r in rows]],float)
-    if len(times) < 2 or np.any(np.diff(times) <= 0):
+    if len(times) < 2 or not np.isfinite(times).all() or np.any(np.diff(times) <= 0):
         raise ValueError('ordered positive final-curve times required')
     end = float(times[-1])
     opening = 15. if schedule is None else schedule.opening_until_minutes

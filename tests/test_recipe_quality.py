@@ -35,9 +35,12 @@ CASES = json.loads(
 
 @pytest.mark.parametrize("case", CASES["parser_cases"], ids=lambda case: case["id"])
 def test_request_intent_contract(case):
+    limits = RecipeConstraints(**case.get("constraints", {}))
+    original_limit = limits.max_ingredients
     brief = NaturalLanguageBriefParser(IngredientCatalog.load_builtin()).parse(
-        case["brief"]
+        case["brief"], limits
     )
+    assert limits.max_ingredients == original_limit
     assert set(case.get("desired", [])).issubset(brief.desired_dimensions)
     assert set(case.get("avoided", [])).issubset(brief.avoided_dimensions)
     assert set(case.get("excluded", [])).issubset(brief.excluded_ingredients)

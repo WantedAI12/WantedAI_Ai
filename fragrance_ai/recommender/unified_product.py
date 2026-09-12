@@ -16,8 +16,12 @@ from .models import RecipeConstraints, SCENT_DIMENSIONS
 
 
 class UnifiedProductPredictor:
-    def __init__(self, transport, atlas, structures, catalog, *, reference_bank=None, fine_model=None):
-        if transport.manifest['parent_models']['atlas']['sha256'] != atlas.sha256:
+    def __init__(self, transport, atlas, structures, catalog, *, reference_bank=None, fine_model=None,
+                 odor_backbone_sha256=None):
+        # Legacy callers keep the exact original parent contract. A newer
+        # odor-only backbone must be selected explicitly by its runtime pin.
+        expected = odor_backbone_sha256 or transport.manifest['parent_models']['atlas']['sha256']
+        if expected != atlas.sha256:
             raise ValueError('unified transport / molecular backbone binding mismatch')
         if reference_bank is not None and (reference_bank.parent_sha256 != atlas.sha256
                                            or tuple(reference_bank.endpoints) != tuple(atlas.endpoints)):
@@ -40,6 +44,8 @@ class UnifiedProductPredictor:
     def contract(self):
         self.assert_current()
         return {**self.transport.contract(), 'shared_odor_backbone_sha256': self.atlas.sha256,
+            'odor_backbone_version': getattr(self.atlas,'artifact_version',None),
+            'transport_training_atlas_sha256': self.transport.manifest['parent_models']['atlas']['sha256'],
             'target_reference_sha256': self.references.sha256 if self.references is not None else None,
             'fine_odor_expression':self.fine_model.contract() if self.fine_model is not None else None,
             'odor_endpoints': len(self.atlas.endpoints), 'learned_stock_assay_head_applied': False,
@@ -85,6 +91,7 @@ class UnifiedProductPredictor:
         canonical = np.asarray(canonical)
         model_times = np.unique(np.r_[times, canonical])
         observations, event_rows, start = {0.: state.copy()}, [], 0.
+        work_budget = {'remaining_material_transitions': 2_000_000}
         for stage_context, stage in zip(context.stages, request.stages):
             duration = stage_context.duration_minutes
             end = start+duration
@@ -96,7 +103,7 @@ class UnifiedProductPredictor:
             requested = model_times[(model_times > start)&(model_times <= end)]
             local_times = np.unique(np.r_[requested-start, duration])
             rows, state = trajectory(rates, fractions, local_times, duration=duration,
-                initial=state, operator=self.transport.stable_kernel)
+                initial=state, operator=self.transport.stable_kernel, work_budget=work_budget)
             for t, index in zip(requested, np.searchsorted(local_times, requested-start)):
                 observations[float(t)] = rows[index].copy()
             if stage.rinse_retained_film_fractions is not None:
@@ -154,6 +161,8 @@ class UnifiedProductPredictor:
                 'nonnegative': bool(np.all(masses >= 0)),
                 'cumulative_sinks_monotone': bool(np.all(np.diff(masses[:, :, 2:], axis=0) >= -1e-14)),
                 'sampling_at_process_jumps': 'right_continuous', 'shared_checkpoint_used': True,
+                'transport_material_transitions': 2_000_000-work_budget['remaining_material_transitions'],
+                'transport_material_transition_budget': 2_000_000,
                 'molecular_forward_batches': shapes.forward_batches, 'molecular_cache_hits': shapes.shared_cache_hits},
             'caller_declared_coefficient_sources': [{'stage_id': s.stage_id,
                 'materials': [{'ingredient_id': r.ingredient_id, 'kind': r.source_kind, 'reference': r.source_reference}
@@ -192,7 +201,7 @@ class UnifiedProductPredictor:
 
 def configured_unified_product(catalog, *, component_provider=None):
     from .unified_transport import configured_unified_transport
-    from .local_runtime import local_atlas_provider
+    from .local_runtime import local_odor_backbone_provider, local_profile
     from .perception_runtime import configured_perception
     from .lotion_reference_objective import load_configured_reference_bank
     from .fine_odor_model import configured_fine_odor
@@ -202,5 +211,8 @@ def configured_unified_product(catalog, *, component_provider=None):
     provider = component_provider or configured_perception()
     if provider is None:
         raise ValueError('unified model requires a bound material-identity registry')
-    return UnifiedProductPredictor(model, local_atlas_provider(), provider.structures, catalog,
-                                   reference_bank=load_configured_reference_bank(),fine_model=configured_fine_odor())
+    profile = local_profile()
+    expected = profile.get('odor_backbone',profile['atlas'])[1]
+    return UnifiedProductPredictor(model, local_odor_backbone_provider(), provider.structures, catalog,
+        reference_bank=load_configured_reference_bank(),fine_model=configured_fine_odor(),
+        odor_backbone_sha256=expected)

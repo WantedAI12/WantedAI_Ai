@@ -48,6 +48,8 @@ def _parse_profile(path, raw):
     root = Path(path).parent
     result = {'profile_path': path, 'profile_sha256': hashlib.sha256(raw).hexdigest()}
     names = ('catalog', 'perfume', 'body_lotion', 'atlas', 'stock_mixture')
+    if 'odor_backbone' in value:
+        names += ('odor_backbone',)
     if 'lotion_release' in value:
         names += ('lotion_release',)
     if 'lotion_target_reference' in value:
@@ -98,6 +100,7 @@ def _atlas(path, digest, size, mtime):
 
 
 def local_atlas_provider():
+    """Frozen molecular parent used to train the explicit stock-assay model."""
     profile = local_profile()
     if profile is None:
         raise ValueError('a pinned local Atlas profile is required')
@@ -105,6 +108,30 @@ def local_atlas_provider():
     stat = Path(path).stat()
     with _LOCK:
         return _atlas(path, digest, stat.st_size, stat.st_mtime_ns)
+
+
+def local_odor_backbone_provider():
+    """Select a new odor-only backbone without rebinding old assay training.
+
+    Transport inputs contain physical rates/capacities, not Atlas outputs.
+    Their original training parent pins remain mandatory and unchanged.
+    """
+    profile = local_profile()
+    parent = local_atlas_provider()
+    if 'odor_backbone' not in profile:
+        return parent
+    path, digest = profile['odor_backbone']
+    stat = Path(path).stat()
+    with _LOCK:
+        candidate = _atlas(path,digest,stat.st_size,stat.st_mtime_ns)
+    if (candidate.parent_checkpoint_sha256 != parent.sha256
+            or candidate.artifact_version != 'structured-multioutput-atlas/v66'
+            or not candidate.development_nonregression_passed
+            or candidate.source_digest != parent.source_digest
+            or candidate.endpoints != parent.endpoints
+            or any(candidate.models[k]['features'] != parent.models[k]['features'] for k in parent.models)):
+        raise ValueError('odor backbone must preserve its verified molecular source and direct parent')
+    return candidate
 
 
 @lru_cache(maxsize=4)
@@ -128,7 +155,8 @@ def local_lotion_provider(component, *, reference=None):
         return component
     if mode != 'atlas' or profile is None or component is None:
         raise ValueError('Atlas selection requires a complete local runtime profile')
-    path, digest = profile['atlas']
+    selected = local_odor_backbone_provider()
+    path, digest = str(selected.path), selected.sha256
     stat = Path(path).stat()
     with _LOCK:
         return _bridge(component, path, digest, stat.st_size, stat.st_mtime_ns, profile['profile_sha256'])

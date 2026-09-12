@@ -26,6 +26,9 @@ from ..recommender.formulation_workflow import formulation_workflow, knowledge_c
 from .lotion_inputs import LotionSimulationRequest, LotionOptimizationRequest
 from .lotion_reference import REFERENCE_ID, lotion_reference
 from .clarification import ProductPreferences, apply_question_answers, unsupported_preferences
+from .rd_api import interpretation, register_rd_api
+from .rd_evidence import EvidenceStore
+from .operation_contracts import operation_contracts
 from ..recommender.lotion import simulate_lotion
 from ..recommender.lotion_optimizer import prepare_lotion_optimization, optimize_lotion
 from ..recommender.lotion_estimation import LotionEstimateRequest, estimate_lotion_recipe
@@ -150,8 +153,9 @@ class ModelPersistenceRequest(StrictInput):
     required_duration_minutes: float | None = Field(default=None, strict=True, gt=0, le=43200)
 
 
-def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_limit, *, language_backend=None, perception_guidance=None, lotion_perception_guidance=None, stock_mixture_predictor=None, catalog_contract=None, runtime_guard=None, unified_product_predictor=None):
+def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_limit, *, language_backend=None, perception_guidance=None, lotion_perception_guidance=None, stock_mixture_predictor=None, catalog_contract=None, runtime_guard=None, unified_product_predictor=None, evidence_store=None):
     """Use the legacy generator, authentication boundary, cache and safety gates."""
+    evidence_store = evidence_store if evidence_store is not None else EvidenceStore.configured()
     class ExtendedRequest(StrictInput):
         formula: formula_type
         product_type: str | None = Field(default=None, min_length=1, max_length=80)
@@ -393,7 +397,12 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
         rate_limit()
         if stock_mixture_predictor is None:
             raise HTTPException(status_code=503, detail='stock mixture model is not configured')
-        stock_mixture_predictor.assert_current()
+        try:
+            if runtime_guard is not None:
+                runtime_guard()
+            stock_mixture_predictor.assert_current()
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
         unknown = sorted({r.ingredient_id for r in request.components}-known_ids)
         if unknown:
             raise HTTPException(status_code=422, detail={'unknown_ingredient_ids':unknown})
@@ -408,8 +417,16 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
             return stock_mixture_predictor.predict([StockAliquot(materials_by_id[r.ingredient_id],
                 r.stock_dilution,r.relative_volume,r.solvent) for r in request.components])
         try:
-            value,status = stock_cache.run(identity,compute)
+            def checked_compute():
+                value = compute()
+                stock_mixture_predictor.assert_current()
+                if runtime_guard is not None:
+                    runtime_guard()
+                return value
+            value,status = stock_cache.run(identity,checked_compute)
             stock_mixture_predictor.assert_current()
+            if runtime_guard is not None:
+                runtime_guard()
             response.headers['X-Perfumery-Stock-Cache'] = status
             return value
         except (InferenceBusy,TimeoutError) as error:
@@ -450,6 +467,9 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
         assert_lotion_current()
         language_contract = getattr(language_backend, 'contract', None)
         return {"schema_version": "ai-capabilities-1", "supported_product_codes": sorted(supported_products),
+            "integration_contract": operation_contracts(app, supported_products,
+                unified_available=unified_predictor is not None,
+                evidence_configured=evidence_store.bundle is not None),
             "language_model": language_contract() if language_contract is not None else {
                 'backend': 'injected' if language_backend is not None else 'deterministic_parser'},
             "perception_model": model_contract(perception_provider),
@@ -477,6 +497,8 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
                 "concentration_scenarios": True, "distinct_composition_alternatives": True,
                 "server_generated_comparison": True, "global_relative_revision": True,
                 "fixed_formula_scientific_reassessment": True, "evidence_summary": True,
+                "portable_rd_snapshot_comparison": True, "rd_typed_clarification_answers": True,
+                "saved_candidate_intent_revision": True,
                 "structured_phase_profiles": True, "five_level_intensity_input": True,
                 "model_relative_persistence": True, "application_context_validation": True,
                 "body_lotion_research_transport_simulation": True,
@@ -608,6 +630,7 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
             if unsupported:
                 pending.append({"code": "unsupported_odor_descriptor", "field": "formula.brief", "message": str(error)})
             return {"schema_version": "ai-brief-1", "request_id": digest,
+                "interpretation": interpretation(unsupported=unsupported),
                 "status": "unsupported_requirements" if pending else "needs_clarification",
                 "original_text": value.brief, "intent": None, "effective_target": max(95., value.target_similarity),
                 "questions": [] if unsupported else [{"id": "formula.brief", "question": str(error), "input_type": "text", "required": True}],
@@ -704,6 +727,9 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
             scenarios.append({"index": index, "product_concentration_percent": concentration,
                               "max_formula_cost_per_kg": limit, "product_category": product})
         return {"schema_version": "ai-brief-1", "request_id": digest,
+            "interpretation": interpretation(brief),
+            "parsed_conditions": {"target_region": brief.constraints.target_region,
+                                  "product_concentration_percent": brief.constraints.product_concentration_percent},
             "status": "unsupported_requirements" if unsupported else "needs_clarification" if questions else "ready",
             "original_text": value.brief, "intent": {"target_profile": brief.target_profile,
                 "representation": representation_contract(brief),
@@ -927,3 +953,18 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
             return result
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
+
+    def rd_runtime_contract():
+        from ..recommender.science import SCIENTIFIC_MODEL_VERSION
+        if runtime_guard:
+            runtime_guard()
+        current = capabilities()
+        return {"catalog": catalog_contract or {}, "scientific_model_version": SCIENTIFIC_MODEL_VERSION,
+                "perception_model": current["perception_model"],
+                "product_models": current["product_models"],
+                "odor_expression": current["odor_expression"]}
+
+    register_rd_api(app, ExtendedRequest, prepare, evaluate_core, catalog, rate_limit,
+                    rd_runtime_contract, evidence_store=evidence_store, product_codes=supported_products,
+                    revise=lambda base, instruction: revise_request(RevisionRequest.model_validate(
+                        {**base.model_dump(mode="json"), "instruction": instruction})))

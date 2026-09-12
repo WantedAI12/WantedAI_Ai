@@ -6,7 +6,7 @@ import math
 from dataclasses import asdict, replace
 from datetime import date
 from types import TracebackType
-from typing import Self
+from typing import Callable, Self
 
 import numpy as np
 
@@ -496,6 +496,7 @@ class NaturalLanguagePerfumeryAI:
         *,
         target_profile_override: dict[str, float] | None = None,
         intent_controls: dict | None = None,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> RecipeResult:
         snapshot_guard = getattr(self, "_runtime_snapshot_guard", None)
         from .perception_runtime import assert_provider_current
@@ -514,7 +515,8 @@ class NaturalLanguagePerfumeryAI:
             budgets.append(limit)
             return self._create_recipe_impl(natural_language_brief,
                 replace(requested, max_ingredients=limit), as_of, target_profile_override=target_profile_override,
-                **({"intent_controls": intent_controls} if intent_controls else {}))
+                **({"intent_controls": intent_controls} if intent_controls else {}),
+                **({"progress_callback": progress_callback} if progress_callback is not None else {}))
 
         def assessed(candidate):
             return assess_recipe_profiles(candidate.brief, candidate.achieved_profile, candidate.temporal_profile,
@@ -558,6 +560,8 @@ class NaturalLanguagePerfumeryAI:
             report = session.report(None, None, changed=False, variants=0)
             report.update(status='not_evaluated_no_eligible_candidate', operation='create_recipe', recipe_returned=False)
             result = attach_guidance(result, report)
+        if progress_callback is not None:
+            progress_callback("TEMPORAL_PROFILE")
         assessment = assess_recipe_profiles(
             result.brief, result.achieved_profile, result.temporal_profile,
             self.temporal_simulator.time_weights(result.brief),
@@ -598,6 +602,7 @@ class NaturalLanguagePerfumeryAI:
         *,
         target_profile_override: dict[str, float] | None = None,
         intent_controls: dict | None = None,
+        progress_callback: Callable[[str], None] | None = None,
     ) -> RecipeResult:
         as_of = as_of or date.today()
         if constraints is not None:
@@ -656,12 +661,17 @@ class NaturalLanguagePerfumeryAI:
                 ),
                 avoided_dimensions=sorted(brief.avoided_dimensions),
             )
+        if progress_callback is not None:
+            progress_callback("INGREDIENT_SCREENING")
         candidates, rejected = self.screen.screen(
             self.catalog,
             brief,
             supplier_registry=self.supplier_registry,
             as_of=as_of,
         )
+
+        if progress_callback is not None:
+            progress_callback("SAFETY_CHECK")
 
         for pyramid in brief.pyramid_ratios:
             if brief.pyramid_ratios[pyramid] > 0 and not any(item.pyramid == pyramid for item in candidates):
@@ -811,6 +821,8 @@ class NaturalLanguagePerfumeryAI:
                 return False
             return True
 
+        if progress_callback is not None:
+            progress_callback("RATIO_OPTIMIZATION")
         try:
             selected_candidates = self.optimizer._select_candidates(candidates, brief)
             property_ids = [item.ingredient_id for item in candidates]

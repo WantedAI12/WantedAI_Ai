@@ -344,10 +344,12 @@ class ScientificPropertyStore(SQLiteConnectionOwner):
 
     @staticmethod
     def with_catalog_structures(ingredients, properties: Mapping[str, MolecularProperties]) -> dict[str, MolecularProperties]:
-        """Fill only missing molecule descriptors, never measured VP/BP/ODT.
+        """Fill calculated descriptors, then join independent physical evidence.
 
         The builder stores RDKit-calculated values bound to the exact registry
         structure. Existing measurements and curated centroids win unchanged.
+        Structure calculations never invent VP/BP/ODT. Those fields may only
+        be filled by the separate exact-identity evidence index below.
         No database writes or per-ingredient SQL queries occur here.
         """
         ingredients = tuple(ingredients)
@@ -423,7 +425,12 @@ class TemporalMixtureSimulator:
         targets = []
         for minutes in TIMEPOINTS_MINUTES:
             phase = cls._phase_for_time(minutes)
-            target = effective_phase_target(brief, phase)
+            explicit = brief.phase_target_profiles.get(phase)
+            # A perfume phase with only exclusions has no positive target.
+            # Keep it unscorable instead of borrowing another phase's scent;
+            # the lotion design path has a separate inheritance contract.
+            target = (dict(explicit) if explicit is not None and not any(explicit.values())
+                      else effective_phase_target(brief, phase))
             targets.append((
                 profile_vector(target),
                 [axis for axis,value in target.items() if value > 0],

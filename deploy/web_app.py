@@ -260,7 +260,7 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY, *, runtime_catalog_path
         assert_catalog_current()
         return dict(catalog_snapshot)
 
-    def generate_formula(request: FormulaRequest, response: Response, *, target_profile_override=None, explicit_bans=(), rate_limited=False, fixed_formula_weights=None, intent_controls=None) -> dict:
+    def generate_formula(request: FormulaRequest, response: Response, *, target_profile_override=None, explicit_bans=(), rate_limited=False, fixed_formula_weights=None, intent_controls=None, progress_callback=None) -> dict:
         if not rate_limited:
             enforce_formula_rate_limit()
         constraints = RecipeConstraints(
@@ -317,7 +317,8 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY, *, runtime_catalog_path
                                                 intent_controls=intent_controls).to_dict()
                 return ai.create_recipe(request.brief.strip(), constraints, as_of=as_of,
                                         target_profile_override=target_profile_override,
-                                        **({"intent_controls": intent_controls} if intent_controls else {})).to_dict()
+                                        **({"intent_controls": intent_controls} if intent_controls else {}),
+                                        **({"progress_callback": progress_callback} if progress_callback is not None else {})).to_dict()
 
         try:
             # Optional operator-provided promotion, continual or language-model
@@ -364,6 +365,14 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY, *, runtime_catalog_path
     @web.post("/v1/formulas")
     def formulas(request: FormulaRequest, response: Response) -> dict:
         return generate_formula(request, response)
+
+    from deploy.formula_stream import register_formula_stream
+    register_formula_stream(web, FormulaRequest, generate_formula, enforce_formula_rate_limit, assert_catalog_current)
+
+    # Audit/report routes transform backend-owned history only. They cannot
+    # invoke generate_formula and do not mutate the recipe JSON contract.
+    from deploy.audit_api import register_audit_routes
+    register_audit_routes(web, enforce_formula_rate_limit)
 
     from fragrance_ai.platform.ai_extensions import register_ai_extensions
     register_ai_extensions(web, FormulaRequest, runtime_catalog, generate_formula, enforce_formula_rate_limit,
