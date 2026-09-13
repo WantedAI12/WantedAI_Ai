@@ -195,7 +195,7 @@ def _load(path, sha256, stat):
 def configured_lotion_surrogate():
     from .local_runtime import local_profile
     profile = local_profile()
-    if profile is not None and 'unified_product' in profile:
+    if profile is not None and ('unified_product' in profile or 'formulation_core' in profile):
         from .unified_transport import configured_unified_transport, UnifiedLotionAdapter
         return UnifiedLotionAdapter(configured_unified_transport())
     if profile is None or 'lotion_release' not in profile:

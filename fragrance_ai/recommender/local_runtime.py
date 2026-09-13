@@ -50,6 +50,8 @@ def _parse_profile(path, raw):
     names = ('catalog', 'perfume', 'body_lotion', 'atlas', 'stock_mixture')
     if 'odor_backbone' in value:
         names += ('odor_backbone',)
+    if 'formulation_core' in value:
+        names += ('formulation_core',)
     if 'lotion_release' in value:
         names += ('lotion_release',)
     if 'lotion_target_reference' in value:
@@ -116,6 +118,11 @@ def local_odor_backbone_provider():
     Transport inputs contain physical rates/capacities, not Atlas outputs.
     Their original training parent pins remain mandatory and unchanged.
     """
+    from .formulation_core import configured_formulation_core
+    from .formulation_views import shared_views
+    core = configured_formulation_core()
+    if core is not None:
+        return shared_views(core)[0]
     profile = local_profile()
     parent = local_atlas_provider()
     if 'odor_backbone' not in profile:
@@ -125,12 +132,15 @@ def local_odor_backbone_provider():
     with _LOCK:
         candidate = _atlas(path,digest,stat.st_size,stat.st_mtime_ns)
     if (candidate.parent_checkpoint_sha256 != parent.sha256
-            or candidate.artifact_version != 'structured-multioutput-atlas/v66'
+            or candidate.artifact_version not in ('structured-multioutput-atlas/v66', 'scientific-molecular-atlas/v68')
             or not candidate.development_nonregression_passed
             or candidate.source_digest != parent.source_digest
             or candidate.endpoints != parent.endpoints
             or any(candidate.models[k]['features'] != parent.models[k]['features'] for k in parent.models)):
         raise ValueError('odor backbone must preserve its verified molecular source and direct parent')
+    if candidate.artifact_version == 'scientific-molecular-atlas/v68' and any(
+            head['kind'] != 'atlas-quantitative-profiles/v4' for head in candidate.models.values()):
+        raise ValueError('scientific backbone requires its fitted geometry on every measurement head')
     return candidate
 
 
@@ -145,6 +155,10 @@ def _bridge(component, path, digest, size, mtime, profile_sha):
 
 def local_lotion_provider(component, *, reference=None):
     profile = local_profile()
+    if getattr(component, 'core', None) is not None:
+        if reference not in (None, 'atlas'):
+            raise ValueError('shared formulation runtime has one odor-reference view, not a legacy component checkpoint')
+        return component
     # Explicit legacy component configuration still means component unless the
     # operator also selects an Atlas bridge. Never silently ignore an override.
     from .perception_runtime import LOTION_PATH_ENV, LOTION_HASH_ENV
@@ -156,7 +170,18 @@ def local_lotion_provider(component, *, reference=None):
     if mode != 'atlas' or profile is None or component is None:
         raise ValueError('Atlas selection requires a complete local runtime profile')
     selected = local_odor_backbone_provider()
+    if hasattr(selected, 'core'):
+        return _shared_bridge(component, selected, profile['profile_sha256'])
     path, digest = str(selected.path), selected.sha256
     stat = Path(path).stat()
     with _LOCK:
         return _bridge(component, path, digest, stat.st_size, stat.st_mtime_ns, profile['profile_sha256'])
+
+
+@lru_cache(maxsize=4)
+def _shared_bridge(component, selected, profile_sha):
+    from .lotion_atlas import AtlasLotionGuidance
+    provider = AtlasLotionGuidance(selected, component.structures, experimental=True)
+    provider.runtime_component_provider = component
+    provider.runtime_local_profile_sha256 = profile_sha
+    return provider

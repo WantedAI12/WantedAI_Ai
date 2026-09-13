@@ -222,7 +222,8 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
     assert_provider_product(perception_provider, 'perfume')
     assert_provider_product(lotion_provider, 'body_lotion')
     if stock_mixture_predictor is not None:
-        if stock_mixture_predictor.provider is not perception_provider:
+        from ..recommender.frozen_stock_assay import FrozenStockAssay
+        if not isinstance(stock_mixture_predictor, FrozenStockAssay) and stock_mixture_predictor.provider is not perception_provider:
             raise ValueError('stock mixture requires the same bound component provider')
         stock_mixture_predictor.assert_current()
     if lotion_provider is not None and lotion_provider is perception_provider:
@@ -269,6 +270,19 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
         if runtime_guard is not None:
             runtime_guard()
         return formulation_workflow(request)
+
+    from .emulsion_inputs import EmulsionRequest
+
+    @app.post('/v1/formulation-workflows/emulsion-prediction')
+    def predict_emulsion(request: EmulsionRequest):
+        rate_limit()
+        if runtime_guard is not None:
+            runtime_guard()
+        from ..recommender.formulation_core import configured_formulation_core
+        core = configured_formulation_core()
+        if core is None:
+            raise HTTPException(status_code=503, detail='shared formulation checkpoint not configured')
+        return core.emulsion(request.raw_rows())
 
     @app.post('/v1/ai/assistant')
     def assistant(request: AssistantRequest, response: Response):
@@ -466,6 +480,8 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
         assert_provider_current(perception_provider)
         assert_lotion_current()
         language_contract = getattr(language_backend, 'contract', None)
+        from ..recommender.formulation_core import configured_formulation_core
+        shared = configured_formulation_core()
         return {"schema_version": "ai-capabilities-1", "supported_product_codes": sorted(supported_products),
             "integration_contract": operation_contracts(app, supported_products,
                 unified_available=unified_predictor is not None,
@@ -478,6 +494,7 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
             "unified_product_model": unified_predictor.contract() if unified_predictor is not None else None,
             "odor_expression":{**expression_contract(),'prediction_model':fine_model.contract() if fine_model else None},
             "formulation_knowledge": knowledge_contract(),
+            "shared_formulation_model": shared.contract() if shared is not None else None,
             "product_models": {
                 "perfume": {"product": "perfume", "component_model": model_contract(perception_provider),
                             "prediction_model": "perfume_temporal_mixture", "cross_product_scores_comparable": False,

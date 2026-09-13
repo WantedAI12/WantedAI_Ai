@@ -311,6 +311,11 @@ def _load(path, digest, size, mtime):
 
 
 def configured_unified_transport():
+    from .formulation_core import configured_formulation_core
+    from .formulation_views import shared_views
+    core = configured_formulation_core()
+    if core is not None:
+        return shared_views(core)[2]
     from .local_runtime import local_profile
     profile = local_profile()
     pair = profile.get('unified_product') if profile else None

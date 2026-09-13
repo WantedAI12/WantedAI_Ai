@@ -187,6 +187,11 @@ def _load(path, digest, size, mtime, provider, calibration_key):
 
 
 def configured_fine_odor():
+    from .formulation_core import configured_formulation_core
+    from .formulation_views import shared_views
+    core = configured_formulation_core()
+    if core is not None:
+        return shared_views(core)[1]
     from .local_runtime import local_profile
     profile = local_profile()
     if not profile or 'odor_expression' not in profile:

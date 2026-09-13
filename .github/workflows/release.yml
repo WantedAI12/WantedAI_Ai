@@ -22,6 +22,7 @@ jobs:
       OMP_NUM_THREADS: "1"
       OPENBLAS_NUM_THREADS: "1"
       MKL_NUM_THREADS: "1"
+      PERFUMERY_AI_LOCAL_PROFILE: "disabled"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -38,6 +39,8 @@ jobs:
             numpy==2.2.6 fastapi==0.116.1 cryptography==46.0.3 \
             httpx==0.28.1 PyJWT==2.10.1 pytest==8.4.2 rdkit==2025.9.4 scipy==1.15.2 \
             starlette==0.47.3 anyio==4.10.0
+      - name: Install CPU-only neural export test dependency
+        run: python -m pip install torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu
       - name: Verify tracked LFS artifacts
         run: |
           git lfs ls-files
@@ -50,6 +53,15 @@ jobs:
             fragrance_ai/platform fragrance_ai/recommender deploy \
             fragrance_ai/research/atlas_profiles.py fragrance_ai/research/atlas_inference.py \
             fragrance_ai/research/structured_kernel.py \
+            fragrance_ai/research/scientific_kernel.py \
+            fragrance_ai/research/formulation_network.py \
+            scripts/bind_shared_reference_v69.py scripts/expand_formulation_process_v69.py \
+            scripts/prepare_emulsion_v69.py scripts/prepare_formulation_v69.py \
+            scripts/train_formulation_v69.py scripts/verify_formulation_v69.py \
+            scripts/verify_shared_products_v69.py scripts/serve_product_runtime_v42.py \
+            tests/test_formulation_core_v69.py \
+            scripts/train_main_backbone_v68.py scripts/verify_scientific_backbone_v68.py \
+            tests/test_scientific_backbone_v68.py tests/test_exposure_transport_v68.py \
             scripts/train_main_backbone_v66.py scripts/verify_main_backbone_v66.py \
             scripts/verify_spec_contract_v67.py scripts/verify_physical_exposure_v65.py \
             scripts/verify_search_recovery_v64.py scripts/benchmark_search_recovery_v64.py \
@@ -128,6 +140,10 @@ jobs:
           tests/test_search_recovery_v64.py
           tests/test_physical_exposure_v65.py
           tests/test_main_backbone_v66.py
+          tests/test_scientific_backbone_v68.py
+          tests/test_exposure_transport_v68.py
+          tests/test_formulation_core_v69.py
+          tests/test_unified_product_v60.py
           tests/test_spec_contract_v67.py
       - name: Build clean wheel
         run: python -m build --wheel --outdir artifacts/dist

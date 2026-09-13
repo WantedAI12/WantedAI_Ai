@@ -242,12 +242,13 @@ def test_shared_budget_is_consumed_across_multiple_stages():
 
 
 def test_product_pipeline_shares_one_budget_for_all_stages(model, monkeypatch):
+    from fragrance_ai.recommender.exposure_transport import exposure_trajectory
     seen = []
     def counted(*args, **kwargs):
         budget = kwargs['work_budget']
         seen.append((id(budget), budget['remaining_material_transitions']))
-        return trajectory(*args, **kwargs)
-    monkeypatch.setattr('fragrance_ai.recommender.unified_product.trajectory', counted)
+        return exposure_trajectory(*args, **kwargs)
+    monkeypatch.setattr('fragrance_ai.recommender.unified_product.exposure_trajectory', counted)
     result = make_predictor(model).predict(UnifiedProductRequest(**request_payload()))
     assert len(seen) == 2 and seen[0][0] == seen[1][0]
     assert seen[1][1] < seen[0][1]

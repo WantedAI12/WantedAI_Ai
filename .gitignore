@@ -17,6 +17,10 @@ catboost_info/
 *.token
 .modal.toml
 perfumery.local.json
+perfumery.v68.local.json
+perfumery.v68.control.json
+perfumery.v68.rollback.json
+perfumery.v69.local.json
 dist/odor-calibration-v62/
 
 fragrance_ai/data/reference_fragrances.db
@@ -97,9 +101,14 @@ tests/*
 !tests/test_main_backbone_v66.py
 !tests/test_rd_contract.py
 !tests/test_spec_contract_v67.py
+!tests/test_scientific_backbone_v68.py
+!tests/test_exposure_transport_v68.py
+!tests/test_formulation_core_v69.py
 
 # Local model/catalog bindings are not distribution-cleared release bundles.
 dist/search-recovery-v64/
 dist/physical-exposure-v65/
 dist/main-backbone-v66/
 dist/spec-contract-v67/
+dist/scientific-backbone-v68/
+dist/shared-formulation-v69/

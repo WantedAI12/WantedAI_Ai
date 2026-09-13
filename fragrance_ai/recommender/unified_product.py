@@ -1,15 +1,15 @@
-"""Shared V54 odor backbone + V60 trained transport for finished-product input.
+"""Pinned odor backbone and positive exposure moments for finished products.
 
-This is one conditional forward path, not three copies of model weights. The
-stock-aliquot V54 mixture residual is intentionally not applied to a finished
-product outside its assay domain. Existing recipe generators remain compatible.
+The V60 transport checkpoint retains provenance and its separate legacy lotion
+adapter. This finished-product lane uses an adaptive physical moment operator,
+not its neural transition correction. Stock-assay heads retain their own domain.
 """
 import hashlib
 import json
 
 import numpy as np
 
-from .unified_transport import trajectory
+from .exposure_transport import exposure_trajectory, VERSION as EXPOSURE_VERSION
 from .lotion_atlas import AtlasReferenceGuidance, ATLAS_PROJECTION
 from .lotion_surrogate import MASS_FIELDS
 from .models import RecipeConstraints, SCENT_DIMENSIONS
@@ -20,7 +20,12 @@ class UnifiedProductPredictor:
                  odor_backbone_sha256=None):
         # Legacy callers keep the exact original parent contract. A newer
         # odor-only backbone must be selected explicitly by its runtime pin.
-        expected = odor_backbone_sha256 or transport.manifest['parent_models']['atlas']['sha256']
+        transport_parent = transport.manifest.get('parent_models', {}).get('atlas', {}).get('sha256')
+        expected = odor_backbone_sha256 or transport_parent
+        if hasattr(transport, 'core'):
+            if getattr(atlas, 'core', None) is not transport.core or getattr(fine_model, 'core', None) is not transport.core:
+                raise ValueError('shared formulation views must own the same checkpoint instance')
+            expected = transport.core.sha256
         if expected != atlas.sha256:
             raise ValueError('unified transport / molecular backbone binding mismatch')
         if reference_bank is not None and (reference_bank.parent_sha256 != atlas.sha256
@@ -45,10 +50,15 @@ class UnifiedProductPredictor:
         self.assert_current()
         return {**self.transport.contract(), 'shared_odor_backbone_sha256': self.atlas.sha256,
             'odor_backbone_version': getattr(self.atlas,'artifact_version',None),
-            'transport_training_atlas_sha256': self.transport.manifest['parent_models']['atlas']['sha256'],
+            'transport_training_atlas_sha256': self.transport.manifest.get('parent_models', {}).get('atlas', {}).get('sha256'),
             'target_reference_sha256': self.references.sha256 if self.references is not None else None,
             'fine_odor_expression':self.fine_model.contract() if self.fine_model is not None else None,
             'odor_endpoints': len(self.atlas.endpoints), 'learned_stock_assay_head_applied': False,
+            'finished_product_integrator': EXPOSURE_VERSION,
+            'learned_transport_applied_to_finished_product': False,
+            'rollout_precision_policy': 'adaptive_step_doubling_on_mass_and_exposure_moments',
+            'transport_checkpoint_role': 'shared_neural_head_with_physical_error_control' if hasattr(self.transport, 'core') else 'lineage_and_separate_legacy_lotion_adapter',
+            'shared_formulation_core': hasattr(self.transport, 'core'),
             'prediction_scope': 'conditional_product_transport_and_ordinal_odor_reference_proxy',
             'coefficient_sources_verified': False, 'cross_product_human_scores_comparable': False}
 
@@ -82,15 +92,13 @@ class UnifiedProductPredictor:
         state[:, 0] = mass*parent
         state[:, 4] = mass*(1-parent)
         times = np.asarray(request.times_minutes)
-        # Reference evaluation uses fixed integration samples, not user-chosen
-        # display points (which could otherwise hide an unwanted scent phase).
-        canonical, offset = [0.], 0.
-        for stage in context.stages:
-            canonical.extend((offset+np.linspace(0., 1., 33)[1:]**2*stage.duration_minutes).tolist())
-            offset += stage.duration_minutes
-        canonical = np.asarray(canonical)
-        model_times = np.unique(np.r_[times, canonical])
+        # Exposure is an augmented occupation integral, not trapezoids through
+        # a plotting grid that can miss a short early evaporation peak.
+        model_times = times
         observations, event_rows, start = {0.: state.copy()}, [], 0.
+        accumulated = np.zeros((len(ids), 2))
+        exposure_observations = {0.: accumulated.copy()}
+        integration_diagnostics = []
         work_budget = {'remaining_material_transitions': 2_000_000}
         for stage_context, stage in zip(context.stages, request.stages):
             duration = stage_context.duration_minutes
@@ -102,10 +110,13 @@ class UnifiedProductPredictor:
             fractions = np.array([[r.evaporating_capacity_fraction, r.nonreactive_capacity_fraction] for r in coefficients])
             requested = model_times[(model_times > start)&(model_times <= end)]
             local_times = np.unique(np.r_[requested-start, duration])
-            rows, state = trajectory(rates, fractions, local_times, duration=duration,
-                initial=state, operator=self.transport.stable_kernel, work_budget=work_budget)
+            rows, state, integrals, final_integral, diagnostics = exposure_trajectory(
+                rates, fractions, local_times, duration=duration, initial=state, work_budget=work_budget)
+            integration_diagnostics.append({'stage_id': stage.stage_id, **diagnostics})
             for t, index in zip(requested, np.searchsorted(local_times, requested-start)):
                 observations[float(t)] = rows[index].copy()
+                exposure_observations[float(t)] = accumulated + integrals[index]
+            accumulated += final_integral
             if stage.rinse_retained_film_fractions is not None:
                 retention = np.array([stage.rinse_retained_film_fractions[key] for key in ids])
                 removed = state[:, 0]*(1-retention)
@@ -123,6 +134,7 @@ class UnifiedProductPredictor:
         use_oav = request.profile_weighting != 'air_mass' and all_thresholds
         thresholds = np.array([c.odor_threshold_mg_m3 or 1. for c in request.components])
         air = masses[:, :, 1]/context.headspace_height_cm*1e6
+        integrated_air = np.stack([exposure_observations[float(t)][:, 1] for t in times])/context.headspace_height_cm*1e6
         weights = air/thresholds[None, :] if use_oav else air
         projection = np.zeros((len(self.atlas.endpoints), len(SCENT_DIMENSIONS)))
         for j, axis in enumerate(SCENT_DIMENSIONS):
@@ -142,10 +154,11 @@ class UnifiedProductPredictor:
                     requested=set(fine_intent['wanted'])|set(fine_intent['avoided']) if fine_intent else ()),
                 'materials': [{'ingredient_id': key, 'initial_mg_cm2': float(mass[j]),
                     **{field: float(values[j, k]) for k, field in enumerate((*MASS_FIELDS, 'washed_off_mg_cm2'))},
-                    'air_concentration_mg_m3': float(air[i, j])} for j, key in enumerate(ids)]})
-        canonical_air = np.stack([observations[float(t)][:, 1] for t in canonical])/context.headspace_height_cm*1e6
-        canonical_weights = canonical_air/thresholds[None, :] if use_oav else canonical_air
-        assessment = self._assess(request, canonical, canonical_weights, learned_profiles,parsed_brief=parsed_brief)
+                    'air_concentration_mg_m3': float(air[i, j]),
+                    'cumulative_air_exposure_mg_min_m3': float(integrated_air[i, j])} for j, key in enumerate(ids)]})
+        total_air_exposure = accumulated[:, 1]/context.headspace_height_cm*1e6
+        weighted_exposure = total_air_exposure/thresholds if use_oav else total_air_exposure
+        assessment = self._assess(request, weighted_exposure, learned_profiles, parsed_brief=parsed_brief)
         if fine_intent is not None:
             assessment['fine_expression_target_met'] = None
             assessment['fine_expression_similarity_calibrated'] = False
@@ -156,6 +169,14 @@ class UnifiedProductPredictor:
             'temporal_profile': temporal, 'process_events': event_rows, 'reference_assessment': assessment,
             'fine_expression_intent':fine_intent,'fine_expression_material_evidence':fine_evidence,
             'odor_endpoints': list(self.atlas.endpoints), 'missing_odor_profile_ids': missing,
+            'molecular_model_applicability': [
+                {'ingredient_id': item.ingredient_id,
+                 'diagnostics': shapes.basis.get(item.ingredient_id, {}).get('model_applicability_diagnostics')}
+                for item in items],
+            'integrated_exposure': {'method': EXPOSURE_VERSION,
+                'materials': [{'ingredient_id': key, 'air_exposure_mg_min_m3': float(total_air_exposure[j])}
+                              for j, key in enumerate(ids)],
+                'stages': integration_diagnostics},
             'profile_weighting': 'odor_activity_proxy' if use_oav else 'air_mass_proxy',
             'diagnostics': {'mass_balance_max_abs_error_mg_cm2': float(np.max(np.abs(masses.sum(axis=2)-mass))),
                 'nonnegative': bool(np.all(masses >= 0)),
@@ -168,13 +189,13 @@ class UnifiedProductPredictor:
                 'materials': [{'ingredient_id': r.ingredient_id, 'kind': r.source_kind, 'reference': r.source_reference}
                               for r in s.coefficients]} for s in request.stages],
             'human_similarity_percent': None, 'manufacturing_approved': False,
-            'limitations': ['Transport checkpoint is trained on numerical transition labels, not measured finished-product release.',
+            'limitations': ['Finished-product states and exposure are numerical kinetic predictions, not measured product release.',
                 'Supplied stage coefficients must describe the actual carrier, dilution, temperature and phase capacity.',
                 'No inferred micellar phase transitions, ethanol activity coefficients or skin deposition without context data.',
                 'The shared 146-axis reference shape and its linear airborne mixture are not calibrated human similarity.',
                 'Existing recipe acceptance gates and the stock-aliquot assay head have not been replaced by this product proxy.']}
 
-    def _assess(self, request, times, weights, learned_profiles, *, parsed_brief=None):
+    def _assess(self, request, exposure, learned_profiles, *, parsed_brief=None):
         if request.brief is None:
             return {'status': 'not_requested'}
         if self.references is None or learned_profiles is None:
@@ -187,7 +208,6 @@ class UnifiedProductPredictor:
             'avoided': brief.avoided_dimensions}])
         if unsupported:
             return {'status': 'unsupported', 'score': None, 'unsupported_requirements': unsupported}
-        exposure = np.sum((weights[:-1]+weights[1:])*np.diff(times)[:, None]/2., axis=0)/times[-1]
         if exposure.sum() <= 0:
             return {'status': 'unavailable', 'score': None, 'reason': 'no_modeled_airborne_exposure'}
         predicted = np.einsum('n,hnk->hk', exposure/exposure.sum(), learned_profiles)
@@ -212,7 +232,7 @@ def configured_unified_product(catalog, *, component_provider=None):
     if provider is None:
         raise ValueError('unified model requires a bound material-identity registry')
     profile = local_profile()
-    expected = profile.get('odor_backbone',profile['atlas'])[1]
+    expected = profile.get('formulation_core',profile.get('odor_backbone',profile['atlas']))[1]
     return UnifiedProductPredictor(model, local_odor_backbone_provider(), provider.structures, catalog,
         reference_bank=load_configured_reference_bank(),fine_model=configured_fine_odor(),
         odor_backbone_sha256=expected)

@@ -6,8 +6,6 @@ import threading
 from datetime import date
 from pathlib import Path
 
-import modal
-
 
 ROOT = Path(__file__).resolve().parents[1]
 WHEEL = (
@@ -156,9 +154,21 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY, *, runtime_catalog_path
     wheel_sha = bundle['binding']['wheel_sha256'] if bundle else WHEEL_SHA256
     catalog_sha = bundle['binding']['sha256'] if bundle else RUNTIME_CATALOG_SHA256
     manifest_sha = bundle['manifest_sha256'] if bundle else None
-    prepared_path = Path(runtime_catalog_path) if runtime_catalog_path else (RUNTIME_CATALOG if modal.is_local() else Path(REMOTE_CATALOG))
     if bundle:
         prepared_path = bundle['catalog_path']
+    elif runtime_catalog_path:
+        prepared_path = Path(runtime_catalog_path)
+    else:
+        # An explicitly pinned local API needs no cloud deployment SDK. Only
+        # the legacy implicit host-path selection consults Modal's environment.
+        try:
+            import modal
+        except ModuleNotFoundError as error:
+            if error.name != 'modal':
+                raise
+            prepared_path = RUNTIME_CATALOG
+        else:
+            prepared_path = RUNTIME_CATALOG if modal.is_local() else Path(REMOTE_CATALOG)
     prepared = bool(catalog_sha and prepared_path.is_file())
     if (runtime_catalog_path or catalog_sha) and not prepared:
         raise ValueError("required runtime catalog is unavailable")

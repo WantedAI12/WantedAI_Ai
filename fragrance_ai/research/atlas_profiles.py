@@ -282,6 +282,8 @@ def fit_atlas_structured(
 
 
 def predict_atlas(model, x):
+    if model.get("kind") == "atlas-quantitative-profiles/v4":
+        return predict_atlas_scientific(model, x)
     kind = model.get("kind")
     transform = model.get("target_transform", "identity")
     if (
@@ -341,6 +343,113 @@ def predict_atlas(model, x):
     return prediction
 
 
+def fit_atlas_scientific(
+    x,
+    y,
+    alpha,
+    alignment_regularization,
+    *,
+    target_transform="sqrt",
+    output_coupling=0.9,
+):
+    """Learn molecular geometry mixing inside the current training fold only."""
+    from .scientific_kernel import (
+        MolecularGeometry,
+        ScientificKernel,
+        fit_geometry,
+        fit_alignment,
+        kernel_prior,
+    )
+    from .structured_kernel import fit_structured_kernel
+
+    x, y = np.asarray(x, float), np.asarray(y, float)
+    if (
+        not _valid_features(x)
+        or len(x) < 2
+        or y.ndim != 2
+        or len(y) != len(x)
+        or y.shape[1] < 2
+        or not np.isfinite(y).all()
+        or np.any(y < 0)
+        or target_transform not in ("identity", "sqrt", "log1p")
+    ):
+        raise ValueError("invalid scientific Atlas training input")
+    target = (
+        np.sqrt(y)
+        if target_transform == "sqrt"
+        else np.log1p(y)
+        if target_transform == "log1p"
+        else y
+    )
+    geometry = fit_geometry(x)
+    blocks = MolecularGeometry.from_dict(geometry).blocks(x, x)
+    alignment = fit_alignment(
+        blocks, target, regularization=alignment_regularization, prior=kernel_prior()
+    )
+    specification = {"geometry": geometry, "alignment": alignment}
+    kernel = ScientificKernel(specification).combine(blocks, x, x)
+    solution = fit_structured_kernel(
+        kernel, target, alpha=alpha, output_coupling=output_coupling
+    )
+    return {
+        "kind": "atlas-quantitative-profiles/v4",
+        "features": FEATURES,
+        "support": x.tolist(),
+        "weights": solution["coefficients"].tolist(),
+        "intercept": solution["intercept"].tolist(),
+        "alpha": float(alpha),
+        "target_transform": target_transform,
+        "kernel_normalization": "unit_diagonal",
+        "kernel_specification": specification,
+        "training_solver": solution["diagnostics"],
+    }
+
+
+def inverse_atlas_target(latent, transform):
+    """One finite inverse transform shared by portable and compiled inference."""
+    if transform not in ("identity", "sqrt", "log1p"):
+        raise ValueError("invalid Atlas inverse target transform")
+    latent = np.maximum(0.0, latent)
+    with np.errstate(over="raise", invalid="raise"):
+        prediction = (
+            latent**2
+            if transform == "sqrt"
+            else np.expm1(latent)
+            if transform == "log1p"
+            else latent
+        )
+    if not np.isfinite(prediction).all():
+        raise ValueError("nonfinite inverse Atlas target transform")
+    return prediction
+
+
+def predict_atlas_scientific(model, x):
+    from .scientific_kernel import ScientificKernel
+
+    x, support, weights, intercept = (
+        np.asarray(v, float)
+        for v in (x, model["support"], model["weights"], model["intercept"])
+    )
+    if (
+        model.get("kind") != "atlas-quantitative-profiles/v4"
+        or model.get("features") != FEATURES
+        or model.get("kernel_normalization") != "unit_diagonal"
+        or not _valid_features(x)
+        or not _valid_features(support)
+        or x.shape[1] != support.shape[1]
+        or intercept.ndim != 1
+        or len(intercept) < 2
+        or weights.shape != (len(support), len(intercept))
+        or not np.isfinite(weights).all()
+        or not np.isfinite(intercept).all()
+        or not np.isfinite(model["alpha"])
+        or model["alpha"] <= 0
+    ):
+        raise ValueError("invalid scientific Atlas checkpoint")
+    kernel = ScientificKernel(model["kernel_specification"])(x, support)
+    return inverse_atlas_target(kernel @ weights + intercept, model["target_transform"])
+
+
 class AtlasProfilePredictor:
     """Local, source-bound quantitative descriptor model for known graphs."""
 
@@ -391,7 +500,7 @@ class AtlasProfilePredictor:
         if (stat.st_size, stat.st_mtime_ns) != self._file_metadata:
             raise ValueError("Atlas checkpoint changed; reload the local runtime")
 
-    def predict(self, graphs, *, reference_level="high"):
+    def _query_features(self, graphs, *, reference_level):
         self.assert_current()
         from rdkit import Chem
 
@@ -408,4 +517,15 @@ class AtlasProfilePredictor:
         x = atlas_features(
             canonical, [reference_level] * len(canonical), self.native, self.fine
         )
-        return self._compiled.predict(x)
+        return x
+
+    def predict(self, graphs, *, reference_level="high"):
+        return self._compiled.predict(
+            self._query_features(graphs, reference_level=reference_level)
+        )
+
+    def predict_with_diagnostics(self, graphs, *, reference_level="high"):
+        """Profile predictions plus train-domain facts, not calibrated confidence."""
+        return self._compiled.predict_with_diagnostics(
+            self._query_features(graphs, reference_level=reference_level)
+        )
