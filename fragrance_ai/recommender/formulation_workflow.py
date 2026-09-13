@@ -127,7 +127,7 @@ def _batch(context, process, method):
             "scope": "mass_balance_only_not_a_manufacturing_approval"}
 
 
-def formulation_workflow(request):
+def formulation_workflow(request, *, include_learned=True):
     request = WorkflowRequest.model_validate(request)
     data, _ = _knowledge()
     result = {"schema_version": "formulation-workflow/1", "product_type": request.product_type,
@@ -223,6 +223,12 @@ def formulation_workflow(request):
     result["process_constraints_satisfied"] = False if any(row["severity"] == "conflict" for row in result["checks"]) else None
     if result["process_constraints_satisfied"] is False:
         result["status"] = "process_conflict"
+    if include_learned:
+        from .formulation_core import configured_formulation_core
+        core = configured_formulation_core()
+        if core is not None:
+            from .formulation_process import learned_workflow
+            result['learned_process'] = learned_workflow(request, core, request.completed_step_ids)
     return result
 
 

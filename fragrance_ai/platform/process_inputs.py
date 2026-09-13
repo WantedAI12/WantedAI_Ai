@@ -38,6 +38,14 @@ class WorkflowRequest(ProcessInput):
     product_type: Literal["perfume", "body_lotion"]
     application_context: ApplicationContext | None = None
     process: ManufacturingProcess = Field(default_factory=ManufacturingProcess)
+    completed_step_ids: list[str] = Field(default_factory=list, max_length=512)
+
+    @model_validator(mode='after')
+    def known_completed_steps(self):
+        from ..recommender.formulation_process import ACTIONS
+        if any(step not in ACTIONS for step in self.completed_step_ids):
+            raise ValueError('unknown manufacturing history action')
+        return self
 
     @model_validator(mode="after")
     def product_domain(self):

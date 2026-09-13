@@ -5,6 +5,7 @@ conditions to lotion doses. Descriptor applicability and use retain separate
 heads; full endpoint mass (including off-notes) survives normalization.
 """
 from collections import OrderedDict
+from copy import deepcopy
 from types import MappingProxyType
 import threading
 
@@ -67,6 +68,7 @@ class AtlasReferenceGuidance:
         self.solvent, self.weight = None, 0.
         self.fine_odor_features = model.fine
         self.lotion_shape_cache = OrderedDict()
+        self.lotion_domain_cache = {}
         self.lotion_shape_cache_lock = threading.RLock()
 
     def assert_current(self):
@@ -131,7 +133,7 @@ class AtlasLotionShapes:
         self.graphs[item.ingredient_id] = graph
         return graph
 
-    def _store(self, item, shape):
+    def _store(self, item, shape, diagnostics=None):
         self.shapes[item.ingredient_id] = shape
         if shape is None:
             self.missing.add(item.ingredient_id)
@@ -142,6 +144,7 @@ class AtlasLotionShapes:
             'reference_predictions': [dict(row) for row in REFERENCES],
             'numeric_stock_dilution_known': False, 'intensity_model': False,
             'catalog_profile_feature_available': self.graphs[item.ingredient_id] in self.provider.model.native,
+            'model_applicability_diagnostics': deepcopy(diagnostics),
         }
 
     def prefetch(self, items):
@@ -156,7 +159,7 @@ class AtlasLotionShapes:
             with self.provider.lotion_shape_cache_lock:
                 cache = self.provider.lotion_shape_cache
                 if graph in cache:
-                    self._store(item, cache[graph])
+                    self._store(item, cache[graph], self.provider.lotion_domain_cache.get(graph))
                     cache.move_to_end(graph)
                     self.shared_cache_hits += 1
                     continue
@@ -164,7 +167,11 @@ class AtlasLotionShapes:
         graphs = list(pending)
         for offset in range(0, len(graphs), 128):
             batch = graphs[offset:offset+128]
-            outputs = self.provider.model.predict(batch, reference_level='high')
+            diagnostic_forward = getattr(self.provider.model, 'predict_with_diagnostics', None)
+            if diagnostic_forward is None:
+                outputs, diagnostics = self.provider.model.predict(batch, reference_level='high'), None
+            else:
+                outputs, diagnostics = diagnostic_forward(batch, reference_level='high')
             if set(outputs) != {'applicability', 'use'}:
                 raise ValueError('distinct Atlas reference predictions required')
             raw = np.stack([outputs[row['measurement']] for row in REFERENCES])
@@ -174,17 +181,20 @@ class AtlasLotionShapes:
             self.calls += len(batch)
             self.forward_batches += 1
             for i, graph in enumerate(batch):
+                domain = {head: rows[i] for head, rows in diagnostics.items()} if diagnostics is not None else None
                 totals = raw[:, i].sum(axis=1)
                 shape = None if np.any(totals <= 0) else raw[:, i]/totals[:, None]
                 if shape is not None:
                     shape.setflags(write=False)
                 for item in pending[graph]:
-                    self._store(item, shape)
+                    self._store(item, shape, domain)
                 with self.provider.lotion_shape_cache_lock:
                     self.provider.lotion_shape_cache[graph] = shape
+                    self.provider.lotion_domain_cache[graph] = domain
                     self.provider.lotion_shape_cache.move_to_end(graph)
                     while len(self.provider.lotion_shape_cache) > 3840:
-                        self.provider.lotion_shape_cache.popitem(last=False)
+                        expired, _ = self.provider.lotion_shape_cache.popitem(last=False)
+                        self.provider.lotion_domain_cache.pop(expired, None)
 
     def shape(self, item):
         self.prefetch([item])

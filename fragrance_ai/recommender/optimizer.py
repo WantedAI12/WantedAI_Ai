@@ -502,15 +502,20 @@ class ConstrainedFormulaOptimizer:
         # and internal accord ratios; accept only actual objective improvements
         # with no decrease in the original scent-profile score.
         from .accord_trials import accord_trials
+        from .formulation_refinement import rank_formulation_trials
         def scent_score(current):
             return (profile_scorer or semantic_brief_similarity)(target, achieved_from(current),
                 brief.desired_dimensions, brief.avoided_dimensions)
         for _ in range(2):
             incumbent = weights.copy()
             scent_floor = scent_score(incumbent)
-            for proposal in accord_trials(incumbent, ingredient_vectors, perceptual_multiplier,
+            proposals = accord_trials(incumbent, ingredient_vectors, perceptual_multiplier,
                     target, np.zeros(len(weights)), caps,
-                    budget_groups=[item.pyramid for item in ingredients]):
+                    budget_groups=[item.pyramid for item in ingredients])
+            proposals = rank_formulation_trials(proposals, ingredients, incumbent, ingredient_vectors,
+                perceptual_multiplier, target, product='perfume',
+                concentration_percent=brief.constraints.product_concentration_percent or 15.)
+            for proposal in proposals:
                 if float(prices @ proposal / 100.) > brief.constraints.max_formula_cost_per_kg + 1e-8:
                     continue
                 if scent_score(proposal) + 1e-8 < scent_floor:

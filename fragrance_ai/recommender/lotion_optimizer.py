@@ -388,11 +388,15 @@ def _optimize_lotion_transport(request, catalog, parser=None, *, transport_scena
         'response_basis': weighting, 'human_panel_simulated': False}
     if best is not None and best_score+1e-8 < prepared['effective_target']:
         from .accord_trials import accord_trials
+        from .formulation_refinement import rank_formulation_trials
         for _ in range(2):
             incumbent = best.copy()
             scores = assessments(incumbent)[1]
             worst = int(np.argmin([row['score'] for row in scores]))
-            for candidate in accord_trials(incumbent, profiles, responses[worst], targets[worst], lower, caps):
+            proposals = accord_trials(incumbent, profiles, responses[worst], targets[worst], lower, caps)
+            proposals = rank_formulation_trials(proposals, pool, incumbent, profiles, responses[worst], targets[worst],
+                product='body_lotion', concentration_percent=simulation.application_context.fragrance_concentration_percent)
+            for candidate in proposals:
                 accord_report['trials'] += 1
                 if not valid(candidate):
                     continue

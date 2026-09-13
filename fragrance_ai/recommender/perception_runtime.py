@@ -35,6 +35,10 @@ def _metadata(path):
 def environment_snapshot(product='perfume'):
     if product not in ('perfume', 'body_lotion'):
         raise ValueError('unknown perception product')
+    from .formulation_core import configured_formulation_core
+    core = configured_formulation_core()
+    if core is not None:
+        return ('shared_formulation_core', core.sha256, core._stat(), product)
     path_env, hash_env = (PATH_ENV, HASH_ENV) if product == 'perfume' else (LOTION_PATH_ENV, LOTION_HASH_ENV)
     from .local_runtime import configured_pair
     path, digest = configured_pair(path_env, hash_env, product)
@@ -98,6 +102,11 @@ def _load(snapshot):
 def configured_perception(product='perfume'):
     # functools' cache alone may compute a first miss in multiple threads.
     with _LOAD_LOCK:
+        from .formulation_core import configured_formulation_core
+        from .formulation_guidance import product_guidance
+        core = configured_formulation_core()
+        if core is not None:
+            return product_guidance(core, product)
         snapshot = environment_snapshot(product)
         return None if snapshot is None else _load(snapshot)
 

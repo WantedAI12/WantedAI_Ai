@@ -26,14 +26,18 @@ def create_app(*, lotion_reference=None, enable_language=True):
     lotion = local_lotion_provider(lotion, reference=lotion_reference)
     # An explicit stock-assay lane. Never substituted for perfume or lotion
     # release/quality scores. The cross-moment V49 candidate remains optional.
-    from fragrance_ai import StockMixturePredictor
-    stock_path, stock_sha = profile['stock_mixture']
-    stock = StockMixturePredictor(perfume, stock_path, sha256=stock_sha, experimental=True,
-                                  atlas_predictor=local_atlas_provider())
+    if 'formulation_core' in profile:
+        from fragrance_ai.recommender.frozen_stock_assay import FrozenStockAssay
+        stock = FrozenStockAssay(profile)
+    else:
+        from fragrance_ai import StockMixturePredictor
+        stock_path, stock_sha = profile['stock_mixture']
+        stock = StockMixturePredictor(perfume, stock_path, sha256=stock_sha, experimental=True,
+                                      atlas_predictor=local_atlas_provider())
     from fragrance_ai.recommender.local_language import configured_language
     language = configured_language() if enable_language else None
     path, digest = configured_pair(MANIFEST_ENV, MANIFEST_HASH_ENV, 'catalog')
-    from deploy.modal_app import create_web_app, REGISTRY
+    from deploy.web_app import create_web_app, REGISTRY
     try:
         web = create_web_app(str(REGISTRY), perception_guidance=perfume, lotion_perception_guidance=lotion,
             stock_mixture_predictor=stock, language_backend=language,
