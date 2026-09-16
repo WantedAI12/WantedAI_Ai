@@ -185,7 +185,14 @@ def test_actual_formula_stream_matches_json_and_audit_routes_do_not_run_ai(api_r
         assert ordinary.headers["X-Perfumery-Cache"] == "hit"
         assert result["score_contract"]["runtime_minimum_profile_target"] == 95
         if not result["full_profile_target_met"]:
-            assert result["recipe"] == []
+            assert result['target_match_met'] is False
+            assert result['target_match_score'] == result['calculated_profile_similarity']
+            assert result['recipe_delivery']['approval_inferred'] is False
+            if result['recipe_delivery']['returned']:
+                assert result['recipe'] == result['closest_candidate']
+                assert result['recipe_delivery']['status'] == 'target_not_met'
+            else:
+                assert result['recipe'] == []
         monkeypatch.setattr(NaturalLanguagePerfumeryAI, "create_recipe", lambda *a, **kw: pytest.fail("audit invoked recipe inference"))
         before = client.app.state.formula_cache.stats()["computations"]
         for path in ("/v1/reports/audit", "/v1/audit-logs/stream", "/v1/reports/audit/stream"):
@@ -205,8 +212,13 @@ def test_modal_strict_profile_gate_does_not_fabricate_scores_and_separates_cache
         assert after["score_contract"]["runtime_minimum_profile_target"] == 95
         assert after["brief"]["constraints"]["target_similarity"] == 95
         assert not after["full_profile_target_met"]
-        assert after["recipe"] == []
         assert after["closest_candidate"]
+        assert after['recipe'] == after['closest_candidate']
+        assert after['recipe_delivery']['status'] == 'target_not_met'
+        assert not after['recipe_delivery']['approval_inferred']
+        assert after['assessment_status'] == 'no_safe_match'
+        assert after['target_match_score'] == after['calculated_profile_similarity']
+        assert after['target_match_met'] is False
         assert strict.headers["X-Perfumery-Cache"] == "miss"
         assert client.post("/v1/formulas", json=body).json() == before
 
@@ -343,7 +355,7 @@ def test_phase_api_returns_recipes_with_unchanged_default_threshold(api_runtime)
     assert first.json()["formula_id"] != reverse.json()["formula_id"]
 
 
-def test_modal_defaults_to_95_point_full_profile_gate(api_runtime):
+def test_shared_factory_95_point_gate_is_independent_of_recipe_delivery(api_runtime):
     with TestClient(api_runtime()) as client:
         response = client.post("/v1/formulas", json={"brief": "clean scent"})
         assert response.status_code == 200
@@ -352,7 +364,10 @@ def test_modal_defaults_to_95_point_full_profile_gate(api_runtime):
         assert payload["brief"]["constraints"]["simulation_draws"] == 200
         assert not payload["brief"]["constraints"]["experimental_disable_safety"]
         assert payload["score_contract"]["strict_full_profile_gate"]
-        assert not payload["recipe"]
+        assert payload['recipe'] == payload['closest_candidate'] and payload['recipe']
+        assert payload['recipe_delivery']['status'] == 'target_not_met'
+        assert not payload['recipe_delivery']['approval_inferred']
+        assert payload['target_match_met'] is False
         assert payload["similarity_score"] == payload["calculated_profile_similarity"] < 95
         downgraded = client.post("/v1/formulas", json={"brief": "rose scent", "require_full_profile_match": False,
             "target_similarity": 50, "experimental_disable_safety": True, "enable_registry_trace_candidates": True})

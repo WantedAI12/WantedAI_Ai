@@ -96,13 +96,30 @@ def test_safe_affordable_recipe_exceeds_model_threshold():
     assert result.human_similarity_90_claim_authorized is False
 
 
-def test_green_aquatic_forest_brief_exceeds_threshold():
+def test_supported_green_aquatic_woods_brief_exceeds_threshold():
     result = NaturalLanguagePerfumeryAI().create_recipe(
-        "비 온 뒤 숲처럼 맑고 그린하며 아쿠아틱한 향",
+        "맑고 그린하며 아쿠아틱한 우디 향",
         as_of=AS_OF,
     )
     assert result.status == "prototype_ready"
     assert result.similarity_score >= 90.0
+
+
+def test_rain_forest_scene_preserves_earthy_intent_and_reports_builtin_catalog_gap():
+    # V89 scene expansion adds earthy; the public built-in catalog has no
+    # qualifying earthy material at the unchanged default support threshold.
+    # Do not drop that meaning or substitute the larger private registry.
+    result = NaturalLanguagePerfumeryAI().create_recipe(
+        "비 온 뒤 숲처럼 맑고 그린하며 아쿠아틱한 향", as_of=AS_OF)
+    assert {'aquatic', 'earthy', 'fresh', 'green', 'woody'} <= set(result.brief.desired_dimensions)
+    assert any(row.get('scene_id') == 'rain_forest' for row in result.brief.expression_matches)
+    assert result.status == 'no_safe_match'
+    assert result.recipe == [] and result.closest_candidate == []
+    assert result.calculated_profile_similarity is None
+    assert result.simulation_status == 'not_run'
+    assert not result.full_profile_target_met and not result.safety.internal_gate_passed
+    assert 'earthy' in result.message
+    assert any('earthy' in violation for violation in result.safety.violations)
 
 
 def test_rare_and_blocked_materials_are_never_used():

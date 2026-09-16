@@ -47,7 +47,8 @@ def test_dictionary_pagination_is_stable():
 
 
 def test_family_discriminator_keeps_background_rejected_and_scope_local():
-    target=np.array([.8,.15,.05]); background=np.array([.1,.3,.6])
+    target=np.array([.8,.15,.05])
+    background=np.array([.1,.3,.6])
     bank=SimpleNamespace(profiles={'clean':np.stack([target,target])},background=np.stack([background,background]))
     old=discrimination.contrast_direction(target,background)
     with discrimination.reference_context(bank):
@@ -97,18 +98,19 @@ def test_nested_solver_budget_respects_outer_deadline():
 
 
 def test_first_recovery_reuses_real_baseline_without_cross_request_leakage():
-    from fragrance_ai.recommender.failure_recovery import recovery_context,dose_correction_seed,recovery_seed_score
+    from fragrance_ai.recommender.failure_recovery import dose_correction_context,dose_correction_seed,dose_correction_active
     lines=[{'ingredient_id':'test-only','concentrate_percent':100.}]
-    with recovery_context({'score':88.5,'closest_candidate':lines}):
+    with dose_correction_context({'score':88.5,'closest_candidate':lines}):
         assert dose_correction_seed() is lines
-        assert recovery_seed_score()==88.5
-        with recovery_context():
+        assert dose_correction_active()
+        with dose_correction_context():
             assert dose_correction_seed()==()
         assert dose_correction_seed() is lines
-    assert dose_correction_seed()==() and recovery_seed_score() is None
+    assert dose_correction_seed()==() and not dose_correction_active()
 
 
-def test_proposal_portfolio_never_promotes_a_worse_exact_blend(monkeypatch):
+@pytest.mark.parametrize('proposal,expected,score', [([.7,.3],[.8,.2],80.), ([.9,.1],[.9,.1],90.)])
+def test_released_exact_refinement_accepts_only_a_better_physical_blend(monkeypatch, proposal, expected, score):
     from fragrance_ai.recommender import physical_blend_correction as physical
     from fragrance_ai.recommender import blend_correction,failure_inverse_v87
     class Engine:
@@ -118,16 +120,20 @@ def test_proposal_portfolio_never_promotes_a_worse_exact_blend(monkeypatch):
             return np.ones(1),np.zeros((1,2))
         def __call__(self,*a,**k):
             return 0.,np.zeros((1,2)),None
-    monkeypatch.setattr(physical,'release_factors',lambda *a:(np.ones((2,2)),np.ones((1,2)),None))
-    monkeypatch.setattr(blend_correction,'correct_blend',lambda **k:(np.array([.1,.9]),{'surrogate_score':99.}))
+    def forbid_surrogate_only_proposal(**kwargs):
+        raise AssertionError('released refiner must use the exact final objective')
+    monkeypatch.setattr(blend_correction,'correct_blend',forbid_surrogate_only_proposal)
     monkeypatch.setattr(physical,'subset_engine',lambda e,i:e)
     monkeypatch.setattr(failure_inverse_v87,'expanded_reference_support',lambda *a,**k:np.array([0,1]))
-    monkeypatch.setattr(failure_inverse_v87,'polish_prepared',lambda *a,**k:(np.array([.7,.3]),{}))
+    monkeypatch.setattr(failure_inverse_v87,'polish_prepared',lambda *a,**k:(np.array(proposal),{}))
     target=np.broadcast_to([1.,0.],(2,2,2))
     original=np.array([.8,.2])
     selected,report=physical.correct_physical_blend(Engine(),np.ones((2,2,2)),target,[0.,1.],
         np.zeros_like(target),original,np.zeros(2),np.ones(2),np.ones(2),2.,target_score=90.)
-    np.testing.assert_array_equal(selected,original)
-    assert report['selected_score']==pytest.approx(80.)
+    np.testing.assert_array_equal(selected,np.array(expected))
+    assert report['selected_score']==pytest.approx(score)
     assert report['score_offset']==0.
-    assert {r['proposal_strategy'] for r in report['rounds']}=={'linearized_release','exact_final_objective'}
+    assert report['fresh_physics_evaluations'] >= 1
+    assert report['final_objective_unchanged']
+    assert report['rounds'] and all(r['search_aggregation']=='same_nominal_and_time_weighted_objective_as_final'
+                                   and r['all_material_columns_priced']==2 for r in report['rounds'])
