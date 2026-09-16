@@ -37,6 +37,19 @@ def _read_index(path, size, mtime):
 
 
 def evidence_contract(index_path=INDEX):
+    from .physical_evidence_v76 import configured_pair, load
+    pair = configured_pair()
+    if pair:
+        selected,digest=pair
+        stat=Path(selected).stat()
+        index=load(str(selected),digest,stat.st_size,stat.st_mtime_ns)
+        return {'available':True,'index_sha256':digest,'index_schema':index['schema'],
+                'exact_structure_threshold_records':index['counts']['odor_threshold_ppm'],
+                'exact_cas_property_records':len(index.get('legacy_by_cas',{})),
+                'source_identity_counts':dict(index['counts']),
+                'counts_scope':'qualified_source_identities_not_active_catalog_coverage',
+                'join_policy':index['identity_policy'],
+                'joined_values_are_not_formula_sensory_validation':True}
     path = Path(index_path)
     if not path.is_file():
         return {'available': False, 'joined_values_are_not_formula_sensory_validation': True}
@@ -59,10 +72,13 @@ def _graph(smiles):
 
 
 def enrich_properties(ingredients, properties, *, index_path=INDEX):
+    ingredients = tuple(ingredients)
     result = dict(properties)
     path = Path(index_path)
     if not path.is_file():
-        return result
+        from .physical_evidence_v76 import configured_pair, enrich
+        pair = configured_pair()
+        return enrich(ingredients, result, pair) if pair else result
     stat = path.stat()
     index = _read_index(str(path), stat.st_size, stat.st_mtime_ns)
     for item in ingredients:
@@ -84,4 +100,6 @@ def enrich_properties(ingredients, properties, *, index_path=INDEX):
         if additions:
             result[item.ingredient_id] = replace(prior, **additions,
                 source_ref=prior.source_ref+';identity-joined-evidence:'+';'.join(sources))
-    return result
+    from .physical_evidence_v76 import configured_pair, enrich
+    pair = configured_pair()
+    return enrich(ingredients, result, pair) if pair else result

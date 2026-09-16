@@ -44,8 +44,8 @@ def refinement_score_floors(scores, target_score=95.):
     if (values.ndim != 1 or not len(values) or not np.isfinite(values).all()
             or np.any(values < 0) or np.any(values > 100+1e-7)
             or isinstance(target_score, bool) or not np.isfinite(target_score)
-            or not 95 <= target_score <= 100):
-        raise ValueError('finite profile scores and unchanged 95..100 target required')
+            or not 90 <= target_score <= 100):
+        raise ValueError('finite profile scores and explicit 90..100 target required')
     return np.minimum(values, max(float(values.min()), target_score))
 
 

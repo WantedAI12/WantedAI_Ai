@@ -320,6 +320,8 @@ def test_saved_revision_requires_new_confirmation_and_keeps_parent_lineage(data)
             json={"source": stored(first), "instruction": "less woody"},
         )
         assert response.status_code == 200, response.text
+
+
         revision = response.json()
         assert revision["prepared"]["status"] == "ready"
         assert len(calls) == 1 and first == original
@@ -346,6 +348,37 @@ def test_saved_revision_requires_new_confirmation_and_keeps_parent_lineage(data)
             is False
         )
         assert len(calls) == 2 and first == original
+
+
+def test_immutable_snapshot_source_whitespace_survives_comparison_and_revision(data):
+    from fragrance_ai.platform.rd_snapshots import StoredCandidate
+    catalog, factory, *_ = data
+    client, _ = client_for(catalog, factory())
+    with client:
+        first = evaluate(client)
+        first['raw_source_text'] = {'source note': '  preserve this source text \t\n',
+            'nested': [{' key ': ' trailing space '}]}
+        rehash(first)
+        original = copy.deepcopy(first)
+        parsed = StoredCandidate.model_validate(stored(first))
+        assert parsed.evaluation == first
+        other = second_fixture(first)
+        response = client.post('/v2/formulas/compare', json={'candidates':[stored(first),stored(other,'v2')]})
+        assert response.status_code == 200, response.text
+        response = client.post('/v2/briefs/revise', json={'source':stored(first),'instruction':'less woody'})
+        assert response.status_code == 200, response.text
+        assert first == original
+        first['raw_source_text']['source note'] = first['raw_source_text']['source note'].strip()
+        assert parsed.evaluation == original
+        response = client.post('/v2/briefs/revise',json={'source':stored(first),'instruction':'less woody'})
+        assert response.status_code == 422
+
+
+@pytest.mark.parametrize('value', [{'x':float('nan')}, {'x':float('inf')}, {1:'value'}, {'x':b'text'}, {'x':(1,2)}])
+def test_opaque_snapshot_still_rejects_non_json_values(value):
+    from fragrance_ai.platform.rd_snapshots import assert_json_snapshot
+    with pytest.raises(ValueError):
+        assert_json_snapshot(value)
 
 
 def test_capabilities_explain_product_routes_units_and_storage(data):

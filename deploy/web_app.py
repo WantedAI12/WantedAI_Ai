@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import math
 import threading
 from datetime import date
 from pathlib import Path
@@ -73,8 +74,14 @@ q('raw').textContent=JSON.stringify(data,null,2)}catch(error){q('status').textCo
 </script></body></html>"""
 
 
-def create_web_app(registry_path: str = REMOTE_REGISTRY, *, runtime_catalog_path: str | None = None, allow_legacy_research: bool = False, language_backend=None, perception_guidance=None, lotion_perception_guidance=None, stock_mixture_predictor=None, catalog_manifest_path=None, catalog_manifest_sha256=None):
+def create_web_app(registry_path: str = REMOTE_REGISTRY, *, runtime_catalog_path: str | None = None, allow_legacy_research: bool = False, language_backend=None, perception_guidance=None, lotion_perception_guidance=None, stock_mixture_predictor=None, catalog_manifest_path=None, catalog_manifest_sha256=None, minimum_profile_target: float = 95.):
     """Build the exact FastAPI application used locally and on Modal."""
+
+    if (isinstance(minimum_profile_target, bool)
+            or not isinstance(minimum_profile_target, (int, float))
+            or not math.isfinite(minimum_profile_target)
+            or not 90. <= minimum_profile_target <= 100.):
+        raise ValueError("API default target must be finite model points in [90, 100]")
 
     from collections import deque
     import time
@@ -103,7 +110,7 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY, *, runtime_catalog_path
         max_ingredient_price_per_kg: float = Field(default=300.0, gt=0, le=10_000_000)
         max_formula_cost_per_kg: float = Field(default=180.0, gt=0, le=10_000_000)
         min_availability: float = Field(default=0.75, ge=0, le=1.0)
-        target_similarity: float = Field(default=95.0, gt=0, le=100)
+        target_similarity: float = Field(default=float(minimum_profile_target), gt=0, le=100)
         product_concentration_percent: float = Field(default=15.0, gt=0, le=30)
         max_ingredients: int = Field(default=MAX_FORMULA_INGREDIENTS, ge=3, le=MAX_FORMULA_INGREDIENTS)
         enable_registry_trace_candidates: bool = False
@@ -211,7 +218,7 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY, *, runtime_catalog_path
         **activation_report.to_dict(),
         "registry_sha256": activation_report.registry_sha256,
     }
-    strict_factory = RuntimeAIFactory(catalog=runtime_catalog, minimum_profile_target=95.,
+    strict_factory = RuntimeAIFactory(catalog=runtime_catalog, minimum_profile_target=minimum_profile_target,
         require_full_profile_match=True, allow_experimental_safety=False, perception_guidance=perception_guidance,
         manifest_sha256=manifest_sha)
     binding_contract = {'catalog_manifest_sha256': manifest_sha, 'catalog_sha256': catalog_sha,
@@ -370,14 +377,33 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY, *, runtime_catalog_path
             ),
             "registry_activation_mode": activation_report.activation_mode,
         }
-        return payload
+        from fragrance_ai.platform.backend_wire_contract import normalize_formula_response,CONFIDENCE_CONTRACT
+        response.headers['X-Perfumery-Confidence-Contract']=CONFIDENCE_CONTRACT
+        try:
+            return normalize_formula_response(payload)
+        except ValueError as error:
+            raise HTTPException(status_code=502,detail={'code':'AI_RESPONSE_CONTRACT_INVALID',
+                'message':'AI returned an invalid confidence value'}) from error
 
-    @web.post("/v1/formulas")
+    from fragrance_ai.platform.backend_wire_contract import (
+        FormulaGenerationResponse, recipe_delivery_response, RECIPE_DELIVERY_CONTRACT)
+
+    def generate_formula_response(request, response, **kwargs):
+        payload = generate_formula(request, response, **kwargs)
+        try:
+            result = recipe_delivery_response(payload, product='perfume')
+        except ValueError as error:
+            raise HTTPException(status_code=502, detail={'code': 'AI_RESPONSE_CONTRACT_INVALID',
+                'message': 'AI returned an invalid recipe or target match value'}) from error
+        response.headers['X-Perfumery-Recipe-Contract'] = RECIPE_DELIVERY_CONTRACT
+        return result
+
+    @web.post("/v1/formulas", response_model=FormulaGenerationResponse)
     def formulas(request: FormulaRequest, response: Response) -> dict:
-        return generate_formula(request, response)
+        return generate_formula_response(request, response)
 
     from deploy.formula_stream import register_formula_stream
-    register_formula_stream(web, FormulaRequest, generate_formula, enforce_formula_rate_limit, assert_catalog_current)
+    register_formula_stream(web, FormulaRequest, generate_formula_response, enforce_formula_rate_limit, assert_catalog_current)
 
     # Audit/report routes transform backend-owned history only. They cannot
     # invoke generate_formula and do not mutate the recipe JSON contract.
@@ -388,5 +414,6 @@ def create_web_app(registry_path: str = REMOTE_REGISTRY, *, runtime_catalog_path
     register_ai_extensions(web, FormulaRequest, runtime_catalog, generate_formula, enforce_formula_rate_limit,
                            language_backend=language_backend, perception_guidance=strict_factory.perception_guidance,
                            lotion_perception_guidance=lotion_perception_guidance, stock_mixture_predictor=stock_mixture_predictor,
-                           catalog_contract=binding_contract, runtime_guard=assert_catalog_current)
+                           catalog_contract=binding_contract, runtime_guard=assert_catalog_current,
+                           minimum_profile_target=minimum_profile_target)
     return web

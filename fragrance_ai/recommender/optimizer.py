@@ -538,6 +538,7 @@ class ConstrainedFormulaOptimizer:
 
     def variant_from_weights(
         self, ingredients: list[Ingredient], brief: ScentBrief, weights: np.ndarray,
+        *, preserve_input_precision: bool = False,
     ) -> tuple[list[RecipeLine], float, dict[str, float], float, float]:
         """Render solver weights through the existing recipe output contract."""
         weights = np.asarray(weights, dtype=float)
@@ -565,10 +566,12 @@ class ConstrainedFormulaOptimizer:
         )
         lines: list[RecipeLine] = []
         desired = set(brief.desired_dimensions)
+        def rendered(value, decimals):
+            return float(value) if preserve_input_precision else round(float(value), decimals)
         for weight, ingredient in sorted(
             zip(weights, ingredients), key=lambda pair: pair[0], reverse=True
         ):
-            if weight < 0.000001:
+            if weight <= 0 or (not preserve_input_precision and weight < 0.000001):
                 continue
             matching_dimensions = sorted(
                 desired.intersection(
@@ -594,18 +597,18 @@ class ConstrainedFormulaOptimizer:
                     ingredient_id=ingredient.ingredient_id,
                     name=ingredient.name,
                     pyramid=ingredient.pyramid,
-                    concentrate_percent=round(float(weight), 4),
-                    finished_product_percent=round(float(finished_percent), 6),
+                    concentrate_percent=rendered(weight, 4),
+                    finished_product_percent=rendered(finished_percent, 6),
                     volume_ml_for_batch=(
-                        round(float(volume_ml), 4) if volume_ml else None
+                        rendered(volume_ml, 4) if (volume_ml is not None if preserve_input_precision else bool(volume_ml)) else None
                     ),
                     price_per_kg=ingredient.price_per_kg,
                     availability=ingredient.availability,
                     risk_tier=ingredient.risk_tier,
                     reason=reason,
-                    mass_g_for_batch=round(float(mass_g), 5),
-                    active_material_percent=round(float(active_percent), 5),
-                    active_mass_g_for_batch=round(float(active_mass_g), 5),
+                    mass_g_for_batch=rendered(mass_g, 5),
+                    active_material_percent=rendered(active_percent, 5),
+                    active_mass_g_for_batch=rendered(active_mass_g, 5),
                     density_g_ml=ingredient.density_g_ml,
                     active_strength_percent=ingredient.active_strength_percent,
                     carrier=ingredient.carrier,

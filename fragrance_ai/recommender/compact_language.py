@@ -4,6 +4,7 @@ No generated prose is presented as scientific evidence. Confirmed structured
 inputs still enter the existing recipe API and all of its constraints.
 """
 import json
+import re
 from typing import Literal
 from urllib.request import Request, urlopen
 
@@ -105,22 +106,61 @@ def _single_product_mention(message):
     return 'body_lotion' if lotion and not perfume else 'perfume' if perfume and not lotion else 'unspecified'
 
 
-def assistant_reply(request, parser, backend=None):
+def _literal_proposal(message, parser):
+    """Skip generation only when every lexical fragment has a known role.
+
+    This is not an intent confidence threshold. Unknown words, numbers,
+    metaphors or ambiguous product changes still reach the model.
+    """
+    from .brief_parser import KEYWORDS
+    from .catalog import find_text_spans
+    product = _single_product_mention(message)
+    if product == 'unspecified':
+        return None
+    text = message.casefold()
+    characters = list(text)
+    spans = [span for aliases in KEYWORDS.values() for alias in aliases for span in find_text_spans(text, alias)]
+    if not spans:
+        return None
+    for start, end in spans:
+        characters[start:end] = ' '*(end-start)
+    residual = ''.join(characters)
+    phrases = (r'바디\s*로션|body\s+lotion|로션|향수|\b(?:perfume|lotion|fragrance|scent)\b',
+               r'만들어\s*(?:줘|주세요)|원해요|해주세요|부탁해요|없이|제외|빼고',
+               r'\b(?:please|make|want|with|without|no|not|and|a|the|for|me)\b',
+               r'(?<![가-힣])(?:향|으로|로|은|는|을|를|이|가|와|과)(?![가-힣])')
+    for pattern in phrases:
+        residual = re.sub(pattern, ' ', residual)
+    if re.search(r'[\w]', residual, re.UNICODE):
+        return None
+    try:
+        brief = parser.parse(message)
+    except ValueError:
+        return None
+    if not brief.desired_dimensions:
+        return None
+    return validate_proposal({'desired': brief.desired_dimensions, 'avoided': brief.avoided_dimensions,
+                              'product': product, 'clarification': 'none'})
+
+
+def assistant_reply(request, parser, backend=None, *, prefer_literal=False):
     from .formulation_workflow import procedure_answer
     grounded = procedure_answer(request.message)
     if grounded is not None:
         return grounded
     source = 'deterministic_parser'
-    proposal = None
+    proposal = _literal_proposal(request.message, parser) if prefer_literal else None
     grounding = None
-    if backend is not None:
+    if proposal is not None:
+        source = 'deterministic_complete_literal_intent'
+    if backend is not None and proposal is None:
         try:
             proposal = validate_proposal(backend(request.message))
             source = 'quantized_language_model'
         except Exception:
             # No retry amplification, private exception details or partial JSON.
             source = 'deterministic_fallback_after_model_failure'
-    if proposal is not None and parser is not None:
+    if proposal is not None and parser is not None and source != 'deterministic_complete_literal_intent':
         try:
             anchored = parser.parse(request.message)
         except ValueError:

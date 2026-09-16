@@ -138,9 +138,14 @@ def model_contract(provider):
     projection = getattr(provider, 'projection', PROJECTION)
     endpoints = set(getattr(provider, 'endpoints', ()))
     supported = sorted(axis for axis,names in projection.items() if set(names) <= endpoints)
+    coarse_supported=list(supported)
+    if getattr(provider,'complete_reference_dimensions',None) is not None:
+        supported=sorted(provider.complete_reference_dimensions)
     return {'configured': True, 'component_model_sha256': getattr(provider, 'component_model_sha256', None),
             'supported_target_dimensions': supported,
             'unmodeled_target_dimensions': sorted(set(SCENT_DIMENSIONS)-set(supported)),
+            'coarse_projection_dimensions':coarse_supported,
+            'complete_reference_sha256':getattr(provider,'complete_reference_sha256',None),
             'primary_recipe_score_directly_uses_learned_outputs': False,
             'score_role': 'candidate_search_and_auxiliary_prediction_not_primary_strict_profile_score',
             'component_model_version': getattr(provider, 'component_model_version', None),

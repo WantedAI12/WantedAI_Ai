@@ -27,8 +27,8 @@ def assess_fixed_formula(ai, text, constraints, weights, *, as_of=None, target_p
     if not isinstance(weights, dict) or not weights or len(weights) > constraints.max_ingredients:
         raise ValueError("fixed formula requires unique materials within the requested maximum")
     for key, value in weights.items():
-        if not isinstance(key, str) or isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < .0001 or value > 100 or abs(value - round(value, 4)) > 1e-9:
-            raise ValueError("fixed percentages must be positive finite numbers with at most four decimals")
+        if not isinstance(key, str) or isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or not 0 < value <= 100:
+            raise ValueError("fixed percentages must be positive finite numbers")
     if abs(sum(weights.values()) - 100) > .001 + 1e-9:
         raise ValueError("fixed concentrate percentages must sum to 100 within the existing 0.001-point rendering tolerance; automatic normalization is disabled")
     as_of = as_of or date.today()
@@ -36,7 +36,9 @@ def assess_fixed_formula(ai, text, constraints, weights, *, as_of=None, target_p
     if intent_controls:
         from .intent_controls import apply_intent_controls
         brief = apply_intent_controls(brief, intent_controls)
-    brief = replace(brief, constraints=replace(brief.constraints, target_similarity=max(95., ai.minimum_profile_target or 95., brief.constraints.target_similarity)))
+    minimum_target = 95. if ai.minimum_profile_target is None else ai.minimum_profile_target
+    brief = replace(brief, constraints=replace(brief.constraints,
+        target_similarity=max(minimum_target, brief.constraints.target_similarity)))
     ai._validate_constraints(brief.constraints)
     if len(weights) > brief.constraints.max_ingredients:
         raise ValueError("fixed formula exceeds the natural-language material limit")
@@ -57,7 +59,8 @@ def assess_fixed_formula(ai, text, constraints, weights, *, as_of=None, target_p
         if value > by_id[key].as_supplied_cap_percent() + 1e-9:
             raise ValueError("fixed formula exceeds an ingredient concentration cap")
     selected = [by_id[key] for key in sorted(weights)]
-    lines, _, nominal, cost, _ = ai.optimizer.variant_from_weights(selected, brief, np.array([weights[item.ingredient_id] for item in selected]))
+    lines, _, nominal, cost, _ = ai.optimizer.variant_from_weights(selected, brief,
+        np.array([weights[item.ingredient_id] for item in selected]), preserve_input_precision=True)
     if {line.ingredient_id: line.concentrate_percent for line in lines} != weights:
         raise ValueError("rendering would alter the submitted fixed weights")
     fixed_notes, _ = explicit_pyramid(text)

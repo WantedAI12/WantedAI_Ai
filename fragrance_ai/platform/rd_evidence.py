@@ -110,10 +110,11 @@ class EvidenceAssessment(Input):
 
 
 class EvidenceStore:
-    def __init__(self, path=None, digest=None):
+    def __init__(self, path=None, digest=None, *, public_store=None):
         self.path = Path(path).resolve() if path else None
         self.digest = digest
         self.bundle = None
+        self.public_store = public_store
         if bool(path) != bool(digest):
             raise ValueError("evidence path and SHA256 must be configured together")
         if path:
@@ -122,8 +123,10 @@ class EvidenceStore:
 
     @classmethod
     def configured(cls):
+        from .public_evidence import PublicEvidenceStore
         return cls(os.environ.get("PERFUMERY_AI_RD_EVIDENCE_PATH"),
-                   os.environ.get("PERFUMERY_AI_RD_EVIDENCE_SHA256"))
+                   os.environ.get("PERFUMERY_AI_RD_EVIDENCE_SHA256"),
+                   public_store=PublicEvidenceStore.configured())
 
     def _read(self):
         try:
@@ -139,13 +142,16 @@ class EvidenceStore:
     def assert_current(self):
         if self.path:
             self._read()
+        if self.public_store:
+            self.public_store.assert_current()
 
     def contract(self):
         return {"bundle_sha256": self.digest,
                 "active_version": self.bundle.active_version if self.bundle else None,
                 "source_kind": "operator_reviewed_pinned_records",
                 "document_authenticity_independently_verified": False,
-                "live_inventory_verified": False}
+                "live_inventory_verified": False,
+                **({'public_sources': self.public_store.contract()} if self.public_store else {})}
 
     def snapshot(self, version, as_of):
         if self.bundle is None:
@@ -210,6 +216,32 @@ class EvidenceStore:
                 blockers.append({"ingredient_id": None, "reason": "reviewed_formula_cost_exceeded"})
             if purchase_cost > request.policy.maximum_purchase_cost_usd + 1e-9:
                 blockers.append({"ingredient_id": None, "reason": "purchase_budget_exceeded"})
+        framework_checks = []
+        for framework in ('IFRA', 'EU_REACH', 'K_REACH', 'FDA'):
+            findings = []
+            if framework in required:
+                for row in rows:
+                    record = row['evidence']
+                    state = record['frameworks'].get(framework, 'unknown') if record else 'unknown'
+                    invalid = [reason for reason in row['blockers'] if reason in (
+                        'material_identity_mismatch', 'regulatory_evidence_not_current', 'reviewed_use_limit_exceeded')]
+                    status = ('blocked' if invalid or state == 'prohibited' else
+                              'not_assessed' if state == 'unknown' else
+                              'reviewed_with_limits' if state == 'restricted' else 'reviewed_supported')
+                    findings.append({'ingredient_id':row['ingredient_id'], 'status':status,
+                                     'registered_state':state, 'blockers':invalid,
+                                     'source_reference':record['source_reference'] if record else None})
+            statuses = [item['status'] for item in findings]
+            status = ('not_assessed_for_selected_region' if framework not in required else
+                      'blocked' if 'blocked' in statuses else
+                      'not_assessed' if not statuses or all(s == 'not_assessed' for s in statuses) else
+                      'partially_reviewed' if 'not_assessed' in statuses else
+                      'reviewed_with_limits' if 'reviewed_with_limits' in statuses else 'reviewed_supported')
+            framework_checks.append({'id':framework,'required_for_region':framework in required,
+                'status':status,'findings':findings,'material_count':len(rows),
+                'reviewed_material_count':sum(s in ('reviewed_supported','reviewed_with_limits') for s in statuses),
+                'registered_review_passed':status in ('reviewed_supported','reviewed_with_limits'),
+                'regulatory_certificate_issued':False})
         result = {"schema_version": "rd-evidence-assessment-1", "snapshot_version": version,
                   "evaluated_on": as_of.isoformat(), "input_id": content_id(request.model_dump(mode="json")),
                   "evidence_contract": self.contract(), "required_frameworks": list(required),
@@ -218,12 +250,56 @@ class EvidenceStore:
                   "quoted_formula_cost_usd_per_kg": cost if all_priced else None,
                   "purchase_cost_usd": purchase_cost if all_priced else None,
                   "manufacturing_approval": False,
+                  'framework_checks':framework_checks,
                   "scope": "registered_evidence_screen_requires_existing_safety_and_scientific_gates"}
+        if self.public_store:
+            result['public_source_screen'] = self.public_store.screen(
+                [line.model_dump() for line in request.lines], category=request.product_category,
+                concentration=request.product_concentration_percent)
+            public_ifra = next((item for item in result['public_source_screen']['frameworks'] if item['id'] == 'IFRA'), {})
+            published = public_ifra.get('public_registry_check', {}).get('formula_rule_checks', {})
+            conflicts = [row['rule_id'] for row in published.get('checks', []) if row.get('source_limit_exceeded')]
+            if conflicts:
+                result['blockers'].append({'ingredient_id': None, 'reason': 'published_ifra_limit_conflicts_with_recipe',
+                                           'rule_ids': conflicts})
+                result.update(gate_passed=False, status='blocked')
+                for check in framework_checks:
+                    if check['id'] == 'IFRA':
+                        check.update(status='blocked', registered_review_passed=False,
+                                     public_source_conflict_rule_ids=conflicts)
         result["result_id"] = content_id(result)
         return result
 
     def change_impact(self, request, catalog, previous_version):
         if self.bundle is None:
+            if self.public_store is not None:
+                lines = [row.model_dump() for row in request.lines]
+                kwargs = {'category': request.product_category, 'concentration': request.product_concentration_percent}
+                before = self.public_store.screen(lines, version=previous_version, **kwargs)
+                after = self.public_store.screen(lines, **kwargs)
+                if before['snapshot_version'] == after['snapshot_version']:
+                    raise ValueError('previous and active public versions must differ')
+                def regulatory_facts(screen, identifier):
+                    return {framework['id']: {'findings': [row for row in framework.get('findings', [])
+                                if row.get('ingredient_id') == identifier],
+                            'coverage': [row for row in framework.get('public_registry_check', {}).get('material_coverage', [])
+                                if row.get('ingredient_id') == identifier]}
+                            for framework in screen['frameworks']}
+                changes = []
+                for left, right in zip(before['materials'], after['materials']):
+                    previous_rules = regulatory_facts(before, left['ingredient_id'])
+                    current_rules = regulatory_facts(after, right['ingredient_id'])
+                    if left != right or previous_rules != current_rules:
+                        changes.append({'ingredient_id': left['ingredient_id'], 'previous': left['source_observations'],
+                                        'current': right['source_observations'], 'regulatory_previous': previous_rules,
+                                        'regulatory_current': current_rules,
+                                        'regulatory_sources_changed': previous_rules != current_rules})
+                result = {'schema_version': 'rd-change-impact-1', 'before': before, 'after': after,
+                          'changes': changes, 'affected_material_count': len(changes), 'review_required': True,
+                          'state_changed': False, 'manufacturing_approval': False,
+                          'scope': 'public_observation_comparison_not_operator_approval_or_inventory_reservation'}
+                result['result_id'] = content_id(result)
+                return result
             raise ValueError("change impact requires registered evidence snapshots")
         if previous_version == self.bundle.active_version:
             raise ValueError("previous and active evidence versions must differ")

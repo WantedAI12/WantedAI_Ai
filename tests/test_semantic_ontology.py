@@ -1,6 +1,7 @@
 from fragrance_ai.recommender.brief_parser import NaturalLanguageBriefParser
 from fragrance_ai.recommender.catalog import IngredientCatalog
 from fragrance_ai.recommender.semantic_ontology import ScentSemanticOntology
+import pytest
 
 
 def _parse(text: str):
@@ -35,3 +36,19 @@ def test_english_metaphor_maps_to_smoke_and_wood():
 def test_cold_transparent_sea_breeze_maps_to_aquatic_fresh():
     brief = _parse("차가운 바닷바람과 젖은 돌, 아주 투명하고 가볍게")
     assert {"aquatic", "fresh"}.issubset(brief.desired_dimensions)
+
+
+@pytest.mark.parametrize('noun', ['timber', 'lumber', 'firewood'])
+def test_wood_material_nouns_survive_mixed_literal_and_metaphorical_context(noun):
+    brief = _parse(f'the last smoke of a dying campfire over charred {noun}')
+    assert {'smoky', 'woody'} <= set(brief.desired_dimensions)
+    excluded = _parse(f'rose scent, no {noun}')
+    assert 'woody' in excluded.avoided_dimensions
+    assert excluded.target_profile['woody'] == 0
+
+
+def test_wood_nouns_do_not_match_unrelated_longer_words():
+    from fragrance_ai.recommender.models import RecipeConstraints
+    brief = NaturalLanguageBriefParser(IngredientCatalog.load_builtin()).parse(
+        'rose scent, a timberland-inspired label', RecipeConstraints(enable_semantic_ontology=False))
+    assert brief.target_profile['woody'] == 0

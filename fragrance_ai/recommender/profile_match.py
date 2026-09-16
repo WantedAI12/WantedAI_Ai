@@ -129,7 +129,7 @@ def assess_recipe_profiles(brief, achieved_profile: Mapping, temporal_points: Se
     if temporal_points:
         score = None if score is None or temporal_score is None else min(score, temporal_score)
     target = float(brief.constraints.target_similarity)
-    return {"version": PROFILE_MATCH_VERSION, "score_kind": PROFILE_MATCH_KIND,
+    result = {"version": PROFILE_MATCH_VERSION, "score_kind": PROFILE_MATCH_KIND,
             "target_representation": representation_contract(brief),
             "score": score, "target": target, "target_met": score is not None and score + 1e-8 >= target,
             "nominal": nominal.to_dict(), "temporal": points, "temporal_mean_score": temporal_score,
@@ -138,6 +138,48 @@ def assess_recipe_profiles(brief, achieved_profile: Mapping, temporal_points: Se
             "uncertainty_interval": None, "uncertainty_kind": "point_estimate_not_calibrated_human_error_interval",
             "target_source": "natural_language_model_profile_not_measured_reference_odor",
             "actual_human_similarity_measured": False}
+    reference = next((p.get('full_reference_prediction') for p in temporal_points if p.get('full_reference_prediction') is not None), None)
+    if reference is not None:
+        legacy = dict(result)
+        result.update(version=reference['version'], score_kind='hierarchical_source_reference_agreement_not_human_similarity',
+            score=reference['score'], target_met=reference['target_met'],
+            partial_profile_score=reference.get('partial_profile_score'),
+            score_scope=reference.get('score_scope', 'complete_requested_profile'),
+            reference_assessment=reference, legacy_19_axis_assessment=legacy,
+            target_representation=reference['intent'],
+            target_source='independent_full_reference_profile_not_19_axis_purity',
+            score_aggregation=reference.get('aggregation'),
+            legacy_scores_directly_comparable=False)
+        if reference['score'] is not None or reference.get('partial_profile_score') is not None:
+            names = tuple(reference['endpoints'])
+            prediction = np.asarray(reference['predicted_profiles'])
+            targets = reference['intent']['targets']
+            def compared(index):
+                return min((compare_profiles(targets[index]['profiles'][head], prediction[head,index],
+                    avoided=targets[index]['avoided'],dimensions=names).to_dict() for head in range(prediction.shape[0])),
+                    key=lambda r:r['score'])
+            result['nominal'] = compared(0)
+            result['temporal'] = [{**compared(j+1), 'minutes':p['minutes'],'phase':p['phase'],'weight':p['weight']}
+                for j,p in enumerate(legacy['temporal'])]
+            result['temporal_mean_score'] = sum(p['score']*p['weight'] for p in result['temporal'])
+            result['temporal_minimum_score'] = min(p['score'] for p in result['temporal'] if p['weight']>0)
+            result['timepoint_diagnostic_aggregation'] = 'pointwise_worst_head_not_authoritative_joint_head_aggregation'
+            if reference['score'] is None:
+                result['partial_profile_diagnostics'] = {k: result[k] for k in
+                    ('nominal', 'temporal', 'temporal_mean_score', 'temporal_minimum_score')}
+                result.update(nominal=None, temporal=[], temporal_mean_score=None, temporal_minimum_score=None)
+    return result
+
+
+def profile_search_assessment(brief, achieved_profile, temporal_points, time_weights):
+    """Private optimization view; never return this as the whole-user score."""
+    value = assess_recipe_profiles(brief, achieved_profile, temporal_points, time_weights)
+    partial = value.get('partial_profile_score')
+    if value['score'] is None and partial is not None:
+        return {**value, **value['partial_profile_diagnostics'], 'score': partial,
+            'target_met': False, 'optimization_only': True,
+            'score_scope': 'resolved_positive_intent_only'}
+    return value
 
 
 @dataclass
@@ -172,7 +214,7 @@ def attach_profile_assessment(result: RecipeResult, assessment: dict, *, strict:
                         "strict_full_profile_gate": strict, "actual_human_90_proven_by_this_score": False},
     )
     boundary = (
-        "전체 19차원 모델 향 프로필 판정에는 calculated_profile_similarity와 full_profile_target_met를 사용합니다. "
+        "선택된 모델 향 프로필 판정에는 calculated_profile_similarity와 full_profile_target_met를 사용합니다. "
         "호환 모드의 similarity_score는 기존 선호 점수이며, 두 점수 모두 실제 후각 정확도가 아닙니다."
     )
     output.limitations = [*result.limitations]
@@ -181,13 +223,18 @@ def attach_profile_assessment(result: RecipeResult, assessment: dict, *, strict:
     if strict:
         output.similarity_score = assessment["score"] if assessment["score"] is not None else 0.0
         output.raw_similarity_score = output.similarity_score
-        output.similarity_kind = PROFILE_MATCH_KIND
+        output.similarity_kind = assessment['score_kind']
         if not assessment["target_met"]:
+            if output.recipe and not output.closest_candidate:
+                output.closest_candidate = list(output.recipe)
             output.recipe = []
             output.status = "no_safe_match"
             output.simulation_only_approved = False
             rendered = "계산 불가" if assessment["score"] is None else f"{assessment['score']:.2f}점"
             explanation = f"전체 향 프로필 {rendered}: 요청 기준 {assessment['target']:.2f}점 미충족. closest_candidate는 미승인 후보입니다."
+            if assessment.get('partial_profile_score') is not None:
+                explanation = (f"해석 가능한 향 부분의 후보를 생성했습니다(부분 점수 {assessment['partial_profile_score']:.2f}). "
+                    "미해결 향 조건이 있어 전체 유사도는 계산하지 않았습니다. closest_candidate는 미승인 후보입니다.")
             output.message = explanation if result.recipe else f"{result.message}; {explanation}"
             if output.manufacturing_plan is not None:
                 output.manufacturing_plan = replace(

@@ -14,7 +14,7 @@ class QuantitativeView:
         self.path, self.sha256 = core.path, core.sha256
         self.endpoints = core.quantitative_endpoints
         self.fine, self.native = core.manifest['fine_features'], core.manifest['native_profiles']
-        self.artifact_version = VERSION
+        self.artifact_version = getattr(core,'version',VERSION)
 
     def assert_current(self):
         self.core.assert_current()
@@ -30,7 +30,7 @@ class QuantitativeView:
         result = self.predict(graphs, reference_level=reference_level)
         rows = [{'source_native_present': g in self.native,
                  'source_annotation_present': g in self.fine['by_structure'],
-                 'model_kind': VERSION, 'diagnostic_kind': 'source_availability_not_calibrated_uncertainty'} for g in graphs]
+                 'model_kind': self.artifact_version, 'diagnostic_kind': 'source_availability_not_calibrated_uncertainty'} for g in graphs]
         return result, {k: rows for k in result}
 
 
@@ -42,6 +42,7 @@ class FineView:
         self.structures = core.manifest['structures']
         self.annotations = core.manifest['source_annotations']
         self._cache = OrderedDict()
+        self._identity_cache = OrderedDict()
         self._lock = threading.RLock()
 
     def assert_current(self):
@@ -64,12 +65,21 @@ class FineView:
             graph = supplied or (binding[0] if binding else None)
             if binding and binding[1] is not None and binding[1] != item.cas_number:
                 raise ValueError('shared model material/CAS identity mismatch')
+            identity = (item.ingredient_id, item.cas_number, supplied, tuple(binding) if binding else None)
+            if identity in self._identity_cache:
+                graphs.append(self._identity_cache[identity])
+                self._identity_cache.move_to_end(identity)
+                continue
             parsed = Chem.MolFromSmiles(graph) if graph and '.' not in graph else None
             if parsed is not None and binding and supplied:
                 bound = Chem.MolFromSmiles(binding[0])
                 if bound is None or Chem.MolToSmiles(bound) != Chem.MolToSmiles(parsed):
                     raise ValueError('shared model material structure identity mismatch')
-            graphs.append(Chem.MolToSmiles(parsed, isomericSmiles=True) if parsed else None)
+            canonical = Chem.MolToSmiles(parsed, isomericSmiles=True) if parsed else None
+            graphs.append(canonical)
+            self._identity_cache[identity] = canonical
+        while len(self._identity_cache) > 8192:
+            self._identity_cache.popitem(last=False)
         missing = sorted({g for g in graphs if g and g not in self._cache})
         for offset in range(0, len(missing), 128):
             batch = missing[offset:offset+128]

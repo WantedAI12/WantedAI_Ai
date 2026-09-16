@@ -178,7 +178,7 @@ class TransitionSchedule(LotionInput):
 class LotionOptimizationRequest(LotionTargetInput):
     simulation: LotionSimulationRequest
     brief: str = Field(min_length=3, max_length=2000)
-    target_similarity: float = Field(default=95., ge=95., le=100.)
+    target_similarity: float = Field(default=95., ge=90., le=100.)
     search_goal: Literal["maximize", "reach_target"] = "maximize"
     # An explicit physical floor; NOT a calibrated human detection threshold.
     minimum_air_concentration_mg_m3: float = Field(ge=1e-12, le=1e9)
@@ -186,7 +186,8 @@ class LotionOptimizationRequest(LotionTargetInput):
     max_ingredient_price_per_kg: float = Field(default=300., gt=0, le=1e6)
     min_availability: float = Field(default=.75, ge=0, le=1)
     max_risk_tier: int = Field(default=1, strict=True, ge=1, le=2)
-    registry_pool: Literal["core", "conditional_research"] = "core"
+    registry_pool: Literal["core", "conditional_research"] = Field(default="conditional_research",
+        description="Optional; omission searches the extended registry under the unchanged risk, price and safety constraints. Explicit core preserves the former limited pool.")
     excluded_ingredient_ids: list[str] = Field(default_factory=list, max_length=50000)
     transition_schedule: TransitionSchedule | None = None
     maximum_modeled_uptake_mg_cm2: float | None = Field(default=None, gt=0, le=100)

@@ -18,8 +18,23 @@ PATH = Path(__file__).resolve().parents[1]/'data/odor_expression_v61.json'
 
 
 def registry():
+    from .odor_space import configured_odor_space
+    space = configured_odor_space()
+    if space is not None:
+        return _recovery_view({'payload': {**space.value, 'claim_boundary': 'Source vocabulary and ordinal references, not human similarity.',
+                           'attribution':space.value['source']['attribution']},
+                'rows':space.rows, 'aliases':space.aliases, 'sha256':space.sha256, 'space':space})
     stat = PATH.stat()
-    return _registry(stat.st_size,stat.st_mtime_ns)
+    return _recovery_view(_registry(stat.st_size,stat.st_mtime_ns))
+
+
+def _recovery_view(value):
+    from .failure_recovery import recovery_active
+    if not recovery_active():
+        return value
+    from .alias_consistency import consistent_aliases
+    aliases, resolution = consistent_aliases(value['aliases'], value['rows'])
+    return {**value, 'aliases':aliases, 'failure_alias_resolution':resolution}
 
 
 @lru_cache(maxsize=2)
@@ -44,7 +59,8 @@ def _registry(size, mtime):
 def expression_contract():
     r = registry()
     rows = list(r['rows'].values())
-    return {'version': 'odor-expression-v61', 'registry_sha256': r['sha256'],
+    from .odor_language_v89 import contract as language_contract
+    return {'version': 'odor-expression-v89', 'registry_sha256': r['sha256'],
         'canonical_concepts': len(rows), 'odor_concepts': sum(x['kind']=='odor' for x in rows),
         'quality_concepts': sum(x['kind']=='quality' for x in rows),
         'family_nodes': sum(x['kind']=='family' for x in rows), 'aliases': len(r['aliases']),
@@ -52,7 +68,10 @@ def expression_contract():
         'quantitative_backbone_axes': 146, 'quantitative_axes_changed': False,
         'supports_composition': True, 'unknown_terms_guaranteed_understood': False,
         'claim_boundary': r['payload']['claim_boundary'],
-        'attribution': r['payload']['attribution'], 'source_repository': r['payload']['source']['repository']}
+        'attribution': r['payload']['attribution'], 'source_repository': r['payload']['source']['repository'],
+        **({'hierarchical_space':r['space'].contract()} if r.get('space') else {}),
+        **({'failure_alias_resolution':r['failure_alias_resolution']} if 'failure_alias_resolution' in r else {}),
+        'compositional_language':language_contract(r)}
 
 
 def language_extensions(existing_aliases):
@@ -68,6 +87,11 @@ def parse_expression(text, *, excluded_material_spans=()):
     r = registry()
     lowered = text.casefold()
     spans = {a: find_text_spans(lowered, a) for a in r['aliases']}
+    if r.get('space'):
+        from .odor_space import contextual_spans
+        for alias, concept in r['aliases'].items():
+            if r['rows'][concept].get('contextual_only'):
+                spans[alias] = contextual_spans(lowered, alias)
     scopes = _list_scopes(lowered, {span for values in spans.values() for span in values})
     spans = exclusive_odor_spans(spans, set(r['aliases']))
     numeric = {}
@@ -100,18 +124,48 @@ def parse_expression(text, *, excluded_material_spans=()):
                 'end':end, 'polarity':'avoid' if negated else 'want', 'weight':weight,
                 'kind': r['rows'][key]['kind'],
                 'support': 'source_annotation' if r['rows'][key]['source_terms'] else 'vocabulary_only'})
+            if r.get('space'):
+                alternatives = r['space'].value.get('lexical_interpretations', {}).get(alias)
+                if alternatives:
+                    matches[-1]['interpretation_alternatives'] = alternatives
     # Conflicting clauses remain visible. Do not silently erase either one.
-    return {'version': 'odor-expression-v61', 'wanted':positive, 'avoided':negative,
+    from .odor_language_v89 import interpret_scenes, facets
+    scenes=[scene for scene in interpret_scenes(text,r,lambda start,end:_is_negated(lowered,start,end,scopes))
+            if not any(a<=scene['start'] and scene['end']<=b for a,b in excluded_material_spans)]
+    # A recognized compound scene replaces contained literal fragments. The
+    # same atom mentioned elsewhere in the request is retained independently.
+    retained=[m for m in matches if not any(s['start']<=m['start'] and m['end']<=s['end']
+                                          and s['polarity']==m['polarity'] for s in scenes)]
+    if len(retained)!=len(matches):
+        positive,negative={},{}
+        for m in retained:
+            destination=negative if m['polarity']=='avoid' else positive
+            destination[m['concept_id']]=max(destination.get(m['concept_id'],0.),m['weight'])
+        matches=retained
+    for scene in scenes:
+        atoms=[key for key in scene['atoms'] if scene['polarity']=='avoid' or key not in negative]
+        for key in atoms:
+            destination=negative if scene['polarity']=='avoid' else positive
+            destination[key]=max(destination.get(key,0.),1./len(atoms))
+            matches.append({'concept_id':key,'text':scene['text'],'start':scene['start'],'end':scene['end'],
+                'polarity':scene['polarity'],'weight':1./len(atoms),'kind':r['rows'][key]['kind'],
+                'support':'project_authored_scene_interpretation','scene_id':scene['scene_id'],
+                'interpretation_basis':scene['basis']})
+    from .odor_space import unresolved_named_odors
+    return {'version':'odor-expression-v89', 'wanted':positive, 'avoided':negative,
+        'style_facets':facets(text,lambda start,end:_is_negated(lowered,start,end,scopes)), 'scene_interpretations':scenes,
         'matches':sorted(matches, key=lambda x:x['start']),
         'conflicting_concepts':sorted(set(positive)&set(negative)),
         'composition_semantics':'separate_concepts_with_scopes_not_new_measured_compound_odor',
-        'unknown_text_is_not_a_zero_odor':True}
+        'unknown_text_is_not_a_zero_odor':True,
+        'unresolved_named_odors':unresolved_named_odors(text, matches) if r.get('space') else []}
 
 
 def brief_expression(brief):
     return {'version':'odor-expression-v61', 'wanted':brief.expression_targets,
         'avoided':brief.expression_avoided, 'matches':brief.expression_matches,
-        'phases':brief.phase_expressions, 'human_similarity_percent':None}
+        'phases':brief.phase_expressions, 'style_facets':getattr(brief,'expression_style_facets',[]),
+        'human_similarity_percent':None}
 
 
 def expression_utility(items, brief, model=None):

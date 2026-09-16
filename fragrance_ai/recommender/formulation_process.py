@@ -134,10 +134,18 @@ def learned_workflow(request, core, completed=()):
     values.update(mixer_kind=process.get('mixer_kind'), method_code={'auto': 0, 'cold': 1, 'hot': 2}[process['method']])
     values['pe9010_present'] = any(row['id'] == 'lc_pe9010' for row in plan['sources'])
     predicted = core.procedure(template, completed, values=values)
-    teacher, checks = procedure_target(template, completed, values)
-    return {**predicted, 'status': 'source_consistent' if predicted['next_action'] == ACTIONS[teacher] else 'model_source_conflict',
+    actions = [item if isinstance(item, str) else item['action'] for item in completed]
+    if core.manifest.get('process_graph_training') is not None:
+        from .formulation_process_graph import process_state
+        legal = process_state(template, actions, values)
+        allowed, checks = legal['allowed'], legal['checks']
+    else:
+        teacher, checks = procedure_target(template, actions, values)
+        allowed = [ACTIONS[teacher]]
+    return {**predicted, 'status': 'source_consistent' if predicted['next_action'] in allowed else 'model_source_conflict',
             'template': template, 'completed_step_ids': list(completed),
-            'source_next_action': ACTIONS[teacher], 'source_checks': dict(zip(CHECKS, checks.astype(bool).tolist())),
+            'source_next_action': allowed[0], 'source_allowed_next_actions': allowed,
+            'source_checks': dict(zip(CHECKS, checks.astype(bool).tolist())),
             'workflow_steps': list(TEMPLATES[template]), 'sources': SOURCES,
             'full_source_scoped_sequence_covered': True,
             'manufacturing_approved': False, 'physical_outcome_labels_available': False}

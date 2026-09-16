@@ -20,7 +20,7 @@ def test_only_surplus_changes_never_target_or_worst_or_failed_point(scores,targe
     np.testing.assert_allclose(refinement_score_floors(scores,target),expected,atol=1e-10)
 
 
-@pytest.mark.parametrize('scores,target', [([],95),([float('nan')],95),([101],95),([90],94),([90],True)])
+@pytest.mark.parametrize('scores,target', [([],95),([float('nan')],95),([101],95),([90],89.9),([90],True)])
 def test_invalid_quality_contract_rejected(scores,target):
     with pytest.raises(ValueError):
         refinement_score_floors(scores,target)

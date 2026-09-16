@@ -26,6 +26,7 @@ from .safety import CandidateSafetyScreen
 from .science import ScientificPropertyStore, TemporalMixtureSimulator
 from .formulation_science import permeability_estimates, storage_retention, skin_exposure_report
 from .intent_controls import apply_intent_controls, target_controls
+from .failure_recovery import failed_only_recovery
 
 
 ESTIMATION_VERSION = "reference-lotion-engineering-v2"
@@ -60,9 +61,10 @@ class LotionEstimateRequest(LotionTargetInput):
     fragrance_concentration_percent: float = Field(default=.5, ge=.01, le=3.)
     application_mass_mg_cm2: float = Field(default=2., ge=.1, le=10.)
     substrate: Literal["skin_model", "inert_surface"] = "skin_model"
-    target_similarity: float = Field(default=95., ge=95., le=100.)
+    target_similarity: float = Field(default=95., ge=90., le=100.)
     search_goal: Literal["maximize", "reach_target"] = "reach_target"
-    registry_pool: Literal["core", "conditional_research"] = "core"
+    registry_pool: Literal["core", "conditional_research"] = Field(default="conditional_research",
+        description="Optional; omission uses the extended screened registry. Explicit core selects the former limited pool; risk and safety constraints still apply.")
     max_risk_tier: int = Field(default=1, strict=True, ge=1, le=2)
     max_formula_cost_per_kg: float = Field(default=180., gt=0, le=1e6)
     max_ingredient_price_per_kg: float = Field(default=300., gt=0, le=1e6)
@@ -276,6 +278,7 @@ def _estimate_single_base(request, catalog, parser=None, *, oil_base_percent=10.
         "all_user_requirements_verified": False}
 
 
+@failed_only_recovery('body_lotion')
 def estimate_lotion_recipe(request, catalog, parser=None, *, perception_guidance=None, use_configured_perception=True,
                           _incumbent_recipe=None):
     from .lotion_perception import attach_lotion_perception, resolve_provider

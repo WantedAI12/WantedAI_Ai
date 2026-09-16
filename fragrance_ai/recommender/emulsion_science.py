@@ -45,11 +45,20 @@ def features(raw, *, impeller_diameter_m=REFERENCE['impeller_diameter_m']):
 
 
 def normal_log_bins(log_diameters, mean, sigma):
+    from scipy.special import ndtr
+    centers=np.asarray(log_diameters,float)
+    if centers.ndim!=1 or len(centers)<2 or not np.isfinite(centers).all() or np.any(np.diff(centers)<=0):
+        raise ValueError('ordered finite log-diameter bin centers required')
     sigma = np.maximum(np.asarray(sigma), .08)
-    logp = -.5*((np.asarray(log_diameters)[None] - np.asarray(mean)[:, None])/sigma[:, None])**2
-    logp -= logp.max(1, keepdims=True)
-    logp -= np.log(np.exp(logp).sum(1, keepdims=True))
-    return logp
+    edges=np.r_[-np.inf,(centers[:-1]+centers[1:])/2,np.inf]
+    z=(edges[None]-np.asarray(mean)[:,None])/sigma[:,None]
+    # Integrate probability over bins; density evaluated at centers incorrectly
+    # favors narrow/irregular bins. Use survival tails to avoid cancellation.
+    low,high=z[:,:-1],z[:,1:]
+    probability=np.where(low>0,ndtr(-low)-ndtr(-high),ndtr(high)-ndtr(low))
+    probability=np.maximum(probability,np.finfo(float).tiny)
+    probability/=probability.sum(-1,keepdims=True)
+    return np.log(probability)
 
 
 def baseline(raw, specification):

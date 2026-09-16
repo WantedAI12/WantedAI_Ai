@@ -2,6 +2,12 @@ name: dev-deployment-gates
 
 on:
   workflow_dispatch:
+    inputs:
+      publish_attestation:
+        description: 'Publish the verified wheel provenance (authorized release operator only)'
+        required: false
+        default: false
+        type: boolean
   push:
     branches: [dev]
   pull_request:
@@ -17,12 +23,25 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:17-alpine@sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193
+        env:
+          POSTGRES_USER: perfumery_test
+          POSTGRES_PASSWORD: isolated-ci-fixture-only
+          POSTGRES_DB: perfumery_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U perfumery_test -d perfumery_test"
+          --health-interval 5s --health-timeout 5s --health-retries 12
     env:
       PYTHONUNBUFFERED: "1"
       OMP_NUM_THREADS: "1"
       OPENBLAS_NUM_THREADS: "1"
       MKL_NUM_THREADS: "1"
       PERFUMERY_AI_LOCAL_PROFILE: "disabled"
+      PERFUMERY_AI_TEST_POSTGRES_URL: postgresql://perfumery_test:isolated-ci-fixture-only@127.0.0.1:5432/perfumery_test
     steps:
       - uses: actions/checkout@v4
         with:
@@ -60,6 +79,7 @@ jobs:
             scripts/train_formulation_v69.py scripts/verify_formulation_v69.py \
             scripts/verify_shared_products_v69.py scripts/serve_product_runtime_v42.py \
             tests/test_formulation_core_v69.py \
+            tests/test_runtime_release_v69.py scripts/verify_modal_v69.py \
             scripts/train_main_backbone_v68.py scripts/verify_scientific_backbone_v68.py \
             tests/test_scientific_backbone_v68.py tests/test_exposure_transport_v68.py \
             scripts/train_main_backbone_v66.py scripts/verify_main_backbone_v66.py \
@@ -92,12 +112,31 @@ jobs:
             tests/test_validation_pipeline.py \
             tests/test_manufacturing_readiness.py tests/test_platform_api.py tests/test_rd_contract.py \
             tests/test_platform_workspace.py tests/test_api_security.py \
-            tests/test_api_oidc_tenant.py tests/test_postgres_contract.py
+            tests/test_api_oidc_tenant.py tests/test_postgres_contract.py \
+            tests/test_fractional_bound_v70.py tests/test_public_registry_index_v70.py \
+            tests/test_lotion_regulatory_v70.py \
+            tests/test_global_search_v71.py tests/test_prior_sampling_v71.py \
+            tests/test_whole_pool_search_v72.py tests/test_component_observations_v72.py \
+            tests/test_model_comparison_v72.py scripts/benchmark_candidate_v72.py \
+            scripts/summarize_model_comparison_v72.py \
+            fragrance_ai/research/autoregressive_network.py \
+            scripts/train_autoregressive_v73.py scripts/verify_autoregressive_v73.py \
+            tests/test_autoregressive_refinement_v73.py tests/test_autoregressive_neural_v73.py \
+            fragrance_ai/research/constrained_autoregressive_network.py fragrance_ai/research/aligned_autoregressive_network.py \
+            scripts/train_constrained_autoregressive_v74.py tests/test_aligned_autoregressive_v75.py
+          python -m ruff check --select E4,E7,E9,F \
+            fragrance_ai/recommender/odor_resolution.py \
+            scripts/resolve_odor_space_v78.py scripts/acquire_odor_sources_v78.py \
+            scripts/prepare_external_odor_evidence_v78.py tests/test_odor_resolution_v78.py \
+            scripts/recover_odor_support_v79.py scripts/verify_odor_support_v79.py tests/test_odor_support_v79.py \
+            scripts/prepare_supported_release_v80.py scripts/verify_supported_local_v80.py \
+            tests/test_supported_release_v80.py tests/test_runtime_release_v80.py
           python -m compileall -q fragrance_ai deploy scripts tests
+          python scripts/verify_publication_v91.py
           node --check fragrance_ai/ui/app.js
       - name: Deployment-focused regression
         run: >-
-          python -m pytest -W error -vv --durations=15
+          python -m pytest -W error -vv --durations=15 --junitxml=artifacts/regression.xml
           tests/test_core_smoke.py
           tests/test_rd_contract.py
           tests/test_recommender.py
@@ -132,6 +171,7 @@ jobs:
           tests/test_api_security.py
           tests/test_api_oidc_tenant.py
           tests/test_postgres_contract.py
+          tests/test_postgres_integration.py
           tests/test_runtime_release_v62.py
           tests/test_runtime_release_v63.py
           tests/test_lotion_solver_v27.py
@@ -143,8 +183,52 @@ jobs:
           tests/test_scientific_backbone_v68.py
           tests/test_exposure_transport_v68.py
           tests/test_formulation_core_v69.py
+          tests/test_runtime_release_v69.py
           tests/test_unified_product_v60.py
           tests/test_spec_contract_v67.py
+          tests/test_fractional_profile_cuts_v70.py
+          tests/test_guidance_gradient_v70.py
+          tests/test_literal_fast_path_v70.py
+          tests/test_public_evidence_v70.py
+          tests/test_junit_floor_v70.py
+          tests/test_framework_projection_v70.py
+          tests/test_fine_identity_cache_v70.py
+          tests/test_fractional_bound_v70.py
+          tests/test_public_registry_index_v70.py
+          tests/test_lotion_regulatory_v70.py
+          tests/test_runtime_release_v70.py
+          tests/test_global_search_v71.py
+          tests/test_prior_sampling_v71.py
+          tests/test_whole_pool_search_v72.py
+          tests/test_component_observations_v72.py
+          tests/test_model_comparison_v72.py
+          tests/test_autoregressive_refinement_v73.py
+          tests/test_autoregressive_neural_v73.py
+          tests/test_aligned_autoregressive_v75.py
+          tests/test_system_physics_v76.py
+          tests/test_nonlinear_inverse_v76.py
+          tests/test_mass_projection_v76.py
+          tests/test_numerical_feasibility_v76.py
+          tests/test_process_graph_v76.py
+          tests/test_shared_observed_v76.py
+          tests/test_simplex_geometry_v76.py
+          tests/test_stock_residue_v76.py
+          tests/test_odor_space_v77.py
+          tests/test_odor_resolution_v78.py
+          tests/test_odor_support_v79.py
+          tests/test_supported_release_v80.py
+          tests/test_runtime_release_v80.py
+          tests/test_confidence_contract_v86.py
+          tests/test_release_target_v87.py
+          tests/test_backend_alignment_v89.py
+          tests/test_transport_fast_path_v89.py
+          tests/test_v89_backend_contract.py
+          tests/test_v89_language_and_discrimination.py
+          tests/test_recipe_delivery_v90.py
+          tests/test_backend_contract_v91.py
+          tests/test_fixed_assessment.py
+      - name: Require actual successful regression evidence
+        run: python scripts/verify_junit_floor.py --junit-xml artifacts/regression.xml --minimum-tests 220
       - name: Build clean wheel
         run: python -m build --wheel --outdir artifacts/dist
       - name: Reject unsafe serialized runtime assets
@@ -159,3 +243,32 @@ jobs:
               raise SystemExit(f"unsafe runtime assets: {bad}")
           print(wheel)
           PY
+      - name: Preserve verified build and regression evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: verified-wheel-${{ github.run_id }}
+          path: |
+            artifacts/dist/*.whl
+            artifacts/regression.xml
+          if-no-files-found: error
+          retention-days: 7
+
+  attest-wheel:
+    # No attestation publishing or elevated token in pull-request builds.
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/dev' && inputs.publish_attestation
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-wheel-${{ github.run_id }}
+          path: artifacts
+      - name: Attest the wheel built and verified by this run
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
+        with:
+          subject-path: artifacts/dist/*.whl
+          create-storage-record: false

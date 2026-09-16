@@ -22,9 +22,11 @@ from .models import Ingredient, RecipeLine, ScentBrief, SCENT_DIMENSIONS, profil
 from .optimizer import semantic_brief_similarity
 from .sqlite_lifecycle import SQLiteConnectionOwner
 from .odor_integrity import registry_odor_rejection, is_registry_material
+from .prior_sampling import VERSION as PRIOR_SAMPLING_VERSION, coupled_blocks
+from .mixture_physics import carrier_moles_per_gram, hill_response, interaction_matrix
 
 
-SCIENTIFIC_MODEL_VERSION = "headspace-olfactory-twin-2.4"
+SCIENTIFIC_MODEL_VERSION = "headspace-olfactory-twin-2.6"
 TIMEPOINTS_MINUTES = (0, 15, 60, 240, 480)
 TIMEPOINT_WEIGHTS = np.asarray((0.25, 0.25, 0.20, 0.18, 0.12), dtype=float)
 ATMOSPHERIC_PRESSURE_PA = 101_325.0
@@ -69,17 +71,21 @@ class TemporalPoint:
     relative_to_opening_intensity_percent: float = 0.0
     scent_profile: dict[str, float] = field(default_factory=dict)
     target_profile: dict[str, float] = field(default_factory=dict)
+    full_reference_prediction: dict | None = None
 
 
 @dataclass(frozen=True)
 class IngredientTemporalPoint:
     minutes: int
     application_surface_remaining_fraction_percent: float
-    estimated_remaining_concentrate_percent: float
-    estimated_remaining_finished_product_percent: float
-    estimated_evaporated_concentrate_percent: float
+    estimated_remaining_concentrate_percent: float | None
+    estimated_remaining_finished_product_percent: float | None
+    estimated_evaporated_concentrate_percent: float | None
     headspace_contribution_percent: float
     odor_contribution_percent: float
+    active_remaining_concentrate_percent: float = 0.
+    active_remaining_finished_product_percent: float = 0.
+    as_supplied_remaining_finished_product_percent_bounds: tuple[float,float] = (0.,0.)
 
 
 @dataclass(frozen=True)
@@ -93,6 +99,7 @@ class IngredientTemporalProfile:
     volatility_basis: str
     odor_threshold_basis: str
     points: tuple[IngredientTemporalPoint, ...]
+    residue_basis: str = 'active_odorant_decay;stock_carrier_decay_not_inferred'
 
 
 @dataclass(frozen=True)
@@ -120,6 +127,7 @@ class ScientificTwinResult:
     model_domain_passed: bool = False
     uncertainty_kind: str = "prior_propagation_not_calibrated_prediction_error"
     calculated_structure_coverage_percent: float = 0.0
+    uncertainty_sampling_version: str = 'legacy_explicit_seed_stream'
 
 
 @dataclass(frozen=True)
@@ -145,6 +153,7 @@ class _IngredientResponseInputs:
     activities: np.ndarray
     transports: np.ndarray
     half_lives: np.ndarray
+    carrier_moles_per_g: np.ndarray
 
 
 class ScientificPropertyStore(SQLiteConnectionOwner):
@@ -391,6 +400,9 @@ class ScientificPropertyStore(SQLiteConnectionOwner):
 
 
 class TemporalMixtureSimulator:
+    def __init__(self, reference_provider=None):
+        self.reference_provider = reference_provider
+
     """Physics-informed headspace and olfactory-mixture digital twin.
 
     The model uses an ideal hydroalcoholic matrix as its explicit reference
@@ -408,8 +420,7 @@ class TemporalMixtureSimulator:
     @staticmethod
     def _odor_response(odor_activity: np.ndarray | float) -> np.ndarray:
         """Saturating response to the OAV at the evaluated time point."""
-        powered = np.maximum(0.0, np.asarray(odor_activity, dtype=float)) ** 0.55
-        return powered / (1.0 + powered)
+        return hill_response(odor_activity)
 
     @staticmethod
     def _phase_for_time(minutes: int) -> str:
@@ -474,7 +485,7 @@ class TemporalMixtureSimulator:
         coverage = np.minimum(1., selected.sum(axis=1) / min(.57, .32 + .025 * len(ids)))
         return np.clip((.70 * shape + .25 * coverage + .05 * avoidance) * 100., 0., 100.)
 
-    def _sampled_temporal_arrays(self, prepared, interaction, time_targets, draws, rng):
+    def _sampled_temporal_arrays(self, prepared, interaction, time_targets, draws, rng, *, coupled=False):
         """Batch physics, retaining every scalar RNG call and its order.
 
         RNG array calls are intentionally not substituted for scalar calls:
@@ -488,20 +499,42 @@ class TemporalMixtureSimulator:
         profiles = np.asarray([item.ingredient.vector() for item in prepared])
         transport = np.asarray([self._air_to_receptor_transport(item.properties) for item in prepared])
         fractions = np.asarray([item.mole_fraction for item in prepared])
+        common = iter(coupled_blocks([item.ingredient.ingredient_id for item in prepared], draws)) if coupled else None
+        if coupled:
+            pressure_mu = np.asarray([item.vapor_pressure_pa for item in prepared])
+            pressure_sigma = np.asarray([item.vapor_log_sigma for item in prepared])
+            threshold_mu = np.asarray([item.odor_threshold_ppm for item in prepared])
+            threshold_sigma = np.asarray([item.threshold_log_sigma for item in prepared])
+            activity_mu = np.asarray([item.activity_coefficient for item in prepared])
+            activity_sigma = np.asarray([.18 if item.properties else .50 for item in prepared])
+            lifetime_base = np.asarray([360.*math.sqrt(max(1., item.properties.molecular_weight if item.properties else 180.)/160.)
+                *self.PYRAMID_PERSISTENCE[item.ingredient.pyramid] for item in prepared])
         for start in range(0, draws, 64):
             size = min(64, draws - start)
             activities = np.empty((size, count))
             lives = np.empty_like(activities)
             strengths = np.empty(size)
-            for index in range(size):
-                vapor = np.asarray([item.vapor_pressure_pa * math.exp(rng.normal(0., item.vapor_log_sigma)) for item in prepared])
-                threshold = np.asarray([item.odor_threshold_ppm * math.exp(rng.normal(0., item.threshold_log_sigma)) for item in prepared])
-                activity = np.asarray([item.activity_coefficient * math.exp(rng.normal(0., .18 if item.properties else .50)) for item in prepared])
-                gas = fractions * activity
-                gas *= vapor / ATMOSPHERIC_PRESSURE_PA * 1_000_000.
-                activities[index] = np.maximum(1e-12, gas / np.maximum(threshold, 1e-12))
-                lives[index] = [self._half_life_minutes(item.ingredient, item.properties, pressure) for item, pressure in zip(prepared, vapor)]
-                strengths[index] = float(np.clip(rng.normal(.20, .05), .08, .40))
+            if coupled:
+                offset, noise, strengths = next(common)
+                assert offset == start
+                vapor = pressure_mu*np.exp(noise[:, :, 0]*pressure_sigma)
+                threshold = threshold_mu*np.exp(noise[:, :, 1]*threshold_sigma)
+                activity = activity_mu*np.exp(noise[:, :, 2]*activity_sigma)
+                gas = fractions*activity*vapor/ATMOSPHERIC_PRESSURE_PA*1_000_000.
+                activities = gas/np.maximum(threshold, 1e-12)
+                lives = np.clip(lifetime_base/(1.+.8*np.maximum(1e-8, vapor)**.35), 5., 1440.)
+            else:
+                # Explicit-seed and direct legacy callers retain the original
+                # scalar RNG order for reproducibility of historical studies.
+                for index in range(size):
+                    vapor = np.asarray([item.vapor_pressure_pa * math.exp(rng.normal(0., item.vapor_log_sigma)) for item in prepared])
+                    threshold = np.asarray([item.odor_threshold_ppm * math.exp(rng.normal(0., item.threshold_log_sigma)) for item in prepared])
+                    activity = np.asarray([item.activity_coefficient * math.exp(rng.normal(0., .18 if item.properties else .50)) for item in prepared])
+                    gas = fractions * activity
+                    gas *= vapor / ATMOSPHERIC_PRESSURE_PA * 1_000_000.
+                    activities[index] = gas / np.maximum(threshold, 1e-12)
+                    lives[index] = [self._half_life_minutes(item.ingredient, item.properties, pressure) for item, pressure in zip(prepared, vapor)]
+                    strengths[index] = float(np.clip(rng.normal(.20, .05), .08, .40))
             remaining = np.power(.5, np.asarray(TIMEPOINTS_MINUTES)[None, :, None] / lives[:, None, :])
             current = self._odor_response(activities[:, None, :] * remaining) * transport
             suppressed = current / (1. + strengths[:, None, None] * (current @ interaction.T))
@@ -578,7 +611,7 @@ class TemporalMixtureSimulator:
         cls, ingredient: Ingredient, props: MolecularProperties | None
     ) -> tuple[float, float]:
         if props and props.odor_threshold_ppm is not None:
-            return max(1e-9, props.odor_threshold_ppm), 0.35
+            return max(1e-9, props.odor_threshold_ppm), (1.60 if 'pubchem-HSDB:' in props.source_ref else 0.35)
         impact = max(0.05, ingredient.odor_impact)
         return max(1e-6, cls.THRESHOLD_PRIOR_PPM[ingredient.pyramid] / impact), 1.60
 
@@ -609,50 +642,25 @@ class TemporalMixtureSimulator:
         active_mass = (
             line.finished_product_percent * line.active_strength_percent / 100.0
         )
-        odorant_moles = max(1e-12, active_mass / molecular_weight)
+        odorant_moles = max(0., active_mass / molecular_weight)
         base_moles = (
             max(0.0, 100.0 - line.finished_product_percent) / ETHANOL_MOLECULAR_WEIGHT
         )
+        base_moles += line.finished_product_percent*carrier_moles_per_gram([ingredient],[line.active_strength_percent])[0]
         liquid_fraction = odorant_moles / max(1e-12, odorant_moles + base_moles)
         gas_ppm = (
-            liquid_fraction * vapor_pressure / ATMOSPHERIC_PRESSURE_PA * 1_000_000.0
+            liquid_fraction * max(.5,min(3.,math.exp(.18*((props.xlogp if props and props.xlogp is not None else 2.)-2.))))
+            * vapor_pressure / ATMOSPHERIC_PRESSURE_PA * 1_000_000.0
         )
         return float(cls._odor_response(gas_ppm / threshold)) * cls._air_to_receptor_transport(props)
 
     @staticmethod
     def _interaction_matrix(prepared: list[_PreparedMaterial]) -> np.ndarray:
-        profiles = np.asarray(
-            [item.ingredient.vector() for item in prepared], dtype=float
-        )
-        norms = np.linalg.norm(profiles, axis=1, keepdims=True)
-        normalized = profiles / np.maximum(norms, 1e-12)
-        profile_overlap = np.clip(normalized @ normalized.T, 0.0, 1.0)
-        chemical_overlap = np.zeros_like(profile_overlap)
-        for left, left_item in enumerate(prepared):
-            for right, right_item in enumerate(prepared):
-                if left == right:
-                    continue
-                left_props = left_item.properties
-                right_props = right_item.properties
-                if left_props and right_props:
-                    mass_similarity = math.exp(
-                        -abs(left_props.molecular_weight - right_props.molecular_weight)
-                        / 300.0
-                    )
-                    if left_props.xlogp is not None and right_props.xlogp is not None:
-                        polarity_similarity = math.exp(
-                            -abs(left_props.xlogp - right_props.xlogp) / 3.0
-                        )
-                    else:
-                        polarity_similarity = 0.5
-                    chemical_overlap[left, right] = (
-                        mass_similarity * polarity_similarity
-                    )
-                else:
-                    chemical_overlap[left, right] = 0.5
-        interaction = 0.70 * profile_overlap + 0.30 * chemical_overlap
-        np.fill_diagonal(interaction, 0.0)
-        return np.clip(interaction, 0.0, 1.0)
+        return interaction_matrix(
+            [i.ingredient.vector() for i in prepared],
+            [i.properties.molecular_weight if i.properties else 180. for i in prepared],
+            [i.properties.xlogp if i.properties and i.properties.xlogp is not None else np.nan for i in prepared],
+            [i.properties is not None for i in prepared])
 
     def ingredient_perceptual_factors(
         self,
@@ -687,6 +695,7 @@ class TemporalMixtureSimulator:
             np.asarray([max(0.50, min(3.0, math.exp(0.18 * ((prop.xlogp if prop and prop.xlogp is not None else 2.0) - 2.0)))) for prop in props]),
             np.asarray([self._air_to_receptor_transport(prop) for prop in props]),
             np.asarray([self._half_life_minutes(item, prop, pressure) for item, prop, pressure in zip(rows, props, pressures)]),
+            carrier_moles_per_gram(rows),
         )
 
     def ingredient_response_matrix(self, inputs: _IngredientResponseInputs, product_concentration_percent: float) -> np.ndarray:
@@ -696,10 +705,10 @@ class TemporalMixtureSimulator:
         finished_percent = concentration / 100.0
         active_mass = finished_percent * inputs.strengths / 100.0
         moles = active_mass / np.maximum(1e-9, inputs.molecular_weights)
-        base_moles = max(0.0, 100.0 - finished_percent) / ETHANOL_MOLECULAR_WEIGHT
+        base_moles = max(0.0, 100.0 - finished_percent) / ETHANOL_MOLECULAR_WEIGHT + finished_percent*inputs.carrier_moles_per_g
         liquid_fraction = moles / np.maximum(1e-12, moles + base_moles)
         gas_ppm = liquid_fraction * inputs.activities * inputs.vapor_pressures / ATMOSPHERIC_PRESSURE_PA * 1_000_000.0
-        oav = np.maximum(1e-12, gas_ppm / inputs.thresholds)
+        oav = gas_ppm / inputs.thresholds
         remaining = np.power(0.5, np.asarray(TIMEPOINTS_MINUTES)[None, :] / inputs.half_lives[:, None])
         return self._odor_response(oav[:, None] * remaining) * inputs.transports[:, None]
 
@@ -743,8 +752,13 @@ class TemporalMixtureSimulator:
         store: ScientificPropertyStore | Mapping[str, MolecularProperties],
     ) -> list[_PreparedMaterial]:
         raw: list[tuple[RecipeLine, Ingredient, MolecularProperties | None, float]] = []
+        if len({line.ingredient_id for line in lines}) != len(lines):
+            raise ValueError('unique ingredient IDs required; combine duplicate recipe lines first')
         total_finished = sum(max(0.0, line.finished_product_percent) for line in lines)
         base_moles = max(0.0, 100.0 - total_finished) / ETHANOL_MOLECULAR_WEIGHT
+        base_moles += float(np.asarray([max(0.,line.finished_product_percent) for line in lines]) @
+                            carrier_moles_per_gram([ingredients[line.ingredient_id] for line in lines],
+                                                   [line.active_strength_percent for line in lines]))
         odorant_moles = 0.0
         for line in lines:
             ingredient = ingredients[line.ingredient_id]
@@ -813,7 +827,7 @@ class TemporalMixtureSimulator:
             / ATMOSPHERIC_PRESSURE_PA
             * 1_000_000.0
         )
-        odor_activity = np.maximum(1e-12, gas_ppm / np.maximum(threshold, 1e-12))
+        odor_activity = gas_ppm / np.maximum(threshold, 1e-12)
         transport = np.asarray(
             [cls._air_to_receptor_transport(item.properties) for item in prepared],
             dtype=float,
@@ -845,19 +859,24 @@ class TemporalMixtureSimulator:
                 initial_concentrate = max(0.0, item.line.concentrate_percent)
                 initial_finished = max(0.0, item.line.finished_product_percent)
                 fraction = float(remaining[index])
+                strength=item.line.active_strength_percent/100.
+                stock_unknown=strength<1 and minutes>0
+                active_finished=initial_finished*strength*fraction
+                residue_bounds=((initial_finished,initial_finished) if minutes==0 else
+                                (active_finished,active_finished+initial_finished*(1-strength)))
                 point_series[index].append(
                     IngredientTemporalPoint(
                         minutes=minutes,
                         application_surface_remaining_fraction_percent=round(
                             fraction * 100.0, 6
                         ),
-                        estimated_remaining_concentrate_percent=round(
+                        estimated_remaining_concentrate_percent=None if stock_unknown else round(
                             initial_concentrate * fraction, 6
                         ),
-                        estimated_remaining_finished_product_percent=round(
+                        estimated_remaining_finished_product_percent=None if stock_unknown else round(
                             initial_finished * fraction, 6
                         ),
-                        estimated_evaporated_concentrate_percent=round(
+                        estimated_evaporated_concentrate_percent=None if stock_unknown else round(
                             initial_concentrate * (1.0 - fraction), 6
                         ),
                         headspace_contribution_percent=round(
@@ -866,6 +885,9 @@ class TemporalMixtureSimulator:
                         odor_contribution_percent=round(
                             float(odor_percent[index]), 6
                         ),
+                        active_remaining_concentrate_percent=round(initial_concentrate*strength*fraction,6),
+                        active_remaining_finished_product_percent=round(active_finished,6),
+                        as_supplied_remaining_finished_product_percent_bounds=tuple(round(value,6) for value in residue_bounds),
                     )
                 )
         return tuple(
@@ -915,15 +937,8 @@ class TemporalMixtureSimulator:
             )
         time_targets = self.targets_by_time(brief)
         prepared = self._prepare(lines, ingredients, store)
-        if seed is None:
-            canonical = "|".join(
-                f"{item.line.ingredient_id}:{item.line.finished_product_percent:.8f}"
-                for item in sorted(
-                    prepared, key=lambda current: current.line.ingredient_id
-                )
-            )
-            seed = int(hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:16], 16)
-        rng = np.random.default_rng(seed)
+        coupled = seed is None
+        rng = np.random.default_rng(0 if coupled else seed)
 
         importance = np.asarray(
             [
@@ -978,10 +993,15 @@ class TemporalMixtureSimulator:
             prepared, interaction
         )
         time_similarities, time_intensities, time_mixtures = self._sampled_temporal_arrays(
-            prepared, interaction, time_targets, draws, rng,
+            prepared, interaction, time_targets, draws, rng, coupled=coupled,
         )
 
         temporal: list[TemporalPoint] = []
+        reference_prediction = None
+        if self.reference_provider is not None:
+            from .hierarchical_perfume import active, evaluate_reference
+            if active(self.reference_provider, brief):
+                reference_prediction = evaluate_reference(self.reference_provider, brief, lines, ingredients, store, draws)
         opening_intensity = max(
             1e-12, float(np.mean(time_intensities[:, 0]))
         )
@@ -1017,6 +1037,7 @@ class TemporalMixtureSimulator:
                         for index, dimension in enumerate(SCENT_DIMENSIONS)
                     },
                     target_profile={dimension: float(time_targets[time_index][0][index]) for index, dimension in enumerate(SCENT_DIMENSIONS)},
+                    full_reference_prediction=reference_prediction if time_index == 0 else None,
                 )
             )
         per_draw_mean = time_similarities @ self.time_weights(brief)
@@ -1097,4 +1118,5 @@ class TemporalMixtureSimulator:
             simulation_only_approved=False,
             monte_carlo_draws=draws,
             model_domain_passed=model_domain_passed,
+            uncertainty_sampling_version=PRIOR_SAMPLING_VERSION if coupled else 'legacy_explicit_seed_stream',
         )

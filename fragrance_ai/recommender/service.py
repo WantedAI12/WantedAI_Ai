@@ -29,11 +29,13 @@ from .odor_profiles import OdorProfileStore
 from .quality import QualityEvidenceStore, formula_fingerprint
 from .promotion_activation import PromotionActivationBundle
 from .perception_guidance import PerceptionGuidance, attach_guidance
-from .profile_match import assess_recipe_profiles, attach_profile_assessment, full_profile_similarity
+from .profile_match import assess_recipe_profiles, attach_profile_assessment, full_profile_similarity, profile_search_assessment
 from .global_profile_search import optimize_full_pool, profile_upper_bound
 from .linear_program_cache import linear_program_request
 from .adaptive_pyramid import actual_pyramid, blended_proposals, check_adaptive_response, prepare_adaptive_policy
 from .dose_refinement import dose_refinement_proposals, full_inferred_note_policy
+from .search_budget import governed, exhausted as search_budget_exhausted
+from .failure_recovery import failed_only_recovery, perfume_recovery_available, recovery_active
 from .registry_activation import REGISTRY_CONDITIONAL_DATA_SOURCE
 from .odor_integrity import registry_odor_rejection
 from .release_spec import ReleaseSpec
@@ -224,7 +226,7 @@ class NaturalLanguagePerfumeryAI:
         )
         if scientific_store is None:
             self._owned_resources.append(self.scientific_store)
-        self.temporal_simulator = TemporalMixtureSimulator()
+        self.temporal_simulator = TemporalMixtureSimulator(reference_provider=self.perception_guidance)
         self.physsim_engine = ConcentrationAwarePhysSim(
             concentration_response=concentration_response
         )
@@ -487,7 +489,9 @@ class NaturalLanguagePerfumeryAI:
             if not isinstance(value, str) or len(value) > 256:
                 raise ValueError(f"{name} must be text of at most 256 characters")
 
+    @failed_only_recovery('perfume', eligibility=perfume_recovery_available)
     @linear_program_request
+    @governed('perfume')
     def create_recipe(
         self,
         natural_language_brief: str,
@@ -508,6 +512,10 @@ class NaturalLanguagePerfumeryAI:
         requested = self.parser.parse(natural_language_brief, constraints).constraints
         automatic = bool(self.require_full_profile_match and requested.max_ingredients > 12
                          and requested.validation_level == "prototype" and not requested.reference_target_id)
+        if recovery_active() and target_profile_override is None:
+            from .hierarchical_perfume import active as hierarchical_active
+            if hierarchical_active(self.perception_guidance, self.parser.parse(natural_language_brief, requested)):
+                automatic = False
         budgets = []
         support_results = []
 
@@ -529,7 +537,10 @@ class NaturalLanguagePerfumeryAI:
             return assessment
 
         def rank(candidate, assessment):
-            return (bool(candidate.recipe), -1. if assessment["score"] is None else assessment["score"])
+            score = assessment['score']
+            if score is None:
+                score = assessment.get('partial_profile_score')
+            return (bool(candidate.recipe), -1. if score is None else score)
 
         result = run_budget(12 if automatic else requested.max_ingredients)
         best = record(result)
@@ -537,7 +548,10 @@ class NaturalLanguagePerfumeryAI:
             # The small-support trajectory is an incumbent, not a restriction
             # on the eligible pool. Keep its winner when wider searches regress.
             latest = result
-            for limit in dict.fromkeys((min(24, requested.max_ingredients), requested.max_ingredients)):
+            limits = () if getattr(result, '_hierarchical_intent', None) is not None else (min(24, requested.max_ingredients), requested.max_ingredients)
+            for limit in dict.fromkeys(limits):
+                if search_budget_exhausted():
+                    break
                 if best["target_met"] and result.recipe:
                     break
                 # Preserve the complete V15 24-first path when the small
@@ -555,7 +569,8 @@ class NaturalLanguagePerfumeryAI:
             # maximum; every candidate satisfied a tighter or identical cap.
             result.brief = replace(result.brief, constraints=replace(result.brief.constraints,
                                     max_ingredients=requested.max_ingredients))
-        if self.perception_guidance is not None and getattr(result, 'perception_guidance', None) is None:
+        if (self.perception_guidance is not None and getattr(result, 'perception_guidance', None) is None
+                and getattr(result, '_hierarchical_intent', None) is None):
             session = self.perception_guidance.begin(result.brief)
             report = session.report(None, None, changed=False, variants=0)
             report.update(status='not_evaluated_no_eligible_candidate', operation='create_recipe', recipe_returned=False)
@@ -567,6 +582,10 @@ class NaturalLanguagePerfumeryAI:
             self.temporal_simulator.time_weights(result.brief),
         )
         assessment["search"] = getattr(result, "_full_profile_search", {})
+        assessment['search']['score_scope'] = assessment.get('score_scope', 'complete_requested_profile')
+        if getattr(result, '_hierarchical_intent', None) is not None:
+            assessment.update(score=None, target_met=False, target_representation=result._hierarchical_intent,
+                score_kind='hierarchical_source_reference_unresolved', version='hierarchical-perfume-reference/v77')
         if result.brief.constraints.reference_target_id.strip():
             assessment.update(score=None, target_met=False,
                               scope="explicit_reference_uses_existing_reference_comparison_contract")
@@ -591,6 +610,11 @@ class NaturalLanguagePerfumeryAI:
         # intermediates. Final full-profile acceptance still uses the exact
         # requested goal, and evidenced/qualified flows keep their old gates.
         if self.require_full_profile_match and constraints.validation_level == "prototype" and not constraints.reference_target_id:
+            bank = getattr(self.perception_guidance, 'complete_reference_bank', None)
+            if bank is not None and getattr(bank, 'odor_space', None) is not None:
+                # The legacy preference remains a diagnostic/seed heuristic;
+                # the new full-reference final threshold is unchanged.
+                return 0.
             return min(90., constraints.target_similarity)
         return constraints.target_similarity
 
@@ -663,6 +687,14 @@ class NaturalLanguagePerfumeryAI:
             )
         if progress_callback is not None:
             progress_callback("INGREDIENT_SCREENING")
+        from .hierarchical_perfume import active as hierarchical_active, target_rows
+        if hierarchical_active(self.perception_guidance, brief):
+            from .odor_space import target_report
+            intent = target_report(self.perception_guidance.complete_reference_bank, brief, target_rows(brief))
+            if not intent['searchable']:
+                blocked = self._blocked_result(brief, '세부 향의 정량 참조가 부족합니다: '+', '.join(intent['unsupported']), {}, as_of)
+                blocked._hierarchical_intent = intent
+                return blocked
         candidates, rejected = self.screen.screen(
             self.catalog,
             brief,
@@ -809,6 +841,8 @@ class NaturalLanguagePerfumeryAI:
 
         def internally_eligible(variant, context_brief=None) -> bool:
             context_brief = context_brief or brief
+            if retired_blends.reject_lines(variant[0]):
+                return False
             if variant[1] + 1e-8 < self._preference_screen_target(context_brief.constraints):
                 return False
             if variant[3] > context_brief.constraints.max_formula_cost_per_kg:
@@ -823,6 +857,11 @@ class NaturalLanguagePerfumeryAI:
 
         if progress_callback is not None:
             progress_callback("RATIO_OPTIMIZATION")
+        from .retired_blends import RetiredBlendFilter
+        retired_blends = RetiredBlendFilter(
+            'perfume' if brief.constraints.product_category in
+            ('eau_de_parfum', 'eau_de_toilette', 'eau_de_cologne') else 'other',
+            brief.constraints.product_concentration_percent)
         try:
             selected_candidates = self.optimizer._select_candidates(candidates, brief)
             property_ids = [item.ingredient_id for item in candidates]
@@ -830,6 +869,8 @@ class NaturalLanguagePerfumeryAI:
                 property_ids.extend(line.ingredient_id for line in reference_target.lines)
             scientific_properties = self.scientific_store.get_many(property_ids)
             scientific_properties = ScientificPropertyStore.with_catalog_structures(candidates, scientific_properties)
+            if guide is not None and hasattr(guide, 'bind_properties'):
+                guide.bind_properties(scientific_properties)
             response_inputs = self.temporal_simulator.prepare_response_inputs(candidates, scientific_properties)
             response_index = {identifier: index for index, identifier in enumerate(response_inputs.identifiers)}
             response_matrices = {}
@@ -874,6 +915,8 @@ class NaturalLanguagePerfumeryAI:
             variant_fingerprints: set[str] = set()
 
             def add_variant(variant):
+                if retired_blends.reject_lines(variant[0]):
+                    return False
                 fingerprint = formula_fingerprint(variant[0])
                 if fingerprint not in variant_fingerprints:
                     variant_fingerprints.add(fingerprint)
@@ -994,6 +1037,8 @@ class NaturalLanguagePerfumeryAI:
                         full_profile_variants_added += int(add_variant(refined))
         except NoFeasibleFormula as error:
             return self._blocked_result(brief, str(error), rejected, as_of)
+        if not formula_variants:
+            return self._blocked_result(brief, "제외된 배합 외의 후보를 찾지 못했습니다.", rejected, as_of)
         evaluated_variants = []
         screening_draws = min(64, max(30, brief.constraints.simulation_draws))
         for variant in formula_variants:
@@ -1055,7 +1100,7 @@ class NaturalLanguagePerfumeryAI:
             )
 
         original_choice = max(
-            evaluated_variants[:unguided_variant_count],
+            evaluated_variants[:unguided_variant_count] or evaluated_variants,
             key=lambda item: (
                 item[3].status == "evidenced_nonhuman_pass",
                 physics_objective(item),
@@ -1083,7 +1128,7 @@ class NaturalLanguagePerfumeryAI:
                     continue
                 # A research prior cannot erase existing requested-target,
                 # safety or evidence gates. Bound legacy proxy regression too.
-                if physics_objective(item) < physics_objective(original_choice) - 3.0:
+                if not getattr(guide, 'authoritative_profile_objective', False) and physics_objective(item) < physics_objective(original_choice) - 3.0:
                     continue
                 if original_choice[3].status == "evidenced_nonhuman_pass" and item[3].status != "evidenced_nonhuman_pass":
                     continue
@@ -1097,7 +1142,7 @@ class NaturalLanguagePerfumeryAI:
         full_before = full_after = None
         if reference_target is None:
             def complete_score(item):
-                assessment = assess_recipe_profiles(
+                assessment = profile_search_assessment(
                     brief, item[0][2], [asdict(point) for point in item[1].temporal_points], time_weights
                 )
                 return assessment["score"]
@@ -1166,6 +1211,27 @@ class NaturalLanguagePerfumeryAI:
         if reference_target is None:
             current_full = complete_score(chosen)
             optimistic_bound = profile_upper_bound(candidates, brief.target_profile)
+            if getattr(guide, 'authoritative_profile_objective', False):
+                optimistic_bound = {'status':'not_certified_for_full_reference_objective', 'upper_score':100.,
+                    'legacy_render_allowance_points':0., 'legacy_19_axis_bound_not_applied':True}
+            if (self.enable_full_pool_search and self.require_full_profile_match and current_full is not None
+                    and not getattr(guide, 'authoritative_profile_objective', False)
+                    and current_full+1e-8 < brief.constraints.target_similarity):
+                # A positive structural mixture must obey this cap/cost hull,
+                # even if inferred note bands and cardinality are removed.
+                # The recomputed dual is a bound, not a favorable LP proposal.
+                from .models import MAX_FORMULA_INGREDIENTS
+                relaxed_brief = replace(brief, constraints=replace(brief.constraints, max_ingredients=MAX_FORMULA_INGREDIENTS))
+                relaxed = optimize_full_pool(candidates, relaxed_brief,
+                    pyramid_bounds={group: (0., 100.) for group in brief.pyramid_ratios})
+                if relaxed.certified_overlap_upper_score is not None:
+                    tighter = min(optimistic_bound['upper_score'], relaxed.certified_overlap_upper_score+
+                                  optimistic_bound['legacy_render_allowance_points'])
+                    optimistic_bound.update(status='validated_fractional_cap_cost_upper', upper_score=tighter,
+                        certified_unrendered_upper_score=relaxed.certified_overlap_upper_score,
+                        bounds_include_caps_cost_pyramid='caps_cost_only_pyramid_and_cardinality_relaxed',
+                        certificate_method='recomputed_lagrangian_bound_with_reduced_cost_box_residuals',
+                        numerical_optimum_is_not_achievability=True)
             pool_diagnostic.update(
                 candidate_count=len(candidates), bound=optimistic_bound,
                 baseline_v7_score=current_full, selected_score=current_full, candidate_changed=False,
@@ -1174,6 +1240,11 @@ class NaturalLanguagePerfumeryAI:
                 requested_target_ruled_out_by_bound=(optimistic_bound["upper_score"] is not None
                                                     and optimistic_bound["upper_score"] + 1e-8 < brief.constraints.target_similarity),
             )
+            if (self.require_full_profile_match and pool_diagnostic['requested_target_ruled_out_by_bound']
+                    and getattr(getattr(guide,'provider',None),'core',None) is not None
+                    and getattr(guide.provider.core,'version',None) in ('shared-formulation-core/v75','shared-formulation-core/v76')):
+                from .profile_frontier import explain_profile_frontier
+                pool_diagnostic['profile_frontier']=explain_profile_frontier(candidates,brief,optimistic_bound)
             if self.enable_full_pool_search and current_full is not None and current_full + 1e-8 < brief.constraints.target_similarity:
                 pool_diagnostic["status"] = "evaluated_entire_screened_pool"
                 minimums = {
@@ -1220,7 +1291,7 @@ class NaturalLanguagePerfumeryAI:
                     twin = self.temporal_simulator.evaluate(variant[0], ingredient_map, brief, scientific_properties, draws=brief.constraints.simulation_draws)
                     pool_variants_evaluated += 1
                     pool_sets_evaluated.add(tuple(sorted(line.ingredient_id for line in variant[0])))
-                    comparison = assess_recipe_profiles(brief, variant[2], [asdict(point) for point in twin.temporal_points], time_weights)["score"]
+                    comparison = profile_search_assessment(brief, variant[2], [asdict(point) for point in twin.temporal_points], time_weights)["score"]
                     attempt["full_profile_score"] = comparison
                     if (comparison is None or comparison <= current_full + 1e-8
                             or (not self.require_full_profile_match and not legacy_was_eligible and comparison + 1e-8 < brief.constraints.target_similarity)):
@@ -1256,7 +1327,7 @@ class NaturalLanguagePerfumeryAI:
         adaptive = {"enabled": self.enable_adaptive_pyramid and self.enable_full_pool_search, "status": "not_applicable", "attempts": []}
         if reference_target is None:
             baseline_v8 = chosen
-            baseline_assessment = assess_recipe_profiles(brief, chosen[0][2], [asdict(p) for p in chosen[1].temporal_points], time_weights)
+            baseline_assessment = profile_search_assessment(brief, chosen[0][2], [asdict(p) for p in chosen[1].temporal_points], time_weights)
             adaptive.update(baseline_v8_score=baseline_assessment["score"], selected_score=baseline_assessment["score"],
                             baseline_v8_formula_id=formula_fingerprint(chosen[0][0]), candidate_changed=False,
                             original_inferred_pyramid=dict(brief.pyramid_ratios), selected_pyramid=actual_pyramid(chosen[0][0]))
@@ -1335,7 +1406,7 @@ class NaturalLanguagePerfumeryAI:
                                                                     draws=source_brief.constraints.simulation_draws)
                             pool_variants_evaluated += 1
                             pool_sets_evaluated.add(tuple(sorted(line.ingredient_id for line in variant[0])))
-                            assessment = assess_recipe_profiles(candidate_brief, variant[2], [asdict(p) for p in twin.temporal_points], time_weights)
+                            assessment = profile_search_assessment(candidate_brief, variant[2], [asdict(p) for p in twin.temporal_points], time_weights)
                             score = assessment["score"]
                             attempt.update(full_profile_score=score, pyramid_ratios=ratios)
                             if score is None or score <= current_adaptive_score + 1e-8 or (not self.require_full_profile_match and not legacy_was_eligible and score + 1e-8 < source_brief.constraints.target_similarity):
@@ -1374,7 +1445,7 @@ class NaturalLanguagePerfumeryAI:
                 "status": "not_applicable", "attempts": []}
         if reference_target is None:
             dose_baseline, dose_brief = chosen, brief
-            dose_assessment = assess_recipe_profiles(brief, chosen[0][2], [asdict(p) for p in chosen[1].temporal_points], time_weights)
+            dose_assessment = profile_search_assessment(brief, chosen[0][2], [asdict(p) for p in chosen[1].temporal_points], time_weights)
             dose_score = dose_assessment["score"]
             dose.update(baseline_v9_score=dose_score, selected_score=dose_score, candidate_changed=False,
                         baseline_v9_formula_id=formula_fingerprint(chosen[0][0]),
@@ -1398,12 +1469,20 @@ class NaturalLanguagePerfumeryAI:
                 seen_dose = {formula_fingerprint(chosen[0][0])}
                 prior_guide = guide.evaluate_lines(chosen[0][0], ingredient_map) if guide is not None and guide.enabled else None
                 modeled_ids = {item.ingredient_id for item in candidates if item.vector().sum() > 0}
+                dose['autoregressive_refinement'] = {}
                 for proposal in dose_refinement_proposals(candidates, dose_brief, scientific_properties, dose_baseline[0][0], policy, dose_seeds, minimums,
-                                                         current_lines=lambda: chosen[0][0], current_score=lambda: dose_score):
+                                                         current_lines=lambda: chosen[0][0], current_score=lambda: dose_score,
+                                                         current_feedback=lambda: profile_search_assessment(dose_brief, chosen[0][2], [asdict(p) for p in chosen[1].temporal_points], time_weights),
+                                                         autoregressive_diagnostics=dose['autoregressive_refinement'],
+                                                         guidance=guide, minimum_guidance=prior_guide['score'] if prior_guide is not None else None):
+                    neural_usage=(dose['autoregressive_refinement'].get('neural_usage') if proposal.get('replacement_mode')
+                        in ('trusted_neural_feedback','trained_autoregressive_decoder','reference_neural_feedback','reference_autoregressive_decoder',
+                            'learned_seed_actual_physics_polish') else None)
                     allocation_bounds = (full_inferred_note_policy(policy)["bounds"] if proposal.get("allocation_mode") == "inferred_full_range" else policy["bounds"])
-                    blends = list(blended_proposals(dose_baseline[0][0], proposal["weights_percent"], brief.constraints.max_ingredients, modeled_ids))
+                    from .adaptive_pyramid import refinement_blends
+                    blends = list(refinement_blends(dose_baseline[0][0], proposal, brief.constraints.max_ingredients, modeled_ids))
                     for fraction, weights in reversed(blends):
-                        attempt = {key: value for key, value in proposal.items() if key != "weights_percent"}
+                        attempt = {key: value for key, value in proposal.items() if key not in ("weights_percent","anchor_weights_percent")}
                         attempt.update(context="actual_dose_joint_time", blend_fraction=fraction, status="proposed")
                         dose["attempts"].append(attempt)
                         pool_diagnostic["attempts"].append(attempt)
@@ -1415,6 +1494,16 @@ class NaturalLanguagePerfumeryAI:
                                 or sum(line.concentrate_percent / 100 * line.price_per_kg for line in variant[0]) > brief.constraints.max_formula_cost_per_kg + 1e-6
                                 or any(not low - .001 <= ratios[group] <= high + .001 for group, (low, high) in allocation_bounds.items())):
                             attempt["status"] = "rejected_existing_or_allocation_constraints"
+                            if proposal.get('replacement_mode','').startswith('source-fixed-physical-inverse/'):
+                                reality = assess_realism(variant[0], ingredient_map, context_brief, self.corpus)
+                                gate = self.safety_gate.evaluate(variant[0], ingredient_map, context_brief.constraints, as_of=as_of)
+                                attempt['constraint_rejection'] = {
+                                    'legacy_preference':variant[1],
+                                    'legacy_preference_minimum':self._preference_screen_target(context_brief.constraints),
+                                    'realism_score':reality.score,'realism_minimum':context_brief.constraints.minimum_realism_score,
+                                    'realism_components':reality.components,'safety_violations':list(gate.violations),
+                                    'zero_dose_rows':sum(line.concentrate_percent<=0 for line in variant[0]),
+                                    'mass_total':sum(ratios.values()),'formula_cost':variant[3]}
                             continue
                         identity = formula_fingerprint(variant[0])
                         if identity in seen_dose:
@@ -1422,9 +1511,11 @@ class NaturalLanguagePerfumeryAI:
                             continue
                         seen_dose.add(identity)
                         twin = self.temporal_simulator.evaluate(variant[0], ingredient_map, context_brief, scientific_properties, draws=brief.constraints.simulation_draws)
+                        if neural_usage is not None:
+                            neural_usage['actual_physics_evaluations']+=1
                         pool_variants_evaluated += 1
                         pool_sets_evaluated.add(tuple(sorted(line.ingredient_id for line in variant[0])))
-                        assessment = assess_recipe_profiles(context_brief, variant[2], [asdict(p) for p in twin.temporal_points], time_weights)
+                        assessment = profile_search_assessment(context_brief, variant[2], [asdict(p) for p in twin.temporal_points], time_weights)
                         score = assessment["score"]
                         attempt.update(full_profile_score=score, pyramid_ratios=ratios)
                         if score is None or score <= dose_score + 1e-8 or (not self.require_full_profile_match and not legacy_was_eligible and score + 1e-8 < brief.constraints.target_similarity):
@@ -1452,6 +1543,8 @@ class NaturalLanguagePerfumeryAI:
                         dose.update(candidate_changed=True, selected_score=score, selected_formula_id=identity, selected_pyramid=ratios)
                         pool_diagnostic.update(selected_score=score, candidate_changed=True, selected_formula_id=identity)
                         attempt["status"] = "selected_actual_dose_improvement"
+                        if neural_usage is not None:
+                            neural_usage['adopted_improvements']+=1
                         if score + 1e-8 >= brief.constraints.target_similarity:
                             break
                     if dose_score + 1e-8 >= brief.constraints.target_similarity:
@@ -1913,6 +2006,7 @@ class NaturalLanguagePerfumeryAI:
             scientific_monte_carlo_draws=scientific_twin.monte_carlo_draws,
             scientific_model_domain_passed=scientific_twin.model_domain_passed,
             scientific_uncertainty_kind=scientific_twin.uncertainty_kind,
+            scientific_sampling_version=scientific_twin.uncertainty_sampling_version,
             physsim_status=physsim.status,
             physsim_model_version=physsim.model_version,
             physsim_similarity_score=physsim.similarity,
@@ -2046,6 +2140,8 @@ class NaturalLanguagePerfumeryAI:
             "not_human_perception_validation": True,
             "full_pool_search": pool_diagnostic,
         }
+        if retired_blends.rejected:
+            result._full_profile_search['retired_blends'] = retired_blends.report()
         return result
 
     def create_recipe_with_target_profile(

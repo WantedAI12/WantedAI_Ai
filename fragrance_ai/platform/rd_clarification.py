@@ -38,6 +38,16 @@ def answer_rd_questions(original, questions, answers):
     output = json.loads(json.dumps(original, allow_nan=False))
     legacy = {}
     for key, answer in answers.items():
+        if key.startswith('evidence_policy.'):
+            from .rd_policy import POLICY_QUESTIONS, ReviewEvidencePolicy
+            field = key.removeprefix('evidence_policy.')
+            if field not in POLICY_QUESTIONS:
+                raise ValueError('unsupported evidence policy answer')
+            parsed = ReviewEvidencePolicy.model_validate({field: answer})
+            if getattr(parsed, field) is None:
+                raise ValueError('policy answer cannot be null')
+            output.setdefault('evidence_policy', {})[field] = getattr(parsed, field)
+            continue
         if not key.startswith("request.formula."):
             legacy[key] = answer
             continue

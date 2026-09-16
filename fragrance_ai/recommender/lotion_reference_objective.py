@@ -133,7 +133,32 @@ class ObservedReferenceBank:
         self.profiles = {k: normalize(x) for k, x in v['profiles'].items()}
         self.background = normalize(v['background'])
         self.metadata = v['concept_metadata']
+        self.annotation_extension = v.get('annotation_extension')
+        if self.annotation_extension is not None:
+            extension = self.annotation_extension
+            if (extension.get('version') != 'source-annotation-reference-extension/v71'
+                    or any(extension.get(key) is not False for key in
+                           ('recipe_outcomes_used', 'candidate_catalog_used', 'predicted_odor_profiles_used'))
+                    or extension.get('existing_reference_vectors_unchanged') is not True):
+                raise ValueError('invalid source-only reference extension')
         self.parent_sha256 = v['parent_atlas_sha256']
+        from .odor_resolution import validate_resolution
+        self.resolution = validate_resolution(v)
+        self.odor_space = None
+        extension = v.get('hierarchical_extension')
+        if extension is not None:
+            from .odor_space import COMPILER, load_space
+            if (extension.get('schema') != COMPILER or
+                    any(extension.get(k) is not False for k in ('recipe_outcomes_used','candidate_catalog_used'))
+                    or (extension.get('predicted_odor_profiles_used') is not False and self.resolution is None)):
+                raise ValueError('invalid hierarchical source reference')
+            target = (self.path.parent/extension['space_path']).resolve()
+            if not target.is_relative_to(self.path.parent.resolve()):
+                raise ValueError('odor space escapes reference directory')
+            self.odor_space = load_space(target, extension['space_sha256'])
+            if self.odor_space.value.get('release_scope'):
+                from .odor_release_scope import validate_scope
+                validate_scope(self.odor_space.value, self.profiles)
         if len(set(self.endpoints)) != len(self.endpoints) or not self.profiles:
             raise ValueError('invalid reference endpoint identity')
         if any(x.shape != (2, len(self.endpoints)) for x in [self.background, *self.profiles.values()]):
@@ -142,21 +167,40 @@ class ObservedReferenceBank:
     def assert_current(self):
         if hashlib.sha256(self.path.read_bytes()).hexdigest() != self.sha256:
             raise ValueError('lotion target reference changed during request')
+        if getattr(self, 'odor_space', None) is not None and hashlib.sha256(self.odor_space.path.read_bytes()).hexdigest() != self.odor_space.sha256:
+            raise ValueError('hierarchical odor space changed during request')
 
     def contract(self):
-        return {'version': VERSION, 'evaluation_version': 'lotion-observed-exposure/v2', 'product': 'body_lotion',
+        return {'version': VERSION, 'evaluation_version': 'lotion-observed-exposure/v3', 'product': 'body_lotion',
+            'discrimination_version':'source-family-discrimination/v89',
             'prediction_model': 'finite_dose_ow_film_transport_with_atlas_reference_shapes',
             'aggregation': 'exposure_integral_or_explicit_phase_integrals_then_min_over_scenarios_and_reference_heads',
             'profile_representation': 'learned_146_axis_observed_reference_not_19_axis_purity',
             'cross_product_scores_comparable': False, 'matrix_calibrated': False,
             'reference_sha256': self.sha256,
-            'target_basis': 'conditional_observed_full_146_descriptor_profiles',
+            'target_basis': ('typed_observed_and_model_estimated_146_descriptor_references' if getattr(self, 'resolution', None)
+                             else 'conditional_observed_full_146_descriptor_profiles'),
             'predicted_basis': 'transport_weighted_learned_146_descriptor_mixture',
             'recipe_outcomes_used_to_define_target': False, 'unmentioned_notes_forced_to_zero': False,
             'absolute_intensity_calibrated': False, 'lotion_mixture_interactions_calibrated': False,
-            'human_similarity_percent': None, 'legacy_scores_directly_comparable': False}
+            'available_reference_concepts': len(self.profiles),
+            'source_annotation_extension': ({
+                'version': self.annotation_extension['version'],
+                'recipe_outcomes_used': False,
+                'candidate_catalog_used': False,
+                'new_measured_descriptor_endpoints': False,
+                'existing_reference_vectors_unchanged': True,
+            } if self.annotation_extension else None),
+            'human_similarity_percent': None, 'legacy_scores_directly_comparable': False,
+            **({'reference_resolution':{k:v for k,v in self.resolution.items()
+                if k not in ('new_reference_metadata','source_profile_keys')}} if getattr(self, 'resolution', None) else {}),
+            **({'hierarchical_odor_space':self.odor_space.contract(), 'target_compiler':'hierarchical-target-compiler/v77'}
+               if getattr(self, 'odor_space', None) is not None else {})}
 
     def targets(self, brief, target_rows):
+        if getattr(self, 'odor_space', None) is not None:
+            from .odor_space import compile_targets
+            return compile_targets(self, brief, target_rows)
         from .brief_parser import _is_negated, _match_weight
         from .odor_descriptors import load_builtin_odor_descriptor_lexicon
         lexicon = {r.descriptor: r for r in load_builtin_odor_descriptor_lexicon().descriptors}
@@ -216,8 +260,13 @@ class ObservedReferenceBank:
             if avoid:
                 vector[:, [self.endpoints.index(k) for k in avoid]] = 0.
                 vector = normalize(vector)
+            annotation_conditioned = [k for k in available
+                if self.metadata.get(k, {}).get('reference_kind') == 'source_annotation_conditioned_observed_full_profiles']
             output.append({'profiles': vector, 'concepts': concepts, 'avoided': avoid,
-                'source': 'observed_conditional_reference_not_measured_user_target'})
+                'source': ('source_annotation_conditioned_observed_reference_not_measured_user_target'
+                           if annotation_conditioned else 'observed_conditional_reference_not_measured_user_target'),
+                'annotation_conditioned_concepts': annotation_conditioned,
+                'reference_identity_support': {k: self.metadata.get(k, {}).get('distinct_identity_groups') for k in available}})
         if brief.target_profile_source == 'explicit_structured_relative_weights':
             unsupported.add('explicit_19_axis_profile_requires_legacy_profile_mode')
         if brief.intensity != 'medium':
@@ -233,11 +282,17 @@ class ObservedReferenceBank:
         cosine = result['cosine_score']/100
         background = self.background[head]
         bg_cosine = float(np.dot(background, actual)/(np.linalg.norm(background)*np.linalg.norm(actual)))
+        from .reference_discrimination import assess
+        clean=self.profiles.get('clean')
+        discrimination = assess(target['profiles'][head],actual,background,
+                                clean_reference=clean[head] if clean is not None else None)
         # A broad mean profile must not win just because every scent shares
         # common descriptors. This guard does not rescale the agreement score.
         result.update(version=VERSION, score_kind='observed_reference_profile_agreement_not_user_similarity',
             background_cosine_score=100*bg_cosine,
-            reference_more_specific_than_background=cosine > bg_cosine+1e-8)
+            reference_more_specific_than_background=discrimination['passed'],
+            discrimination=discrimination,
+            legacy_cosine_background_discrimination_passed=cosine > bg_cosine+1e-8)
         return result
 
 

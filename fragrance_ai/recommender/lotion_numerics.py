@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 from scipy import sparse
 from scipy.optimize import OptimizeWarning
+from .search_budget import allowance
 
 
 def highs_linprog(solver, objective, **kwargs):
@@ -54,7 +55,7 @@ def conditioned_linprog(solver, objective, *, A_ub, b_ub, A_eq, b_eq, bounds, sc
     transformed_bounds = [(lo/s if lo is not None else None, hi/s if hi is not None else None)
         for (lo,hi),s in zip(bounds, scales)]
     result = highs_linprog(solver, costs, A_ub=matrix, b_ub=rhs, A_eq=equality, b_eq=eq_rhs,
-        bounds=transformed_bounds, method='highs-ipm', options={'time_limit':2., 'presolve':True,
+        bounds=transformed_bounds, method='highs-ipm', options={'time_limit':allowance('linear',2.,len(objective)), 'presolve':True,
             'small_matrix_value':1e-12, 'primal_feasibility_tolerance':1e-9, 'dual_feasibility_tolerance':1e-9})
     if getattr(result, 'x', None) is not None:
         result.x = np.asarray(result.x)*scales
