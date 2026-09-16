@@ -4,13 +4,13 @@ No private models, material bundles, raw QA responses or credentials are copied.
 The publication worktree must already exist and remain separate from the source.
 """
 import argparse
-import ast
 import hashlib
 import json
 from pathlib import Path
 import re
 import shutil
 import subprocess
+from verify_publication_v91 import semantic_hash
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -43,8 +43,7 @@ def main():
         name = path.relative_to(installed).as_posix()
         copy(path, name)
         sources[name] = hashlib.sha256(path.read_bytes()).hexdigest()
-        ast_sources[name] = hashlib.sha256(ast.dump(ast.parse(path.read_text(encoding='utf8')),
-            include_attributes=False).replace(', type_params=[]', '').encode()).hexdigest()
+        ast_sources[name] = semantic_hash(path)
     # Non-code wheel assets must be already public and unchanged.
     for folder in ('fragrance_ai/data', 'fragrance_ai/ui'):
         for path in (installed/folder).rglob('*'):

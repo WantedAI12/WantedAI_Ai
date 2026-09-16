@@ -8,11 +8,27 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def canonical_ast(value):
+    if isinstance(value, ast.AST):
+        return {'node': type(value).__name__, 'fields': {
+            key: canonical_ast(item) for key, item in ast.iter_fields(value)
+            if key != 'type_params' or item}}
+    if isinstance(value, (list, tuple)):
+        return [canonical_ast(item) for item in value]
+    if isinstance(value, bytes):
+        return {'bytes': value.hex()}
+    if isinstance(value, complex):
+        return {'complex': repr(value)}
+    if value is Ellipsis:
+        return {'literal': 'ellipsis'}
+    return value
+
+
 def semantic_hash(path):
     tree = ast.parse(path.read_text(encoding='utf8'))
-    # Empty generic parameters were added to CPython's AST in 3.12. They do
-    # not change these nongeneric 3.11-compatible runtime implementations.
-    normalized = ast.dump(tree, include_attributes=False).replace(', type_params=[]', '')
+    # ast.dump changed its empty-field rendering in Python 3.13. Serialize
+    # fields ourselves so the 3.11 deployment/CI and local 3.13 agree.
+    normalized = json.dumps(canonical_ast(tree), sort_keys=True, separators=(',', ':'))
     return hashlib.sha256(normalized.encode()).hexdigest()
 
 
@@ -30,7 +46,7 @@ def main():
                 raise ValueError('deployed source hash mismatch: ' + name)
             expected[name] = semantic_hash(source)
         record['runtime_ast_sha256'] = expected
-        record['ast_normalization'] = 'CPython AST without locations and empty type_params'
+        record['ast_normalization'] = 'canonical-json-ast/v1; no locations or empty type_params'
         path.write_text(json.dumps(record, indent=2)+'\n', encoding='utf8')
     actual_names = {item.relative_to(ROOT).as_posix() for item in (ROOT/'fragrance_ai').rglob('*.py')}
     if actual_names != set(record['runtime_ast_sha256']):
