@@ -42,7 +42,7 @@ def representation_contract(brief, supported_axes=None):
         requested.update(k for p in profiles.values() for k,v in p.items() if v > 0)
     requested.update(k for values in brief.phase_avoided_dimensions.values() for k in values)
     supported = None if supported_axes is None else set(supported_axes)
-    return {'version': 'explicit-target-representation/v1', 'axes': list(SCENT_DIMENSIONS),
+    result = {'version': 'explicit-target-representation/v1', 'axes': list(SCENT_DIMENSIONS),
         'source': brief.target_profile_source, 'weight_semantics': 'normalized_model_profile_not_human_intensity',
         'zero_target_axis_semantics': 'zero_desired_model_mass_not_an_explicit_user_ban',
         'unrequested_axes_remain_in_strict_comparison': True,
@@ -51,6 +51,18 @@ def representation_contract(brief, supported_axes=None):
         'learned_unmodeled_requested_axes': sorted(requested-supported) if supported is not None else None,
         'learned_coverage_is_not_primary_19_axis_score': True,
         'fine_expression':brief_expression(brief), 'human_similarity_percent': None}
+    from .odor_space import configured_odor_space
+    space = configured_odor_space()
+    if space is not None and brief.target_profile_source != 'explicit_structured_relative_weights':
+        from .lotion_reference_objective import load_configured_reference_bank
+        from .odor_space import target_report
+        bank = load_configured_reference_bank()
+        if bank is not None and bank.odor_space is not None:
+            rows = [{'phase':'overall','target_profile':brief.target_profile,'avoided':brief.avoided_dimensions}]
+            result.update(hierarchical_target=target_report(bank,brief,rows), legacy_projection_only=True,
+                zero_target_axis_semantics='legacy_display_zero_not_unmentioned_reference_absence',
+                unrequested_axes_remain_in_strict_comparison=False)
+    return result
 
 
 def apply_intent_controls(brief, controls):

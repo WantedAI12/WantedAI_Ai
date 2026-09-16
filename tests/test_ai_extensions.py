@@ -140,10 +140,22 @@ def test_structured_profile_is_passed_to_engine_not_only_displayed(extension):
     assert calls[0][1]["target_profile_override"] == {"citrus": 1}
 
 
-def test_actual_modal_app_exposes_additive_routes_and_real_recipe_response():
-    pytest.importorskip("modal")
-    from deploy.modal_app import REGISTRY, create_web_app
-    with TestClient(create_web_app(str(REGISTRY))) as client:
+def test_actual_modal_app_exposes_additive_routes_and_real_recipe_response(monkeypatch):
+    import os
+    from pathlib import Path
+    profile = os.environ.get('PERFUMERY_AI_TEST_RELEASE_PROFILE')
+    if not profile:
+        pytest.skip('real release integration requires an explicit sealed test profile')
+    # A test-only selector is not an operator model setting. Leaving it in
+    # PERFUMERY_AI_* would correctly make the runtime bypass its cache.
+    monkeypatch.delenv('PERFUMERY_AI_TEST_RELEASE_PROFILE')
+    # Import the current factory, not the archived V32 deployment entrypoint.
+    # No deployment or bypass of artifact verification is involved.
+    monkeypatch.setenv('PERFUMERY_AI_LOCAL_PROFILE', profile)
+    monkeypatch.setenv('PERFUMERY_AI_ENV', 'research')
+    from deploy.target_runtime_v87 import create_release_app
+    registry = Path(__file__).resolve().parents[1]/'benchmarks/industrial_ingredient_registry_v1.db'
+    with TestClient(create_release_app(registry_path=str(registry))) as client:
         request = {"formula": {"brief": "clean scent", "max_ingredients": 12}}
         prepared = client.post("/v1/briefs/prepare", json=request)
         assert prepared.status_code == 200 and prepared.json()["status"] == "ready"
@@ -151,8 +163,8 @@ def test_actual_modal_app_exposes_additive_routes_and_real_recipe_response():
         assert response.status_code == 200
         candidate = response.json()["candidates"][0]
         assert candidate["target_match_score"] == candidate["result"]["calculated_profile_similarity"]
-        assert candidate["result"]["score_contract"]["effective_target"] == 95
-        assert not candidate["result"]["recipe"]
+        assert candidate["result"]["score_contract"]["effective_target"] == 90
+        assert candidate['result']['recipe_delivery']['returned'] == bool(candidate['result']['recipe'])
         assert candidate["regulatory"]["schema_version"] == "regulatory-tabs-1"
         old = client.post("/v1/formulas", json=request["formula"])
         assert old.status_code == 200

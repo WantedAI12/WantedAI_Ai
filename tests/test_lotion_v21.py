@@ -150,7 +150,7 @@ def test_unsupported_or_incomplete_requirements_are_not_silently_accepted(kind):
     if kind == "scope": value["simulation"]["coefficient_scope"] = "fixed_composition"
     if kind == "scope_reference": value["simulation"]["coefficient_scope_reference"] = None
     if kind == "mode": value["simulation"]["transport_mode"] = "open_sink"
-    if kind == "low_target": value["target_similarity"] = 90
+    if kind == "low_target": value["target_similarity"] = 89.9
     if kind == "missing_material": value["simulation"]["materials"][0].pop("lipid_water_partition")
     if kind == "changed_concentration": value["brief"] = "woody scent 농도 3%"
     if kind == "missing_phase": value["brief"] = "opening citrus, drydown woody"
@@ -178,7 +178,7 @@ def test_routes_reuse_parser_and_catalog_without_perfume_inference():
         assert repeated.headers["X-Perfumery-Lotion-Cache"] == "hit"
         assert repeated.json() == result.json()
         assert client.get("/v1/ai/capabilities").json()["features"]["body_lotion_fixed_base_inverse_design"]
-        value["target_similarity"] = 90
+        value["target_similarity"] = 89.9
         assert client.post("/v1/applications/body-lotion/optimize", json=value).status_code == 422
 
 

@@ -111,7 +111,7 @@ def prepare_lotion_optimization(request, catalog, parser=None, *, _request_snaps
         "missing_transport_count": len(eligible) - len(pool), "candidate_ids": [item.ingredient_id for item in pool],
         "rejected_candidate_counts": rejected, "price_unit": "USD_estimate",
         "price_currency": "USD", "price_source_labels": sorted(price_labels), "live_supplier_price_verified": False,
-        "effective_target": max(95., request.target_similarity), "unscored_requirements": unscored,
+        "effective_target": request.target_similarity, "unscored_requirements": unscored,
         "odor_projection_versions": sorted({item.odor_projection_version or 'explicit-odor-projection-1' for item in pool}),
         "coefficient_scope": simulation.coefficient_scope, "coefficient_scope_reference": simulation.coefficient_scope_reference,
         "parameter_source_verified": False, "manufacturing_approved": False}

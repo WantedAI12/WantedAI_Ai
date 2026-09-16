@@ -34,7 +34,7 @@ def test_changed_structured_target_invalidates_request_cache():
     assert snapshot['brief'].target_profile['floral'] == 1.
 
 
-def test_prohibition_only_phase_has_same_remaining_target_in_perfume_and_lotion():
+def test_prohibition_only_phase_keeps_product_specific_target_contracts():
     catalog = IngredientCatalog.load_builtin()
     parser = NaturalLanguageBriefParser(catalog)
     brief = parser.parse('시트러스 우디', RecipeConstraints())
@@ -42,7 +42,10 @@ def test_prohibition_only_phase_has_same_remaining_target_in_perfume_and_lotion(
     target = effective_phase_target(brief,'drydown')
     assert target['citrus'] == 0. and target['woody'] == 1.
     rows = TemporalMixtureSimulator.targets_by_time(brief)
-    np.testing.assert_allclose(rows[-1][0],[target[k] for k in SCENT_DIMENSIONS])
+    # Perfume's explicit negative-only phase has no invented positive target.
+    # Lotion's retained-base preparation separately resolves the remaining
+    # positive target via effective_phase_target above (V67 contract).
+    np.testing.assert_array_equal(rows[-1][0], np.zeros(len(SCENT_DIMENSIONS)))
     assert 'citrus' in rows[-1][2]
 
 

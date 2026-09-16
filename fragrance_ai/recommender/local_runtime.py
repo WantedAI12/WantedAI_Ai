@@ -52,14 +52,22 @@ def _parse_profile(path, raw):
         names += ('odor_backbone',)
     if 'formulation_core' in value:
         names += ('formulation_core',)
+    if 'physical_evidence' in value:
+        names += ('physical_evidence',)
+    if 'public_evidence' in value:
+        names += ('public_evidence',)
     if 'lotion_release' in value:
         names += ('lotion_release',)
     if 'lotion_target_reference' in value:
         names += ('lotion_target_reference',)
+    if 'component_reference_observations' in value:
+        names += ('component_reference_observations',)
     if 'unified_product' in value:
         names += ('unified_product',)
     if 'odor_expression' in value:
         names += ('odor_expression',)
+    if 'odor_space' in value:
+        names += ('odor_space',)
     if 'odor_calibration' in value:
         if 'odor_expression' not in value:
             raise ValueError('odor calibration requires a pinned odor expression model')

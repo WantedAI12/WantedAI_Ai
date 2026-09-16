@@ -15,7 +15,7 @@ SOURCES = {
 }
 
 
-def regulatory_summary(payload):
+def regulatory_summary(payload, *, evidence_assessment=None):
     safety = payload.get("safety") or {}
     constraints = payload["brief"]["constraints"]
     recipe = payload.get("recipe") or []
@@ -50,16 +50,55 @@ def regulatory_summary(payload):
         tabs.append({"id": identifier, "label": label, "status": "not_assessed", "status_label": "확인 필요",
                      "evidence_scope": "no_scoped_rule_or_registration_evidence_connected", "findings": [],
                      "required_evidence": requirements, "note": note, "source_url": SOURCES[identifier]})
-    status = "not_assessed" if subject == "no_formula" else "blocked" if ifra_blocked or not safety.get("internal_gate_passed", False) else "review_required"
+    from ..platform.public_evidence import PublicEvidenceStore
+    public = PublicEvidenceStore.configured()
+    public_check = (evidence_assessment or {}).get('public_source_screen')
+    if public_check is None and public and subject != 'no_formula':
+        public_check = public.screen(recipe or candidate, category=constraints['product_category'],
+                                     concentration=constraints['product_concentration_percent'])
+    if public_check:
+        for tab, checked in zip(tabs, public_check['frameworks']):
+            tab['public_source_screen'] = checked
+            if checked['status'] != 'not_assessed':
+                tab['source_evidence_connected'] = True
+                tab['required_evidence'] = list(dict.fromkeys(tab['required_evidence'] + ['공급 품목·배치·사업자 범위 확인']))
+                if tab['status'] == 'not_assessed':
+                    tab.update(status='reference_available', status_label='공개자료 연결·검토 필요')
+                if checked.get('public_registry_check') and tab['status'] != 'blocked':
+                    tab.update(status='public_registry_review_required', status_label='공개 물질목록 대조·검토 필요',
+                        evidence_scope='public_registry_identity_and_findings_not_operating_approval')
+                if checked.get('public_registry_check', {}).get('formula_rule_checks', {}).get('source_limit_exceeded'):
+                    tab.update(status='blocked', status_label='공개 IFRA 기준 초과·검토 필요')
+    if evidence_assessment is not None:
+        reviewed_checks = {row['id']:row for row in evidence_assessment.get('framework_checks', [])}
+        for tab in tabs:
+            tab['registered_assessment'] = {
+                'assessment_id': evidence_assessment.get('result_id'),
+                'required_for_region': tab['id'] in evidence_assessment.get('required_frameworks', []),
+                'gate_passed': evidence_assessment.get('gate_passed', False),
+                'blockers': deepcopy(evidence_assessment.get('blockers', []))}
+            checked = reviewed_checks.get(tab['id'])
+            if checked:
+                tab['framework_assessment'] = deepcopy(checked)
+                if checked['status'] == 'blocked':
+                    tab.update(status='blocked',status_label='등록 근거 검사 차단')
+                elif checked['registered_review_passed'] and tab['status'] != 'blocked':
+                    tab.update(status='registered_review_supported',status_label='등록 근거 검사 통과',
+                        evidence_scope='scoped_registered_review_not_regulatory_certificate')
+                elif checked['status'] == 'partially_reviewed':
+                    tab.update(status='partial_screen_only',status_label='일부 원료 근거만 확인')
+    registered_blocked = any(tab['status'] == 'blocked' for tab in tabs)
+    status = "not_assessed" if subject == "no_formula" else "blocked" if registered_blocked or not safety.get("internal_gate_passed", False) else "review_required"
     tabs.append({"id": "REGULATORY_STATUS", "label": "규제 상태", "status": status,
                  "status_label": {"not_assessed": "미평가", "blocked": "검토 차단", "review_required": "검토 필요"}[status],
                  "internal_gate_passed": safety.get("internal_gate_passed", False),
                  "internal_blockers": list(safety.get("violations") or []),
                  "missing_documents": list(safety.get("missing_documents") or []),
-                 "unassessed_frameworks": [row["id"] for row in tabs if row["status"] == "not_assessed"],
+                 "unassessed_frameworks": [row["id"] for row in tabs if row["status"] in ("not_assessed",'reference_available','public_registry_review_required')],
                  "commercial_release_authorized_by_this_summary": False})
     return {"schema_version": "regulatory-tabs-1", "subject": subject,
             "material_count": len(recipe or candidate), "target_region": constraints["target_region"],
             "product_category": constraints["product_category"],
             "product_concentration_percent": constraints["product_concentration_percent"],
-            "status": status, "tabs": tabs, "live_regulatory_lookup_performed": False}
+            "status": status, "tabs": tabs, "live_regulatory_lookup_performed": False,
+            **({'public_source_screen': public_check} if public_check else {})}

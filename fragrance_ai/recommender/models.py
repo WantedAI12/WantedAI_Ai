@@ -217,6 +217,8 @@ class ScentBrief:
     expression_avoided: dict[str, float] = field(default_factory=dict)
     expression_matches: list[dict] = field(default_factory=list)
     phase_expressions: dict[str, dict] = field(default_factory=dict)
+    unresolved_odor_terms: list[dict] = field(default_factory=list)
+    expression_style_facets: list[dict] = field(default_factory=list)
 
 
 @dataclass
@@ -371,6 +373,7 @@ class RecipeResult:
     scientific_monte_carlo_draws: int = 0
     scientific_model_domain_passed: bool = False
     scientific_uncertainty_kind: str = ""
+    scientific_sampling_version: str = ""
     physsim_status: str = "not_run"
     physsim_model_version: str = ""
     physsim_similarity_score: float = 0.0
@@ -431,9 +434,11 @@ class RecipeResult:
     human_similarity_90_claim_authorized: bool = False
 
     def to_dict(self) -> dict[str, Any]:
+        from .confidence_contract import confidence_fields
         from .regulatory_status import regulatory_summary
 
         result = asdict(self)
+        result.update(confidence_fields(self.confidence))
         result["brief"]["constraints"]["explicit_bans"] = sorted(
             self.brief.constraints.explicit_bans
         )

@@ -3,6 +3,7 @@
 Each evaluate call performs one inference. The backend can queue scenario calls
 independently; this module does not start an unbounded synchronous batch.
 """
+from copy import deepcopy
 from datetime import date
 import hashlib
 import json
@@ -12,7 +13,7 @@ import threading
 from typing import Any, Literal
 
 from fastapi import HTTPException, Response, Query
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, create_model, model_validator
 
 from ..recommender.brief_parser import NaturalLanguageBriefParser, BriefParseError, UnsupportedOdorDescriptorError, apply_relative_revision_profile, PHASE_MARKER
 from ..recommender.models import RecipeConstraints, SCENT_DIMENSIONS
@@ -29,6 +30,7 @@ from .clarification import ProductPreferences, apply_question_answers, unsupport
 from .rd_api import interpretation, register_rd_api
 from .rd_evidence import EvidenceStore
 from .operation_contracts import operation_contracts
+from .backend_wire_contract import recipe_delivery_response, RECIPE_DELIVERY_CONTRACT
 from ..recommender.lotion import simulate_lotion
 from ..recommender.lotion_optimizer import prepare_lotion_optimization, optimize_lotion
 from ..recommender.lotion_estimation import LotionEstimateRequest, estimate_lotion_recipe
@@ -153,8 +155,26 @@ class ModelPersistenceRequest(StrictInput):
     required_duration_minutes: float | None = Field(default=None, strict=True, gt=0, le=43200)
 
 
-def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_limit, *, language_backend=None, perception_guidance=None, lotion_perception_guidance=None, stock_mixture_predictor=None, catalog_contract=None, runtime_guard=None, unified_product_predictor=None, evidence_store=None):
+def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_limit, *, language_backend=None, perception_guidance=None, lotion_perception_guidance=None, stock_mixture_predictor=None, catalog_contract=None, runtime_guard=None, unified_product_predictor=None, evidence_store=None, minimum_profile_target=95.):
     """Use the legacy generator, authentication boundary, cache and safety gates."""
+    if (isinstance(minimum_profile_target, bool)
+            or not isinstance(minimum_profile_target, (int, float))
+            or not math.isfinite(minimum_profile_target)
+            or not 90. <= minimum_profile_target <= 100.):
+        raise ValueError("API default target must be finite model points in [90, 100]")
+
+    def with_target_default(request_type):
+        # App-local schema: no mutation of shared models or explicit request values.
+        field = request_type.model_fields["target_similarity"]
+        if field.default == minimum_profile_target:
+            return request_type
+        field = deepcopy(field)
+        field.default = float(minimum_profile_target)
+        return create_model("Configured" + request_type.__name__, __base__=request_type,
+                            target_similarity=(field.annotation, field))
+
+    lotion_design_type = with_target_default(LotionEstimateRequest)
+    lotion_optimization_type = with_target_default(LotionOptimizationRequest)
     evidence_store = evidence_store if evidence_store is not None else EvidenceStore.configured()
     class ExtendedRequest(StrictInput):
         formula: formula_type
@@ -187,7 +207,7 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
 
     class FixedLine(StrictInput):
         ingredient_id: str = Field(min_length=1, max_length=300)
-        concentrate_percent: float = Field(ge=.0001, le=100)
+        concentrate_percent: float = Field(strict=True, gt=0, le=100)
 
     class FixedRequest(ExtendedRequest):
         lines: list[FixedLine] = Field(min_length=1, max_length=50000)
@@ -284,6 +304,35 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
             raise HTTPException(status_code=503, detail='shared formulation checkpoint not configured')
         return core.emulsion(request.raw_rows())
 
+    from .observed_formulation_inputs import ObservedLiquidRequest, ObservedPairRequest
+
+    def observed_core():
+        if runtime_guard is not None:
+            runtime_guard()
+        from ..recommender.formulation_core import configured_formulation_core, SYSTEM_VERSION
+        core=configured_formulation_core()
+        if core is None or core.version!=SYSTEM_VERSION:
+            raise HTTPException(status_code=503,detail='observed V76 formulation checkpoint not configured')
+        return core
+
+    @app.post('/v1/formulation-workflows/observed-outcomes')
+    def observed_outcomes(request: ObservedLiquidRequest):
+        rate_limit()
+        from ..recommender.observed_formulation import predict_liquid
+        try:
+            return predict_liquid(observed_core(),request.ingredient_percent,request.reference_protocol)
+        except ValueError as error:
+            raise HTTPException(status_code=422,detail=str(error)) from error
+
+    @app.post('/v1/formulations/pair-annotations')
+    def pair_annotations(request: ObservedPairRequest):
+        rate_limit()
+        from ..recommender.observed_formulation import predict_pair
+        try:
+            return predict_pair(observed_core(),request.first_smiles,request.second_smiles)
+        except ValueError as error:
+            raise HTTPException(status_code=422,detail=str(error)) from error
+
     @app.post('/v1/ai/assistant')
     def assistant(request: AssistantRequest, response: Response):
         rate_limit()
@@ -315,7 +364,8 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
                 proposal, cache_status = language_cache.run(key, compute)
                 return proposal
 
-            result = assistant_reply(request, parser, cached_language if language_backend is not None else None)
+            result = assistant_reply(request, parser, cached_language if language_backend is not None else None,
+                prefer_literal=getattr(perception_guidance, 'core', None) is not None)
             if runtime_guard is not None:
                 runtime_guard()
             response.headers['X-Perfumery-Language-Cache'] = cache_status
@@ -340,15 +390,17 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
 
     @app.get('/v1/odor-expressions')
     def list_expressions(q: str = Query(default='',max_length=100), offset: int = Query(default=0,ge=0),
-                         limit: int = Query(default=50,ge=1,le=100)):
+                         limit: int = Query(default=50,ge=1,le=100), include_unavailable: bool = False):
         rate_limit()
         if runtime_guard is not None:
             runtime_guard()
         query = q.casefold().strip()
-        rows = [r for r in registry()['rows'].values() if not query or
-                any(query in alias for alias in r['aliases']) or query in r['id']]
+        rows = [r for r in registry()['rows'].values()
+                if (include_unavailable or r.get('generation_support', {}).get('enabled', True)) and
+                (not query or any(query in alias for alias in r['aliases']) or query in r['id'])]
         modeled = set(fine_model.endpoints) if fine_model is not None else set()
         return {'contract':expression_contract(),'total':len(rows),'offset':offset,
+            'includes_unavailable': include_unavailable,
             'items':[{**row,'prediction_status':'model_connected' if row['id'] in modeled else 'vocabulary_only'}
                      for row in rows[offset:offset+limit]]}
 
@@ -357,8 +409,20 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
         rate_limit()
         if runtime_guard is not None:
             runtime_guard()
-        return {**parse_expression(request.text),'contract':expression_contract(),
+        value = {**parse_expression(request.text),'contract':expression_contract(),
                 'recipe_generated':False,'unknown_text_guaranteed_understood':False}
+        from ..recommender.odor_space import configured_odor_space
+        if configured_odor_space() is not None:
+            try:
+                brief = NaturalLanguageBriefParser(catalog).parse(request.text)
+                value['representation'] = representation_contract(brief)
+            except BriefParseError as error:
+                value['representation'] = {'status':'unresolved_odor_intent', 'reason':str(error)}
+                if getattr(error, 'intent_kind', None) == 'odor_absence_condition':
+                    value['representation'].update(status='odor_absence_condition',
+                        positive_odor_profile_applicable=False, product_background_required=True,
+                        fragrance_free_is_not_proof_of_odorless_product=True)
+        return value
 
     @app.post('/v1/odor-expressions/predict')
     def predict_expression(request: ExpressionPredictRequest):
@@ -378,6 +442,14 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
              **summarize_expression(None if proof['status']=='missing_or_multicomponent_structure' else row,
                  fine_model.endpoints,top_k=request.top_k,requested=requested)}
             for item,row,proof in zip(items,values,evidence)],'manufacturing_approved':False}
+
+    @app.get('/v1/applications/unified/coefficients/contract')
+    def unified_coefficient_contract():
+        rate_limit()
+        if runtime_guard is not None:
+            runtime_guard()
+        from .coefficient_contract import coefficient_contract
+        return coefficient_contract()
 
     @app.post('/v1/applications/unified/context')
     def prepare_unified_context(context: UnifiedProductContext):
@@ -475,6 +547,34 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
     supported_products = {
         "eau_de_parfum", "eau_de_toilette", "eau_de_cologne", "shampoo", "body_wash", "candle", "room_spray", "diffuser"}
 
+    class OdorLanguageRequest(StrictInput):
+        text: str = Field(min_length=1,max_length=2000)
+
+    @app.get('/v1/ai/odor-language')
+    def odor_dictionary(query: str=Query(default='',max_length=200), offset: int=Query(default=0,ge=0),
+                        limit: int=Query(default=50,ge=1,le=200)):
+        rate_limit()
+        if runtime_guard is not None:
+            runtime_guard()
+        from ..recommender.odor_expression import registry
+        from ..recommender.odor_language_v89 import dictionary,contract
+        source=registry()
+        return {**dictionary(source,query,offset,limit),'contract':contract(source)}
+
+    @app.post('/v1/ai/odor-language/interpret')
+    def interpret_odor_language(value: OdorLanguageRequest):
+        rate_limit()
+        if runtime_guard is not None:
+            runtime_guard()
+        from ..recommender.odor_expression import brief_expression
+        try:
+            brief=parser.parse(value.text,RecipeConstraints(target_similarity=minimum_profile_target))
+            return {'schema_version':'odor-language-interpretation/v89','interpretation':brief_expression(brief),
+                    'target_profile':brief.target_profile,'execution_mode':'no_recipe_inference',
+                    'unresolved_terms':brief.unresolved_odor_terms}
+        except ValueError as error:
+            raise HTTPException(status_code=422,detail=str(error)) from error
+
     @app.get("/v1/ai/capabilities")
     def capabilities():
         assert_provider_current(perception_provider)
@@ -482,9 +582,12 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
         language_contract = getattr(language_backend, 'contract', None)
         from ..recommender.formulation_core import configured_formulation_core
         shared = configured_formulation_core()
+        from ..recommender.physical_evidence import evidence_contract as physical_evidence_contract
         return {"schema_version": "ai-capabilities-1", "supported_product_codes": sorted(supported_products),
+            "physical_property_evidence":physical_evidence_contract(),
             "integration_contract": operation_contracts(app, supported_products,
                 unified_available=unified_predictor is not None,
+                observed_available=shared is not None and getattr(shared,'version',None)=='shared-formulation-core/v76',
                 evidence_configured=evidence_store.bundle is not None),
             "language_model": language_contract() if language_contract is not None else {
                 'backend': 'injected' if language_backend is not None else 'deterministic_parser'},
@@ -503,6 +606,8 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
                 "body_wash": {"product": "body_wash", "unified_conditional_prediction_available": unified_predictor is not None,
                               "supplied_rinse_and_stage_coefficients_required": True, "matrix_calibrated": False}},
             "features": {"intent_preparation": True, "clarification_questions": True,
+                "observed_formulation_outcomes": shared is not None and getattr(shared,'version',None)=='shared-formulation-core/v76',
+                "learned_pair_annotations": shared is not None and getattr(shared,'version',None)=='shared-formulation-core/v76',
                 "sourced_formulation_workflows": True, "process_condition_conflict_checks": True,
                 "finished_lotion_batch_mass_balance": True,
                 "bounded_assistant": True, "quantized_language_backend": language_backend is not None,
@@ -571,8 +676,31 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
                                                    'component_model': model_contract(lotion_provider)}}
             if catalog_contract is not None:
                 payload['catalog_snapshot'] = dict(catalog_contract)
+            from ..recommender.lotion_regulatory import attach_lotion_regulatory
+            payload = attach_lotion_regulatory(payload, request.model_dump(mode='json'), catalog, operation)
             assert_lotion_current()
             response.headers["X-Perfumery-Lotion-Cache"] = status
+            if hasattr(request,'registry_pool'):
+                payload['registry_pool']=request.registry_pool
+                payload['registry_selection']={'effective_pool':request.registry_pool,
+                    'defaulted':'registry_pool' not in request.model_fields_set,
+                    'default_pool':'conditional_research','safety_constraints_unchanged':True}
+                response.headers['X-Perfumery-Registry-Pool']=request.registry_pool
+            if operation in ('estimated-design-v2', 'optimize'):
+                try:
+                    payload = recipe_delivery_response(payload, product='body_lotion')
+                except ValueError as error:
+                    raise HTTPException(status_code=502, detail={'code': 'AI_RESPONSE_CONTRACT_INVALID',
+                        'message': 'AI returned an invalid recipe or target match value'}) from error
+                response.headers['X-Perfumery-Recipe-Contract'] = RECIPE_DELIVERY_CONTRACT
+                from .response_transport import pack_lotion_response, FORMAT
+                try:
+                    payload = pack_lotion_response(payload)
+                except ValueError as error:
+                    raise HTTPException(status_code=413, detail={'code': 'AI_RESPONSE_TOO_LARGE',
+                        'message': 'Result cannot fit the current backend transport limit without losing required data'}) from error
+                if 'diagnostic_archive' in payload:
+                    response.headers['X-Perfumery-Diagnostic-Transport'] = FORMAT
             return payload
         except (InferenceBusy, TimeoutError) as error:
             raise HTTPException(status_code=503, detail="lotion inference busy; retry", headers={"Retry-After": "5"}) from error
@@ -602,7 +730,7 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
             raise HTTPException(status_code=422, detail=str(error)) from error
 
     @app.post("/v1/applications/body-lotion/design")
-    def design_lotion(request: LotionEstimateRequest, response: Response):
+    def design_lotion(request: lotion_design_type, response: Response):
         rate_limit()
         try:
             return lotion_run(request, "estimated-design-v2", response,
@@ -611,7 +739,7 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
             raise HTTPException(status_code=422, detail=str(error)) from error
 
     @app.post("/v1/applications/body-lotion/prepare")
-    def prepare_lotion(request: LotionOptimizationRequest, response: Response):
+    def prepare_lotion(request: lotion_optimization_type, response: Response):
         rate_limit()
         try:
             return lotion_run(request, "prepare", response, lambda: prepare_lotion_optimization(request, catalog, parser)[0])
@@ -619,7 +747,7 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
             raise HTTPException(status_code=422, detail=str(error)) from error
 
     @app.post("/v1/applications/body-lotion/optimize")
-    def generate_lotion(request: LotionOptimizationRequest, response: Response):
+    def generate_lotion(request: lotion_optimization_type, response: Response):
         rate_limit()
         try:
             return lotion_run(request, "optimize", response, lambda: optimize_lotion(request, catalog, parser, perception_guidance=lotion_provider))
@@ -634,7 +762,7 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
             raise ValueError("extended workflows require the strict quality and safety gates")
         if set(request.edits.excluded_ingredient_ids) - known_ids:
             raise ValueError("unknown excluded ingredient ID")
-        constraints = RecipeConstraints(target_similarity=max(95., value.target_similarity), max_ingredients=value.max_ingredients,
+        constraints = RecipeConstraints(target_similarity=max(minimum_profile_target, value.target_similarity), max_ingredients=value.max_ingredients,
             target_region=value.target_region, product_category=value.product_category,
             product_concentration_percent=value.product_concentration_percent,
             explicit_bans=set(request.edits.excluded_ingredient_ids))
@@ -649,7 +777,7 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
             return {"schema_version": "ai-brief-1", "request_id": digest,
                 "interpretation": interpretation(unsupported=unsupported),
                 "status": "unsupported_requirements" if pending else "needs_clarification",
-                "original_text": value.brief, "intent": None, "effective_target": max(95., value.target_similarity),
+                "original_text": value.brief, "intent": None, "effective_target": max(minimum_profile_target, value.target_similarity),
                 "questions": [] if unsupported else [{"id": "formula.brief", "question": str(error), "input_type": "text", "required": True}],
                 "unsupported_requirements": pending,
                 "product_preferences": request.product_preferences.model_dump(mode="json", exclude_none=True),
@@ -761,7 +889,7 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
             "application_context": assess_application_context(context) if context else None,
             "formulation_workflow": workflow,
             "model_persistence_requirement": request.model_persistence.model_dump() if request.model_persistence else None,
-            "effective_target": max(95., value.target_similarity), "scenarios": scenarios,
+            "effective_target": max(minimum_profile_target, value.target_similarity), "scenarios": scenarios,
             "budget_basis": "caller_supplied_estimate_not_verified_market_quote" if budget else "catalog_price_units_per_kg",
             "scope": "structured review, not unrestricted language understanding; scenarios vary concentration, not guaranteed distinct accords"}
 
@@ -849,6 +977,16 @@ def register_ai_extensions(app, formula_type, catalog, generate_formula, rate_li
                 "display_timeline": display_timeline(payload.get("temporal_profile", [])),
                 "regulatory": payload.get("regulatory"), "evidence": evidence_summary(payload), "runtime": runtime, "result": payload}
             candidate['formulation_workflow'] = prepared['formulation_workflow']
+            # Keep selection/approval decisions based on the original engine
+            # result. Nonempty delivery is not a new quality or evidence pass.
+            try:
+                candidate['result'] = recipe_delivery_response(payload, product='perfume')
+            except ValueError as error:
+                raise HTTPException(status_code=502, detail={'code': 'AI_RESPONSE_CONTRACT_INVALID',
+                    'message': 'AI returned an invalid recipe or target match value'}) from error
+            candidate['recipe_delivery'] = candidate['result']['recipe_delivery']
+            candidate['model_accuracy_percent'] = candidate['result']['model_accuracy_percent']
+            candidate['model_accuracy_status'] = candidate['result']['model_accuracy_status']
             if cache_candidate:
                 remember(candidate, prepared["request_id"], request.scenario_index)
             return {"schema_version": "ai-candidates-1", "request_id": prepared["request_id"],

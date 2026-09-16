@@ -3,17 +3,39 @@
 Checksums detect changed content, not authenticity. These read-only operations
 never promote candidates, infer approvals or replace durable backend storage.
 """
+from copy import deepcopy
 import json
 import math
 import re
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import Field, JsonValue, model_validator
+from pydantic import ConfigDict, Field, field_validator, model_validator
 
 from .rd_evidence import Input, FormulaLine, content_id
 
 
 GATES = {"registered_evidence", "existing_safety", "scientific_domain", "profile_and_persistence"}
+
+
+def assert_json_snapshot(value):
+    """Validate JSON types without coercion or text/number normalization."""
+    pending = [(value, 0)]
+    while pending:
+        item, depth = pending.pop()
+        if depth > 100:
+            raise ValueError('evaluation snapshot exceeds JSON nesting limit')
+        kind = type(item)
+        if kind is dict:
+            if any(type(k) is not str for k in item):
+                raise ValueError('evaluation snapshot requires string JSON keys')
+            pending.extend((v, depth+1) for v in item.values())
+        elif kind is list:
+            pending.extend((v, depth+1) for v in item)
+        elif kind is float:
+            if not math.isfinite(item):
+                raise ValueError('evaluation snapshot requires finite JSON numbers')
+        elif kind not in (str, int, bool, type(None)):
+            raise ValueError('evaluation snapshot contains a non-JSON value')
 
 
 def line_map(lines):
@@ -41,15 +63,27 @@ def composition_diff(left, right):
 
 
 class StoredCandidate(Input):
-    evaluation: dict[str, JsonValue]
+    # A checksum-bound JSON snapshot is opaque historical content. Trimming
+    # nested source quotations changes valid content before its hash is checked.
+    model_config = ConfigDict(str_strip_whitespace=False)
+    # JsonValue's recursive string schema can inherit a parent request's
+    # trimming configuration. An opaque tree plus strict type validation avoids
+    # that coercion in both comparison lists and nested revision requests.
+    evaluation: dict[str, Any]
     candidate_id: str = Field(pattern=r"^[0-9a-f]{64}$")
     # Identifiers are supplied by the authorized backend, not looked up by AI.
     backend_version_id: str = Field(min_length=1, max_length=200)
+
+    @field_validator('backend_version_id', mode='before')
+    @classmethod
+    def normalized_envelope_id(cls, value):
+        return value.strip() if isinstance(value, str) else value
 
     @model_validator(mode="after")
     def consistent_snapshot(self):
         value = self.evaluation
         try:
+            assert_json_snapshot(value)
             if len(json.dumps(value, allow_nan=False).encode()) > 8 * 1024 * 1024:
                 raise ValueError("evaluation snapshot exceeds 8 MiB")
             if value.get("schema_version") != "rd-candidates-2":
@@ -112,6 +146,7 @@ class StoredCandidate(Input):
                 raise ValueError("evaluation status and candidate groups disagree")
         except (KeyError, TypeError, AttributeError) as error:
             raise ValueError("incomplete or invalid evaluation snapshot") from error
+        self.evaluation = deepcopy(value)
         return self
 
     def candidate(self):

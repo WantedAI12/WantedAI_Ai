@@ -23,7 +23,6 @@ def test_fixed_weights_are_recomputed_not_optimized_or_approved():
 @pytest.mark.parametrize("weights,brief", [
     ({"top": 25., "heart": 40., "base": 34.}, "citrus floral woody"),
     ({"unknown": 100.}, "woody"),
-    ({"top": 25.00001, "heart": 39.99999, "base": 35.}, "woody"),
     ({"top": float("nan"), "base": 100.}, "woody"),
     ({"top": 25., "heart": 40., "base": 35.}, "citrus floral woody base 60%"),
 ])
@@ -38,3 +37,16 @@ def test_excluded_material_is_not_reintroduced_by_manual_weights():
         with pytest.raises(ValueError, match="ineligible"):
             assess_fixed_formula(ai, "woody", RecipeConstraints(explicit_bans={"top"}),
                                  {"top": 25., "heart": 40., "base": 35.}, as_of=date(2026, 9, 5))
+
+
+@pytest.mark.parametrize('weights', [
+    {'top': 25.00001, 'heart': 39.99999, 'base': 35.},
+    {'top': 1e-7, 'heart': 40., 'base': 59.9999999},
+])
+def test_generated_precision_is_preserved_and_target_is_not_silently_raised(weights):
+    with NaturalLanguagePerfumeryAI(catalog=IngredientCatalog(materials(), {}),
+            minimum_profile_target=90., require_full_profile_match=True) as ai:
+        result = assess_fixed_formula(ai, 'citrus floral woody',
+            RecipeConstraints(target_similarity=90.), weights, as_of=date(2026, 9, 5))
+    assert {line.ingredient_id: line.concentrate_percent for line in result.closest_candidate} == weights
+    assert result.brief.constraints.target_similarity == 90.

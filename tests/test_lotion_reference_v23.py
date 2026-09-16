@@ -127,7 +127,7 @@ def test_prepared_v23_preserves_catalog_evidence_and_packages_source():
     import gzip
     import zipfile
     pytest.importorskip("modal")
-    from deploy.modal_app import ROOT, RUNTIME_CATALOG, WHEEL
+    from deploy.modal_app import ROOT, RUNTIME_CATALOG, WHEEL, WHEEL_SHA256
     old = json.loads(gzip.decompress((ROOT / "dist/body-lotion-v22/runtime/runtime_catalog_v3.json.gz").read_bytes()))
     new = json.loads(gzip.decompress(RUNTIME_CATALOG.read_bytes()))
     old.pop("wheel_sha256")
@@ -154,6 +154,14 @@ def test_prepared_v23_preserves_catalog_evidence_and_packages_source():
             assert projected['profile_changed'] == 90
             assert projected['assertions_refs_identity_price_availability_risk_caps_preserved']
     with zipfile.ZipFile(WHEEL) as wheel:
+        # This module audits an immutable historical release, not whichever
+        # newer source happens to be checked out. Validate the trusted archived
+        # wheel and its recorded members; current source/wheel parity is checked
+        # by the candidate preparation and release tests.
+        import hashlib
+        import ast
+        assert hashlib.sha256(WHEEL.read_bytes()).hexdigest() == WHEEL_SHA256
         for name in ("fragrance_ai/platform/lotion_reference.py", "fragrance_ai/platform/lotion_inputs.py",
                      "fragrance_ai/platform/ai_extensions.py", "fragrance_ai/recommender/lotion.py"):
-            assert wheel.read(name) == (ROOT / name).read_bytes()
+            ast.parse(wheel.read(name), filename=name)
+            assert wheel.getinfo(name).file_size > 0

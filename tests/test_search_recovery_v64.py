@@ -19,6 +19,72 @@ def diagnostics():
                 expansion_budget_reached=False)
 
 
+def test_timeout_retries_same_columns_before_expansion(monkeypatch):
+    from scipy.optimize import OptimizeResult
+    from fragrance_ai.recommender import lotion_reference_search as search
+    calls = []
+
+    def interrupted_once(objective, **parameters):
+        calls.append((objective, parameters))
+        if len(calls) == 1:
+            return OptimizeResult(success=False, status=1, x=None, message='Time limit reached')
+        return linprog(objective, **parameters)
+
+    monkeypatch.setattr(search, 'linprog', interrupted_once)
+    n, report = 200, diagnostics()
+    result = column_linprog(np.ones(n), material_count=n, initial_columns=[],
+        column_order=list(range(n)), diagnostics=report,
+        A_ub=sparse.csr_matrix((1, n)), b_ub=np.ones(1),
+        A_eq=sparse.csr_matrix(np.ones((1, n))), b_eq=np.ones(1),
+        bounds=[(0., 1.)]*n, options={'dual_feasibility_tolerance': 1e-9})
+    assert result.success and result.x.sum() == pytest.approx(1.)
+    assert len(calls) == 2 and calls[0][0] is calls[1][0]
+    for key in ('A_ub', 'b_ub', 'A_eq', 'b_eq', 'bounds'):
+        assert calls[0][1][key] is calls[1][1][key]
+    assert calls[0][1]['options'] == {'dual_feasibility_tolerance': 1e-9,
+                                     'presolve': False, 'time_limit': .75}
+    assert calls[1][1]['options'] == {**calls[0][1]['options'], 'time_limit': 3.}
+    assert report['maximum_working_materials'] == 64
+    assert report['linear_solves'] == 2 and report['time_limit_retry_successes'] == 1
+
+
+def test_timeout_retry_budget_is_shared_and_never_claims_infeasibility(monkeypatch):
+    from scipy.optimize import OptimizeResult
+    from fragrance_ai.recommender import lotion_reference_search as search
+    calls, report = [], diagnostics()
+
+    def timed_out(objective, **parameters):
+        calls.append(parameters['options']['time_limit'])
+        return OptimizeResult(success=False, status=1, x=None, message='Time limit reached')
+
+    monkeypatch.setattr(search, 'linprog', timed_out)
+    for _ in range(5):
+        result = search._solve_with_time_recovery(np.ones(1), {'options': {'time_limit': .75}}, report)
+        assert not result.success and result.status == 1 and result.x is None
+    assert calls == [.75, 3., .75, 3., .75, 3., .75, .75]
+    assert report['linear_solves'] == 8 and report['time_limit_retries'] == 3
+    assert report['time_limit_retry_reserved_seconds'] == 9.
+    assert report['time_limit_retry_budget_exhausted']
+
+
+@pytest.mark.parametrize('status,message', [(0, 'Optimal'), (1, 'Iteration limit reached'),
+                                          (2, 'Infeasible'), (4, 'Numerical error')])
+def test_retry_is_only_for_time_limit(monkeypatch, status, message):
+    from scipy.optimize import OptimizeResult
+    from fragrance_ai.recommender import lotion_reference_search as search
+    result = OptimizeResult(success=status == 0, status=status, message=message)
+    calls, report = [], diagnostics()
+
+    def outcome(*args, **kwargs):
+        calls.append(1)
+        return result
+
+    monkeypatch.setattr(search, 'linprog', outcome)
+    assert search._solve_with_time_recovery(np.ones(1), {}, report) is result
+    assert len(calls) == report['linear_solves'] == 1
+    assert not report.get('time_limit_retries', 0)
+
+
 @pytest.mark.parametrize('failure', ['cosine', 'background', 'indistinguishable'])
 def test_reference_search_optimizes_every_final_shape_condition(monkeypatch, failure):
     from tests.test_lotion_v21 import fixture
@@ -45,6 +111,7 @@ def test_reference_search_optimizes_every_final_shape_condition(monkeypatch, fai
         if failure == 'indistinguishable':
             background = target.copy()
     bank = ObservedReferenceBank.__new__(ObservedReferenceBank)
+    bank.metadata, bank.annotation_extension = {}, None
     bank.sha256, bank.parent_sha256 = 'b'*64, 'a'*64
     bank.endpoints = tuple('e'+str(i) for i in range(len(target)))
     bank.profiles = {'citrus': np.stack([target]*2)}

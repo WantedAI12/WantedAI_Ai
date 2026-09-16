@@ -25,6 +25,35 @@ class PoolSolution:
     relaxed_overlap_score: float | None = None
     pool_size: int = 0
     restricted_support: bool = False
+    certified_overlap_upper_score: float | None = None
+
+
+def fractional_dual_upper(solution, objective, inequality, limits, equality, equality_rhs, caps, gain, target):
+    """Conservative Lagrangian bound, including finite transformed-variable boxes.
+
+    A solver primal score alone is not an upper bound. Recompute a dual lower
+    bound on min(-overlap), clipping inequality multipliers to their legal sign
+    and bounding every reduced-cost residual over a known containing box.
+    """
+    positive = np.asarray(gain)[np.asarray(caps) > 0]
+    if not len(positive) or np.any(positive <= 0):
+        return None
+    try:
+        mu = np.minimum(np.asarray(solution.ineqlin.marginals, float), 0.)
+        nu = np.asarray(solution.eqlin.marginals, float)
+    except (AttributeError, TypeError, ValueError):
+        return None
+    if not np.isfinite(mu).all() or not np.isfinite(nu).all():
+        return None
+    residual = objective-inequality.T@mu-equality.T@nu
+    scale_upper = 1./float(positive.min())
+    upper = np.r_[np.asarray(caps)*scale_upper, scale_upper, np.asarray(target), 1.]
+    terms = np.r_[mu*np.asarray(limits), nu*np.asarray(equality_rhs), np.minimum(residual, 0)*upper]
+    if not np.isfinite(terms).all():
+        return None
+    lower = float(np.sum(terms, dtype=np.longdouble))
+    allowance = 1e-7*(1+float(np.abs(terms).sum()))
+    return min(100., max(0., -100*(lower-allowance)))
 
 
 def profile_upper_bound(ingredients: list[Ingredient], target: dict[str, float]) -> dict:
@@ -168,6 +197,8 @@ def _fractional_lp(
     )
     if not solution.success or solution.x is None:
         return failed({1: "solver_limit", 2: "infeasible_constraints"}.get(solution.status, "solver_failed"))
+    certified_upper = fractional_dual_upper(solution, objective, vstack(ub_rows, format='csr'), np.concatenate(rhs),
+        vstack(eq_rows, format='csr'), np.asarray(eq_rhs), caps, matrix.sum(axis=1), p)
     # Lexicographic fine-identity refinement. It can resolve different odors
     # sharing one coarse vector, but cannot trade away the original LP optimum.
     from .odor_expression import expression_utility
@@ -203,6 +234,7 @@ def _fractional_lp(
     return PoolSolution(
         "relaxed_profile_optimum", {item.ingredient_id: float(weight * 100) for item, weight in zip(ingredients, weights) if weight > 1e-10},
         float(np.clip(solution.x[-1] * 100, 0, 100)), n,
+        certified_overlap_upper_score=certified_upper,
     )
 
 
@@ -260,9 +292,11 @@ def optimize_full_pool(
         if restricted.weights_percent:
             restricted.pool_size = len(ingredients)
             restricted.restricted_support = True
+            restricted.certified_overlap_upper_score = result.certified_overlap_upper_score
             restricted_solutions.append(restricted)
     if restricted_solutions:
         return max(restricted_solutions, key=lambda row: row.relaxed_overlap_score)
     # Failure of a bounded support search is not a proof of infeasibility.
     return PoolSolution("cardinality_support_search_exhausted", relaxed_overlap_score=result.relaxed_overlap_score,
-                        pool_size=len(ingredients), restricted_support=True)
+                        pool_size=len(ingredients), restricted_support=True,
+                        certified_overlap_upper_score=result.certified_overlap_upper_score)

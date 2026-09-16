@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import math
 from collections import defaultdict
+from functools import lru_cache
 
 import numpy as np
 
@@ -25,7 +26,8 @@ PHYSICAL = ("MolWt", "MolLogP", "TPSA", "NumHDonors", "NumHAcceptors", "NumRotat
 ALPHAS = (10.0, 100.0, 1000.0)
 
 
-def molecule_features(smiles: str, native: dict | None = None) -> dict:
+@lru_cache(maxsize=8192)
+def _molecular_descriptor_tuple(smiles: str):
     from rdkit import Chem, DataStructs
     from rdkit.Chem import Descriptors, rdFingerprintGenerator
 
@@ -39,11 +41,19 @@ def molecule_features(smiles: str, native: dict | None = None) -> dict:
     physical = [float(getattr(Descriptors, name)(mol)) for name in PHYSICAL]
     if not np.isfinite(physical).all():
         raise ValueError("nonfinite molecular descriptors")
-    if native is not None and (len(native["profile"]) != 19 or not np.isfinite(native["profile"]).all()):
-        raise ValueError("native profile feature contract changed")
-    return {"canonical_smiles": Chem.MolToSmiles(mol, isomericSmiles=True),
-            "fingerprint_bits": np.flatnonzero(bits).tolist(), "physical": physical,
-            "native": native}
+    return Chem.MolToSmiles(mol, isomericSmiles=True), tuple(np.flatnonzero(bits).tolist()), tuple(physical)
+
+
+def molecule_features(smiles: str, native: dict | None = None) -> dict:
+    """Reuse immutable chemical descriptors; retain caller-owned native data.
+
+    Descriptor calculation is independent of dose, language and observed
+    native profiles. Returning fresh lists prevents cache mutation by callers.
+    """
+    canonical,bits,physical = _molecular_descriptor_tuple(smiles)
+    if native is not None and (len(native['profile']) != 19 or not np.isfinite(native['profile']).all()):
+        raise ValueError('native profile feature contract changed')
+    return {'canonical_smiles':canonical, 'fingerprint_bits':list(bits), 'physical':list(physical), 'native':native}
 
 
 def features_for(key: tuple[str, str, str], molecules: dict, family: str = "molecular") -> np.ndarray | None:

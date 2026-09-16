@@ -77,6 +77,29 @@ def blended_proposals(baseline_lines, proposed: dict[str, float], max_ingredient
             yield fraction, weights
 
 
+def refinement_blends(baseline_lines, proposal, max_ingredients, modeled_ids):
+    """Keep the accepted iterate from which a recurrent proposal was derived."""
+    from types import SimpleNamespace
+    anchor=proposal.get('anchor_weights_percent')
+    if anchor is not None:
+        if (not anchor or any(not math.isfinite(v) or v<0 for v in anchor.values())
+                or abs(sum(anchor.values())-100)>.00101 or not set(anchor)<=modeled_ids):
+            raise ValueError('invalid autoregressive mass anchor')
+        baseline_lines=[SimpleNamespace(ingredient_id=k,concentrate_percent=v) for k,v in anchor.items()]
+    if anchor is None:
+        yield from blended_proposals(baseline_lines,proposal['weights_percent'],max_ingredients,modeled_ids)
+        return
+    proposed=proposal['weights_percent']
+    identifiers=sorted(set(anchor)|set(proposed))
+    can_blend=len(identifiers)<=max_ingredients and set(identifiers)<=modeled_ids
+    fractions=(.001953125,.00390625,.0078125,.015625,.03125,.0625,.125,.25,.5,.75,1.) if can_blend else (1.,)
+    for fraction in fractions:
+        weights={key:(1-fraction)*anchor.get(key,0.)+fraction*proposed.get(key,0.) for key in identifiers}
+        weights={key:value for key,value in weights.items() if value>1e-8}
+        if len(weights)<=max_ingredients:
+            yield fraction,weights
+
+
 def intensity_and_diffusion(lines, ingredients) -> tuple[float, float]:
     impact = sum(line.concentrate_percent / 100 * ingredients[line.ingredient_id].odor_impact
                  * ingredients[line.ingredient_id].active_strength_percent / 100 for line in lines)
@@ -111,11 +134,36 @@ def prepare_adaptive_policy(brief, baseline_lines, ingredients) -> dict:
 def check_adaptive_response(brief, baseline_assessment, assessment, baseline_twin, twin, lines, ingredients, policy) -> list[str]:
     """Reject improvement obtained by losing requested phases or odor signal."""
     violations = []
-    if baseline_assessment["nominal"]["target_profile"] != assessment["nominal"]["target_profile"]:
+    full = baseline_assessment.get('reference_assessment')
+    changed = assessment.get('reference_assessment')
+    reference_avoidance = None
+    if full is not None or changed is not None:
+        if not full or not changed:
+            return ['reference_representation_changed']
+        try:
+            import numpy as np
+            old_rows,new_rows = full['intent']['targets'],changed['intent']['targets']
+            if (full['endpoints'] != changed['endpoints'] or len(old_rows)!=len(new_rows) or
+                    any(a['avoided']!=b['avoided'] or not np.array_equal(a['profiles'],b['profiles'])
+                        for a,b in zip(old_rows,new_rows))):
+                return ['odor_target_changed']
+            old_pred,new_pred = np.asarray(full['predicted_profiles']),np.asarray(changed['predicted_profiles'])
+            target_shape = np.asarray([r['profiles'] for r in old_rows]).transpose(1,0,2).shape
+            if old_pred.shape!=target_shape or new_pred.shape!=target_shape:
+                return ['reference_profile_shape_changed']
+            if any(not np.isfinite(p).all() or np.any(p<0) or not np.allclose(p.sum(-1),1.,atol=1e-7)
+                    for p in (old_pred,new_pred)):
+                return ['invalid_full_reference_preservation_data']
+            mask = np.asarray([[name in r['avoided'] for name in full['endpoints']] for r in old_rows])
+            reference_avoidance = ((new_pred-old_pred)*mask[None]).sum(-1)
+        except (KeyError,TypeError,ValueError):
+            return ['invalid_full_reference_preservation_data']
+    if full is None and baseline_assessment["nominal"]["target_profile"] != assessment["nominal"]["target_profile"]:
         return ["odor_target_changed"]
     old_avoid = baseline_assessment["nominal"]["avoided_mass"]
     new_avoid = assessment["nominal"]["avoided_mass"]
-    if old_avoid is not None and new_avoid is not None and new_avoid > old_avoid + 1e-6:
+    if (reference_avoidance is not None and np.any(reference_avoidance[:,0]>1e-6) or
+            reference_avoidance is None and old_avoid is not None and new_avoid is not None and new_avoid > old_avoid + 1e-6):
         violations.append("nominal_avoidance_regressed")
     intensity, diffusion = intensity_and_diffusion(lines, ingredients)
     for name, value in (("intensity", intensity), ("diffusion", diffusion)):
@@ -134,7 +182,7 @@ def check_adaptive_response(brief, baseline_assessment, assessment, baseline_twi
     for index, (left, right, left_twin, right_twin) in enumerate(zip(before, after, baseline_twin.temporal_points, twin.temporal_points)):
         if left["minutes"] != right["minutes"] or left["phase"] != right["phase"] or left["weight"] != right["weight"]:
             return [*violations, "time_grid_mismatch"]
-        if left["target_profile"] != right["target_profile"]:
+        if full is None and left["target_profile"] != right["target_profile"]:
             return [*violations, "odor_target_changed"]
         if left["weight"] <= 0:
             continue
@@ -147,7 +195,8 @@ def check_adaptive_response(brief, baseline_assessment, assessment, baseline_twi
             violations.append("temporal_odor_signal_lost")
         if left["phase"] in brief.phase_target_profiles and (right["score"] is None or left["score"] is None or right["score"] + 1e-6 < left["score"]):
             violations.append("explicit_phase_profile_regressed")
-        if right["avoided_mass"] is not None and left["avoided_mass"] is not None and right["avoided_mass"] > left["avoided_mass"] + 1e-6:
+        if (reference_avoidance is not None and np.any(reference_avoidance[:,index+1]>1e-6) or
+                reference_avoidance is None and right["avoided_mass"] is not None and left["avoided_mass"] is not None and right["avoided_mass"] > left["avoided_mass"] + 1e-6):
             violations.append("phase_avoidance_regressed")
     if positive:
         old_min = min(before[i]["score"] for i in positive)

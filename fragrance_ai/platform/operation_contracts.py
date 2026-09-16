@@ -1,7 +1,7 @@
 """Machine-readable routing and units for the existing backend integration."""
 
 
-def operation_contracts(app, legacy_products, *, unified_available, evidence_configured):
+def operation_contracts(app, legacy_products, *, unified_available, evidence_configured, observed_available=False):
     registered = {(method, route.path) for route in app.routes
                   for method in getattr(route, "methods", ())}
 
@@ -39,6 +39,10 @@ def operation_contracts(app, legacy_products, *, unified_available, evidence_con
         "audit_stream": operation("/v1/audit-logs/stream", kind="sse", prerequisites=["backend_history_snapshot"]),
         "audit_report": operation("/v1/reports/audit", prerequisites=["backend_history_snapshot"]),
         "audit_report_stream": operation("/v1/reports/audit/stream", kind="sse", prerequisites=["backend_history_snapshot"]),
+        "observed_formulation_outcomes": operation("/v1/formulation-workflows/observed-outcomes",
+            available=observed_available, prerequisites=["trained_v76_checkpoint", "exact_observed_reference_protocol", "supported_ingredient_percentages"]),
+        "pair_annotations": operation("/v1/formulations/pair-annotations",
+            available=observed_available, prerequisites=["trained_v76_checkpoint", "two_exact_molecular_structures"]),
     }
     return {"schema_version": "ai-operation-contracts-1", "operations": operations,
         "units": {"concentrate_percent": "concentrate_w/w_percent",
@@ -62,7 +66,33 @@ def operation_contracts(app, legacy_products, *, unified_available, evidence_con
                           "rinse_deposition_in_legacy_formula_model": False,
                           "automatic_full_base_formulation": False}},
         "evidence": {"bundle_configured": evidence_configured,
+                     "registered_versions_endpoint":"/v2/evidence/versions",
                      "configuration_does_not_imply_request_evidence_passed": True},
+        "coefficient_contract_endpoint":"/v1/applications/unified/coefficients/contract",
+        "wire_contracts":{"confidence":{"version":"nullable-number-v1","type":"number_or_null",
+                "label_field":"confidence_kind","label_in_numeric_field_allowed":False},
+            "simulation_confidence":{"type":"number_or_null","label_field":"simulation_confidence_kind"},
+            "large_lotion_response":{"format":"lossless-lotion-diagnostics/v1","maximum_json_bytes":8000000,
+                "archive_field":"diagnostic_archive","scores_and_recipe_kept_plain":True,
+                "diagnostic_fields_losslessly_archived":True},
+            "diagnostic_evidence_policy":{"empty_policy_supported":True,
+                "defaults_are_diagnostic_reference_only":True,"operational_missing_policy_requires_answers":True},
+            "recipe_delivery":{"version":"best-available-recipe/v1",
+                "score_field":"target_match_score","score_unit":"model_points_0_100",
+                "score_is_model_accuracy":False,"score_floor_applied":False,
+                "below_target_recipe_may_be_returned":True,"recipe_presence_implies_target_met":False,
+                "decision_field":"recipe_delivery","original_engine_status_preserved":True,
+                "engine_status_field_when_delivery_changes_status":"assessment_status",
+                "below_target_perfume_delivery_status":"recipe_generated_target_not_met",
+                "unknown_target_or_existing_safety_block_promoted":False,
+                "regulatory_review_state_preserved":True,"recipe_delivery_is_regulatory_approval":False,
+                "model_accuracy_field":"model_accuracy_percent","model_accuracy_default":None,
+                "model_accuracy_status":"separate_benchmark_required"},
+            "lotion_registry_pool":{"required":False,"default":"conditional_research",
+                "previous_default":"core","allowed_values":["core","conditional_research"],
+                "safety_constraints_unchanged":True},
+            "change_impact_no_evidence":{"http_status":422,"detail_status":"abstained",
+                "code":"EVIDENCE_SNAPSHOTS_MISSING"}},
         "workflow": {"job_storage_owner": "backend", "approval_owner": "authorized_backend_workflow",
                      "pdf_rendering_owner": "backend", "ai_job_cancel_endpoint": None,
                      "sse_retry": "new_call_from_start", "comparison_storage_owner": "backend",

@@ -38,6 +38,8 @@ def find_text_spans(text: str, alias: str) -> list[tuple[int, int]]:
     if not normalized_alias:
         return []
     pieces = re.split(r"\s+", normalized_alias)
+    if any(piece not in lowered for piece in pieces):
+        return []
     expression = r"\s+".join(re.escape(piece) for piece in pieces)
     if normalized_alias[0].isascii() and normalized_alias[0].isalnum():
         expression = rf"(?<![0-9a-z]){expression}"

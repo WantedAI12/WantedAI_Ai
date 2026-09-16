@@ -13,6 +13,7 @@ license-files = ["LICENSE", "LICENSE_POLICY.md"]
 dependencies = [
     "numpy>=1.24,<3",
     "scipy>=1.11,<2",
+    "clarabel==0.11.1",
 ]
 
 [project.optional-dependencies]

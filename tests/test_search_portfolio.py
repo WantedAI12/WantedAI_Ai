@@ -23,7 +23,9 @@ from fragrance_ai.recommender import service
 ])
 def test_support_portfolio_preserves_target_and_explicit_cap(monkeypatch, limit, scores, bound, expected, selected):
     ai = object.__new__(NaturalLanguagePerfumeryAI)
-    ai.parser = NaturalLanguageBriefParser(IngredientCatalog.load_builtin())
+    ai.perception_guidance = None
+    ai.catalog = IngredientCatalog.load_builtin()
+    ai.parser = NaturalLanguageBriefParser(ai.catalog)
     ai.require_full_profile_match = True
     ai.minimum_profile_target = 95
     ai.temporal_simulator = SimpleNamespace(time_weights=lambda brief: {})
@@ -40,6 +42,9 @@ def test_support_portfolio_preserves_target_and_explicit_cap(monkeypatch, limit,
     monkeypatch.setattr(service, "assess_recipe_profiles", lambda brief, score, temporal, weights:
         {"score": score, "target_met": score >= brief.constraints.target_similarity})
     monkeypatch.setattr(service, "attach_profile_assessment", lambda result, assessment, strict: result)
+    # This test isolates support orchestration; expression-head behavior is
+    # covered by its real-data tests, not the synthetic scalar score below.
+    monkeypatch.setattr('fragrance_ai.recommender.odor_expression.recipe_expression', lambda *args: {})
     request = RecipeConstraints(max_ingredients=limit, target_similarity=95)
     result = ai.create_recipe("green scent", request)
     assert calls == expected == result.score_contract["search_support_budgets"]

@@ -160,6 +160,14 @@ class RuntimeAIFactory:
             'cross_product_scores_comparable': False,
             'body_lotion_matrix_evaluated': False,
         }
+        bank = getattr(self.perception_guidance, 'complete_reference_bank', None)
+        if bank is not None and getattr(bank, 'odor_space', None) is not None:
+            self.runtime_contract['odor_space'] = bank.odor_space.contract()
+            self.runtime_contract['product_model'].update(
+                prediction_model='nonlinear_dose_headspace_weighted_full_reference_profiles',
+                evaluation_version='hierarchical-perfume-reference/v77',
+                target_compiler='hierarchical-target-compiler/v77',
+                legacy_19_axis_score='separate_diagnostic_not_acceptance_score')
         self._snapshot_metadata = _runtime_metadata_snapshot()
         # Validate policy at startup; the temporary instance closes its owned
         # resources here. Runtime engines remain owned by their request lane.

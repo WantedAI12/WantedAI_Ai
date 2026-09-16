@@ -113,6 +113,10 @@ class AtlasLotionShapes:
         self.provider = provider
         self.shapes, self.basis, self.graphs, self.missing = {}, {}, {}, set()
         self.calls = self.forward_batches = self.shared_cache_hits = 0
+        from .reference_observations import configured_component_references
+        self.observations = configured_component_references()
+        if self.observations is not None and self.observations.endpoints != tuple(provider.endpoints):
+            raise ValueError('observed component and predictor endpoint identities differ')
 
     def _graph(self, item):
         from rdkit import Chem
@@ -133,7 +137,7 @@ class AtlasLotionShapes:
         self.graphs[item.ingredient_id] = graph
         return graph
 
-    def _store(self, item, shape, diagnostics=None):
+    def _store(self, item, shape, diagnostics=None, observed_stimuli=None):
         self.shapes[item.ingredient_id] = shape
         if shape is None:
             self.missing.add(item.ingredient_id)
@@ -146,6 +150,24 @@ class AtlasLotionShapes:
             'catalog_profile_feature_available': self.graphs[item.ingredient_id] in self.provider.model.native,
             'model_applicability_diagnostics': deepcopy(diagnostics),
         }
+        if observed_stimuli is not None:
+            self.basis[item.ingredient_id].update(
+                profile_basis='observed_component_ordinal_reference_not_measured_product_mixture',
+                source_stimulus_ids=list(observed_stimuli),
+                component_reference_observations_sha256=self.observations.sha256,
+                shape_predicted_by_model=False)
+
+    def assert_observations_current(self):
+        if self.observations is not None:
+            self.observations.assert_current()
+
+    def observation_summary(self):
+        return {'configured':self.observations is not None,
+            'source_sha256':self.observations.sha256 if self.observations is not None else None,
+            'observed_materials_used':sum(row.get('shape_predicted_by_model') is False for row in self.basis.values()),
+            'predicted_materials_used':sum(row.get('shape_predicted_by_model') is not False for row in self.basis.values()),
+            'scope':'known_component_ordinal_reference_not_product_mixture_or_new_blind_validation',
+            'source_overlap_with_target_reference':bool(self.observations)}
 
     def prefetch(self, items):
         pending = {}
@@ -155,6 +177,10 @@ class AtlasLotionShapes:
             graph = self._graph(item)
             if graph is None:
                 self._store(item, None)
+                continue
+            observed = self.observations.lookup(graph) if self.observations is not None else None
+            if observed is not None:
+                self._store(item, observed[0], observed_stimuli=observed[1])
                 continue
             with self.provider.lotion_shape_cache_lock:
                 cache = self.provider.lotion_shape_cache

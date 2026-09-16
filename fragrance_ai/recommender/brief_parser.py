@@ -24,9 +24,11 @@ class UnsupportedOdorDescriptorError(BriefParseError):
     def __init__(self, descriptors: list[str] | tuple[str, ...]):
         self.descriptors = tuple(sorted(set(descriptors)))
         joined = ", ".join(self.descriptors)
+        self.intent_kind = 'odor_absence_condition' if self.descriptors == ('odorless',) else 'named_odor_reference_missing'
         super().__init__(
-            "현재 안전 원료 프로필로 직접 조향할 수 없는 세부 냄새 표현입니다: "
-            f"{joined}. 더 넓은 향조로 바꿔 요청하세요."
+            "무취는 특정 향이 아니라 냄새 강도 조건입니다. 제품 베이스의 냄새와 향료 무첨가 조건을 구분해야 합니다."
+            if self.intent_kind == 'odor_absence_condition' else
+            f"향 표현은 인식했지만 현재 배합 목표에 연결된 정량 참조가 없습니다: {joined}. 원래 요청을 유지해 확인할 수 있으며, 안전성 때문에 제외된다는 뜻은 아닙니다."
         )
 
 
@@ -199,6 +201,9 @@ KEYWORDS: dict[str, tuple[str, ...]] = {
         "forest",
         "cedar",
         "sandal",
+        "timber",
+        "lumber",
+        "firewood",
     ),
     "amber": ("앰버", "따뜻", "포근", "수지", "amber", "warm", "resinous"),
     "musky": ("머스크", "사향", "살냄새", "musky", "musk", "skin scent"),
@@ -476,10 +481,12 @@ def _perceptual_intent(
         "creamy": ("크리미", "부드러운 크림", "creamy"),
         "soft": ("포근", "부드럽", "보송", "soft", "velvety"),
     }
+    # Phase names are not texture requests ("drydown" is not "dry").
+    control_text = PHASE_MARKER.sub(" ", text)
     texture = {
         name: 1.0
         for name, aliases in texture_terms.items()
-        if any(alias in text for alias in aliases)
+        if any(find_text_spans(control_text, alias) for alias in aliases)
     }
     trigeminal_terms = {
         "cooling": ("차가운", "쿨링", "얼음", "icy", "cooling"),
@@ -489,7 +496,7 @@ def _perceptual_intent(
     trigeminal = {
         name: 1.0
         for name, aliases in trigeminal_terms.items()
-        if any(alias in text for alias in aliases)
+        if any(find_text_spans(control_text, alias) for alias in aliases)
     }
 
     temporal = {"opening": 0.25, "heart": 0.40, "drydown": 0.35}
@@ -619,6 +626,7 @@ class NaturalLanguageBriefParser:
         recognized_descriptors: set[str] = set()
         avoided_descriptors: set[str] = set()
         unsupported_descriptors: set[str] = set()
+        unsupported_weights = {}
         for projection in descriptor_lexicon.descriptors:
             positive_weight = 0.0
             negative_match = False
@@ -651,6 +659,7 @@ class NaturalLanguageBriefParser:
             )
             if not projection.formula_supported:
                 unsupported_descriptors.add(projection.descriptor)
+                unsupported_weights[projection.descriptor] = positive_weight
                 continue
             for dimension, value in projection.profile.items():
                 scores[dimension] += value * positive_weight
@@ -658,7 +667,30 @@ class NaturalLanguageBriefParser:
                     desired.add(dimension)
 
         if unsupported_descriptors:
-            raise UnsupportedOdorDescriptorError(sorted(unsupported_descriptors))
+            # A descriptor formerly lacking a 19-axis bridge can now have an
+            # independently pinned full reference. Use its fixed warm-start
+            # projection only when that exact positive concept is connected.
+            from .odor_space import configured_odor_space
+            space = configured_odor_space()
+            if space is not None:
+                for projection in descriptor_lexicon.descriptors:
+                    if projection.descriptor not in unsupported_descriptors:
+                        continue
+                    owners = {space.aliases[a] for a in projection.aliases if a in space.aliases
+                              and space.aliases[a] in expression['wanted']}
+                    if len(owners) != 1:
+                        continue
+                    owner = next(iter(owners))
+                    node = space.rows[owner]
+                    if not space.value['reference_bindings'].get(owner) or not node['coarse_projection']:
+                        continue
+                    for dimension, value in node['coarse_projection'].items():
+                        scores[dimension] += value*unsupported_weights[projection.descriptor]
+                        if value >= .20:
+                            desired.add(dimension)
+                    unsupported_descriptors.remove(projection.descriptor)
+            if unsupported_descriptors:
+                raise UnsupportedOdorDescriptorError(sorted(unsupported_descriptors))
 
         extension_weights = {}
         for alias, row in extensions.items():
@@ -677,6 +709,19 @@ class NaturalLanguageBriefParser:
                     desired.add(dimension)
 
         requested_ingredients: list[str] = []
+        # Scene interpretations provide a source-linked coarse warm start;
+        # their full concept identities remain in expression_targets.
+        from .odor_expression import registry as expression_registry
+        scene_ids={m['concept_id'] for m in expression['matches']
+                   if m.get('support')=='project_authored_scene_interpretation' and m['polarity']=='want'}
+        if scene_ids:
+            rows=expression_registry()['rows']
+            for key in scene_ids-set(extension_weights):
+                for dimension,value in rows[key]['coarse_projection'].items():
+                    scores[dimension]+=value*expression['wanted'][key]
+                    if value>=.20:
+                        desired.add(dimension)
+            lexical_confidence=max(lexical_confidence,.65)
         excluded_ingredients: list[str] = []
         mention_groups: dict[str, list] = {}
         for mention in material_mentions:
@@ -932,7 +977,9 @@ class NaturalLanguageBriefParser:
         for dimension in avoided:
             scores[dimension] = 0.0
 
-        if sum(scores.values()) <= 0 and not (_allow_negative_only and (avoided or expression['avoided'])):
+        if sum(scores.values()) <= 0 and not expression['wanted'] and not (_allow_negative_only and (avoided or expression['avoided'])):
+            if expression.get('unresolved_named_odors'):
+                raise BriefParseError('알 수 없는 향 이름: '+', '.join(r['text'] for r in expression['unresolved_named_odors']))
             raise BriefParseError(
                 "향 특성을 찾지 못했습니다. 예: '깨끗하고 시원한 시트러스 우디 향'"
             )
@@ -970,5 +1017,7 @@ class NaturalLanguageBriefParser:
             expression_targets=expression['wanted'],
             expression_avoided=expression['avoided'],
             expression_matches=expression['matches'],
+            expression_style_facets=expression.get('style_facets',[]),
             phase_expressions=phase_expressions,
+            unresolved_odor_terms=expression.get('unresolved_named_odors', []),
         )

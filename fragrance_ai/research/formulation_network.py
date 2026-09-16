@@ -26,7 +26,7 @@ class FormulationNetwork(nn.Module):
 All tasks traverse the same fusion/residual trunk. Heads are readouts of that
 trunk, not separately loaded networks. Ingredient count is not fixed by weights.
 """
-    def __init__(self, feature_width, fine_outputs, quantitative_outputs, actions):
+    def __init__(self, feature_width, fine_outputs, quantitative_outputs, actions, *, blend_outputs=0, aqueous_outputs=0):
         super().__init__()
         self.molecule_in = nn.Linear(feature_width, 384)
         self.molecule_out = nn.Linear(384, 256)
@@ -48,13 +48,26 @@ trunk, not separately loaded networks. Ingredient count is not fixed by weights.
         self.emulsion_head = nn.Linear(256, 101)
         nn.init.zeros_(self.emulsion_head.weight)
         nn.init.zeros_(self.emulsion_head.bias)
+        self.extra_heads = []
+        self.observed_revision = bool(blend_outputs or aqueous_outputs)
+        self.observed_dropout = nn.Dropout(.10 if self.observed_revision else 0.)
+        for name,width in (('blend',blend_outputs),('aqueous',aqueous_outputs)):
+            if width:
+                setattr(self,name+'_head',nn.Linear(256,width))
+                self.extra_heads.append(name)
 
     def forward(self, molecules, masses, context, step_ids, step_values):
         mol = torch.relu(self.molecule_out(torch.relu(self.molecule_in(molecules))))
         weights = masses / masses.sum(-1, keepdim=True).clamp_min(1e-30)
         mean = (weights[..., None] * mol).sum(1)
         variance = (weights[..., None] * (mol - mean[:, None])**2).sum(1)
-        ctx = torch.relu(self.context_in(context))
+        physical_context=context
+        if self.observed_revision:
+            # A fixed formula cannot change its predicted odor to please a goal.
+            goal_free=context.clone()
+            goal_free[:,25:63]=0.
+            physical_context=torch.where((context[:,12]==2)[:,None],goal_free,context)
+        ctx = torch.relu(self.context_in(physical_context))
         attention = (self.attention_key(mol) * self.attention_query(ctx)[:, None]).sum(-1) / 8
         # Zero-mass rows, including padding, have exactly no contribution.
         attention = attention + masses.clamp_min(1e-30).log()
@@ -71,8 +84,12 @@ trunk, not separately loaded networks. Ingredient count is not fixed by weights.
         h = torch.relu(self.shared_in(torch.relu(self.fusion(fused))))
         for block in self.shared:
             h = block(h)
-        return {name: getattr(self, name + '_head')(h) for name in
-                ('fine', 'quantitative', 'transport', 'action', 'check', 'revision', 'emulsion')}
+        h=self.observed_dropout(h)
+        result = {name: getattr(self, name + '_head')(h) for name in
+                (*('fine', 'quantitative', 'transport', 'action', 'check', 'revision', 'emulsion'),*self.extra_heads)}
+        if self.observed_revision:
+            result['revision']=torch.where((context[:,12]==2)[:,None],context[:,25:44]-context[:,44:63],result['revision'])
+        return result
 
 
 def export_arrays(model):
